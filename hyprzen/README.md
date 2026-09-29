@@ -10,7 +10,6 @@ wallpaper-driven colour pipeline, and a scratchpad — and deliberately ships
 
 <p>
   <a href="#themes">Themes</a> •
-  <a href="#screenshots">Screenshots</a> •
   <a href="#installation">Installation</a> •
   <a href="#how-theming-works">How theming works</a>
 </p>
@@ -58,25 +57,14 @@ kitty, `nvim`, VSCodium, GTK and the CSS in one pass.
 Both keep `current_theme.lua` in sync, so anything that needs to know *which*
 theme is active — including ZenShell — reads one pointer rather than guessing.
 
-## Screenshots
-
-<p align="center">
-  <img src="../docs/images/desktop-2.webp" alt="Clean desktop" width="49%">
-  <img src="../docs/images/desktop-8.webp" alt="Theme switcher" width="49%">
-</p>
-<p align="center">
-  <img src="../docs/images/desktop-1.webp" alt="Workspace" width="49%">
-  <img src="../docs/images/desktop-5.webp" alt="Themed workspace" width="49%">
-</p>
-
 ## Installation
 
 > **Recommended:** use the repository's top-level installer, which runs this
 > component's setup and then symlinks it:
 >
 > ```bash
-> git clone https://github.com/zenXD45/HyprZen.git
-> cd HyprZen
+> git clone https://github.com/zenXD45/zenshell.git
+> cd zenshell
 > ./install.sh
 > ```
 

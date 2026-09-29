@@ -1,6 +1,6 @@
 #!/bin/bash
 # Zen Shell - One-Click Installation Script
-# Part of the HyprZen monorepo (https://github.com/zenXD45/HyprZen)
+# Part of the HyprZen monorepo (https://github.com/zenXD45/zenshell)
 
 set -e
 
@@ -88,7 +88,7 @@ if [ -d "$INSTALL_DIR" ]; then
 fi
 
 # --- Clone Repository ---
-REPO_URL="https://github.com/zenXD45/HyprZen.git"
+REPO_URL="https://github.com/zenXD45/zenshell.git"
 print_info "Cloning HyprZen monorepo..."
 TMP_CLONE="$HOME/.cache/hyprzen-install-zen"
 

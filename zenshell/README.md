@@ -71,15 +71,15 @@ that seam is the easiest place to extend it.
 depends on:
 
 ```bash
-git clone https://github.com/zenXD45/HyprZen.git
-cd HyprZen
+git clone https://github.com/zenXD45/zenshell.git
+cd zenshell
 ./install.sh
 ```
 
 Standalone:
 
 ```bash
-git clone https://github.com/zenXD45/HyprZen.git
+git clone https://github.com/zenXD45/zenshell.git
 ./zenshell/install.sh
 ```
 

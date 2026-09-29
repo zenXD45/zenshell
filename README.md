@@ -1,10 +1,10 @@
 <div align="center">
 
-# HyprZen 🏝️
+# ZenShell 🏝️
 
 **A Hyprland desktop where [ZenShell](zenshell/README.md) is the entire UI.**
 
-[![CI](https://github.com/zenXD45/HyprZen/actions/workflows/lint.yml/badge.svg)](https://github.com/zenXD45/HyprZen/actions/workflows/lint.yml)
+[![CI](https://github.com/zenXD45/zenshell/actions/workflows/lint.yml/badge.svg)](https://github.com/zenXD45/zenshell/actions/workflows/lint.yml)
 ![Arch](https://img.shields.io/badge/base-Arch_Linux-1793d3?logo=archlinux&logoColor=white)
 ![Hyprland](https://img.shields.io/badge/compositor-Hyprland-56b0f5?logo=hyprland&logoColor=white)
 ![Quickshell](https://img.shields.io/badge/shell-Quickshell-1abc9c?logo=quickshell&logoColor=white)
@@ -18,33 +18,32 @@
 
 ---
 
-![HyprZen desktop](docs/images/desktop-2.webp)
+![ZenShell](docs/images/shell-3.webp)
 
-One monorepo, two layers:
+One monorepo, two layers — and [ZenShell](zenshell/README.md) is the one you
+actually see.
 
-- **[HyprZen](hyprzen/README.md)** — the base rice. A minimal Hyprland config with **15 generated themes**, a wallpaper + Matugen pipeline, and a scratchpad. Ships no bar, no launcher, no notification daemon.
 - **[ZenShell](zenshell/README.md)** — the glassmorphic suite on [Quickshell](https://quickshell.outfoxxed.me). Dynamic Island, dock, spotlight, control centre, theme and wallpaper pickers. It replaces **rofi, waybar, swaync *and* eww** in one process.
+- **[HyprZen](hyprzen/README.md)** — the substrate underneath. Keybinds, window rules, animation, **15 generated themes** and a wallpaper-driven colour pipeline. Ships no bar, no launcher, no notification daemon.
 
 The split is the whole point: HyprZen owns *behaviour and colour*, ZenShell owns *interface*. Neither can shadow the other, so there is nothing to disable or reconcile.
 
 ## Gallery
 
 <p align="center">
-  <img src="docs/images/desktop-1.webp" alt="HyprZen workspace" width="49%">
-  <img src="docs/images/desktop-5.webp" alt="HyprZen themed workspace" width="49%">
+  <img src="docs/images/shell-1.webp" alt="Dynamic Island" width="49%">
+  <img src="docs/images/shell-2.webp" alt="Dock and desktop widgets" width="49%">
 </p>
 <p align="center">
-  <img src="docs/images/desktop-8.webp" alt="ZenShell theme switcher" width="49%">
-  <img src="docs/images/desktop-6.webp" alt="ZenShell spotlight" width="49%">
+  <img src="docs/images/shell-3.webp" alt="Control centre" width="49%">
+  <img src="docs/images/shell-4.webp" alt="Clipboard manager" width="49%">
 </p>
-
-ZenShell's island, dock and control centre:
-
 <p align="center">
-  <img src="docs/images/shell-1.webp" alt="ZenShell island" width="49%">
-  <img src="docs/images/shell-3.webp" alt="ZenShell dock" width="49%">
-  <img src="docs/images/shell-5.webp" alt="ZenShell control centre" width="49%">
-  <img src="docs/images/shell-7.webp" alt="ZenShell wallpaper picker" width="49%">
+  <img src="docs/images/shell-5.webp" alt="Theme switcher" width="49%">
+  <img src="docs/images/shell-6.webp" alt="Wallpaper picker" width="49%">
+</p>
+<p align="center">
+  <img src="docs/images/shell-7.webp" alt="Spotlight search" width="90%">
 </p>
 
 ## Features
@@ -73,8 +72,8 @@ scripts/     repo-level tooling (CI checks)
 > Built for a from-scratch or existing **Arch Linux** install. Tested on Arch + `Hyprland` session; the installer is also safe to re-run and skips what is already in place.
 
 ```bash
-git clone https://github.com/zenXD45/HyprZen.git
-cd HyprZen
+git clone https://github.com/zenXD45/zenshell.git
+cd zenshell
 ./install.sh
 ```
 
