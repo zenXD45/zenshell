@@ -76,10 +76,22 @@ fi
 link "$DOTFILES_DIR/.config/hypr"    "$CONFIG_DIR/hypr"
 link "$DOTFILES_DIR/.config/kitty"   "$CONFIG_DIR/kitty"
 link "$DOTFILES_DIR/.config/wlogout" "$CONFIG_DIR/wlogout"
-link "$DOTFILES_DIR/.config/swayosd" "$CONFIG_DIR/swayosd"
 link "$DOTFILES_DIR/.config/fastfetch" "$CONFIG_DIR/fastfetch"
 link "$DOTFILES_DIR/.config/wal"     "$CONFIG_DIR/wal"
 link "$DOTFILES_DIR/.config/nvim"    "$CONFIG_DIR/nvim"
+
+# ── Zsh config ─────────────────────────────────────────────────
+echo ""
+echo "🐚 Installing zsh config..."
+# Link .zshrc
+if [ -L "$HOME/.zshrc" ]; then
+    rm -f "$HOME/.zshrc"
+fi
+cp "$DOTFILES_DIR/.config/zsh/.zshrc" "$HOME/.zshrc"
+echo "  installed: ~/.zshrc"
+# Link p10k config
+cp "$DOTFILES_DIR/.config/zsh/p10k.zsh" "$HOME/.p10k.zsh"
+echo "  installed: ~/.p10k.zsh"
 
 # ── Step 6: Install scripts ───────────────────────────────────
 echo ""

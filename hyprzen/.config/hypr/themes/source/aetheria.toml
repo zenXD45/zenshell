@@ -1,0 +1,45 @@
+# Aetheria — light theme. Light backgrounds need a touch more blur and a higher
+# inactive opacity so window edges stay legible against wallpaper.
+
+[meta]
+name = "Aetheria"
+slug = "aetheria"
+icon = "☁️"
+dark  = false
+
+[colors]
+bg      = "#fafafa"
+surface = "#f0f0f0"
+overlay = "#e5e5e5"
+accent  = "#7287fd"
+fg      = "#4c4f69"
+subfg   = "#6c6f85"
+urgent  = "#ea76cb"
+
+[geometry]
+rounding = 18
+border_size = 2
+gaps_in = 6
+gaps_out = 16
+blur_size = 8
+blur_passes = 3
+inactive_opacity = 0.94
+shadow_color = "rgba(00000029)"
+
+[palette]
+black   = "#e5e5e5"
+red     = "#ea76cb"
+green   = "#86b300"
+yellow  = "#f9c562"
+blue    = "#7287fd"
+magenta = "#b4befe"
+cyan    = "#4fd6be"
+white   = "#acb0be"
+bright_black   = "#9ca0b0"
+bright_red     = "#f27fd3"
+bright_green   = "#9cc400"
+bright_yellow  = "#ffb84d"
+bright_blue    = "#8c9eff"
+bright_magenta = "#c4a7e7"
+bright_cyan    = "#63e0c9"
+bright_white   = "#4c4f69"

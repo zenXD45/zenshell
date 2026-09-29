@@ -1,0 +1,45 @@
+# Noir — sharp, square, zero-gap. The most minimal theme in the set.
+# Corners and gaps are the identity here, so this theme deliberately goes to 0.
+
+[meta]
+name = "Noir"
+slug = "noir"
+icon = "🌑"
+dark  = true
+
+[colors]
+bg      = "#0f0f0f"
+surface = "#141414"
+overlay = "#1a1a1a"
+accent  = "#838996"
+fg      = "#c0c0c0"
+subfg   = "#8a8a8a"
+urgent  = "#c23b3b"
+
+[geometry]
+rounding = 0
+border_size = 1
+gaps_in = 0
+gaps_out = 0
+blur_size = 2
+blur_passes = 2
+inactive_opacity = 0.85
+shadow_color = "rgba(00000000)"
+
+[palette]
+black   = "#1a1a1a"
+red     = "#c23b3b"
+green   = "#7f9f7f"
+yellow  = "#c9b458"
+blue    = "#6c7a99"
+magenta = "#9b7fa8"
+cyan    = "#6f9a9a"
+white   = "#c0c0c0"
+bright_black   = "#4a4a4a"
+bright_red     = "#e05555"
+bright_green   = "#9fbf9f"
+bright_yellow  = "#e0cf7a"
+bright_blue    = "#8b9bc0"
+bright_magenta = "#c2a0cf"
+bright_cyan    = "#8fc0c0"
+bright_white   = "#e8e8e8"

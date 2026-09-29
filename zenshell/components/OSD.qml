@@ -15,7 +15,7 @@ Item {
 
         Text {
             text: root.osdIcon
-            color: "#FFFFFF"
+            color: root.currentThemeAccent
             font.family: root.font
             font.pixelSize: 16
             Layout.alignment: Qt.AlignVCenter
@@ -28,13 +28,13 @@ Item {
             Layout.preferredHeight: 6
             Layout.alignment: Qt.AlignVCenter
             radius: 3
-            color: "#25FFFFFF"
-            
+            color: Qt.rgba(1, 1, 1, 0.15)
+
             Rectangle {
                 width: parent.width * (Math.min(root.osdValue, 100) / 100.0)
                 height: parent.height
                 radius: 3
-                color: "#FFFFFF"
+                color: root.currentThemeAccent
                 Behavior on width { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
             }
         }

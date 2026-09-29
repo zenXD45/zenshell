@@ -1,125 +1,189 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/catppuccin/catppuccin/main/assets/palette/macchiato.png" width="400" alt="palette" />
-  
-  <h1>🌸 HyprZen</h1>
-  <p><b>An ultra-minimal, zen-inspired dotfiles setup for Hyprland on Arch Linux.</b></p>
-  
-  <p>
-    <a href="#-features">Features</a> •
-    <a href="#-showcase">Showcase</a> •
-    <a href="#-installation">Installation</a> •
-    <a href="#%EF%B8%8F-keybindings">Keybinds</a>
-  </p>
+
+# 🌸 HyprZen
+
+**The behaviour-and-colour half of [HyprZen](../README.md).**
+
+A minimal Hyprland config for Arch Linux that ships **15 generated themes**, a
+wallpaper-driven colour pipeline, and a scratchpad — and deliberately ships
+*no* bar, launcher, or notification daemon.
+
+<p>
+  <a href="#themes">Themes</a> •
+  <a href="#screenshots">Screenshots</a> •
+  <a href="#installation">Installation</a> •
+  <a href="#how-theming-works">How theming works</a>
+</p>
+
 </div>
 
 ---
 
-## ✨ Features
+## What this is
 
-- **Universal System Theming**: Press `SUPER + T` to instantly switch your entire system's aesthetic. It seamlessly syncs Waybar, Rofi, Kitty, Hyprland borders, GTK themes (for Librewolf/Firefox), Neovim, and **VSCodium** in real-time.
-- **13 Immersive Themes**: Includes Catppuccin (Mocha/Latte), Nord, Gruvbox, Tokyo Night (Moon/Storm), Everforest, Kanagawa, Noir, GitHub Light, One Dark, and Rosé Pine. 
-- **Dynamic Island Waybar**: Completely replaces a boring static bar with a sleek, floating, expanding "dynamic island" pill in the top-center. Instantly swap between `minimal`, `pill`, and `dynamic-island` using `Super + W`.
-- **Aesthetic Glassmorphism**: Stunning Kawase blur (3 passes), minimal borders, and transparent background glass effects across all applications including Rofi, VS Code, and terminal windows.
-- **Automated Wallpaper Downloader**: Pick 100+ high-res, aesthetic PC wallpapers effortlessly through an immersive transparent Rofi grid GUI (`SUPER + ALT + W`).
-- **Beautiful Typography**: Pre-configured to use the stunning `GeistMono Nerd Font` everywhere.
-- **Smart Workspaces**: Workspaces 1-4 are always visible for consistency, while 5-10 generate dynamically only when you need them.
-- **Automated Setup**: A bulletproof `setup.sh` script that automatically installs dependencies, downloads fonts, backs up old configs, and initializes dynamic themes.
+ZenShell ([`../zenshell`](../zenshell/README.md)) is the interface. HyprZen is
+everything underneath: keybinds, window rules, animation, workspace behaviour,
+and the theme system that tints the terminal, GTK apps, Neovim and VSCodium at
+once.
 
----
+If you're using the full project, you normally **never run `setup.sh`** — the
+top-level `./install.sh` calls it for you.
 
-## 📸 Showcase
+## Themes
 
-<table align="center">
-  <tr>
-    <td align="center">
-      <b>Clean Desktop Environment</b><br>
-      <img src="assets/2.png" alt="Clean Desktop" width="400"/>
-    </td>
-    <td align="center">
-      <b>Dynamic Theme Switcher</b><br>
-      <img src="assets/8.png" alt="Theme Switcher" width="400"/>
-    </td>
-  </tr>
-</table>
+15 themes, each a single TOML file in `.config/hypr/themes/source/`:
 
-*(Add more screenshots to the `assets/` folder to show off your themes!)*
+| Light | Dark | Dynamic |
+| :--- | :--- | :--- |
+| Alabaster | Aetheria | **Dynamic** (pywal) |
+| Akane | Catppuccin | **Matugen** |
+| Eva Theme | Gruvbox | |
+| Lavender | Noir | |
+| Rosé Pine | Nord | |
+| | One Dark | |
+| | Osaka Jade | |
+| | Tokyo Night | |
 
----
+`SUPER + T` opens the theme picker in the ZenShell island. Switching a theme
+rewrites the Hyprland borders, blur, rounding and shadow opacity, then re-tints
+kitty, `nvim`, VSCodium, GTK and the CSS in one pass.
 
-## 🚀 Installation
+### Two themes are computed, not written
 
-### Supported Distributions
-HyprZen is heavily optimized for **Arch Linux** and Arch-based distributions. It has been tested and works flawlessly on:
-- Arch Linux
-- CachyOS
-- EndeavourOS
-- Manjaro / Garuda
+- **`dynamic`** runs `scripts/dynamic-colors.sh`, which shells out to `pywal`
+  against your current wallpaper and generates `dynamic.lua` from the result.
+- **`matugen`** hands the wallpaper to Matugen, which regenerates the palette the
+  same way.
 
-### How to Install
-The installation process is split into two scripts that work together automatically:
-* **`setup.sh`**: Downloads and installs all the required programs, fonts, and AUR packages.
-* **`install.sh`**: Safely backs up your old configuration files and symlinks the HyprZen aesthetic into your `~/.config` folder.
+Both keep `current_theme.lua` in sync, so anything that needs to know *which*
+theme is active — including ZenShell — reads one pointer rather than guessing.
 
-**1. Clone the repository:**
+## Screenshots
+
+<p align="center">
+  <img src="../docs/images/desktop-2.webp" alt="Clean desktop" width="49%">
+  <img src="../docs/images/desktop-8.webp" alt="Theme switcher" width="49%">
+</p>
+<p align="center">
+  <img src="../docs/images/desktop-1.webp" alt="Workspace" width="49%">
+  <img src="../docs/images/desktop-5.webp" alt="Themed workspace" width="49%">
+</p>
+
+## Installation
+
+> **Recommended:** use the repository's top-level installer, which runs this
+> component's setup and then symlinks it:
+>
+> ```bash
+> git clone https://github.com/zenXD45/HyprZen.git
+> cd HyprZen
+> ./install.sh
+> ```
+
+Standalone, on **Arch Linux** or an Arch derivative (CachyOS, EndeavourOS,
+Manjaro, Garuda):
+
 ```bash
-git clone https://github.com/zenXD45/HyprZen.git
-cd HyprZen
+./setup.sh    # packages, AUR deps, fonts
+./install.sh  # symlink .config/* into ~/.config, link ~/scripts, copy wallpapers
 ```
 
-**2. Run the automated setup:**
-```bash
-# This handles both dependencies (via setup.sh) and symlinking (via install.sh)
-./setup.sh
-```
+Then `hyprctl reload`, or `SUPER + CTRL + R`.
 
-**3. Reload Hyprland:**
-Press `SUPER + CTRL + R` to reload Hyprland and apply all the new configurations.
+`setup.sh` and `install.sh` are both idempotent — re-running them skips what's
+already in place.
 
----
+## Keybinds
 
-## ⌨️ Keybindings
-
-HyprZen uses an ultra-minimal keybind configuration. 
+ZenShell claims the plain `SUPER+` keys. These are the ones HyprZen keeps:
 
 | Action | Shortcut |
 | :--- | :--- |
-| **Terminal (Kitty)** | `SUPER + ENTER` |
-| **App Launcher (ZenShell island)** | `SUPER + SPACE` |
-| **Theme Switcher (island)** | `SUPER + T` |
-| **Wallpaper Picker (island)** | `SUPER + W` |
-| **Close Window** | `SUPER + Q` |
-| **Toggle Fullscreen** | `SUPER + F` |
-| **Toggle Floating** | `SUPER + SHIFT + F` |
-| **Toggle Opaque / Blur** | `SUPER + O` |
-| **Region Screenshot (Annotate)** | `SUPER + Print` |
-| **Region Screenshot (Clipboard)** | `SUPER + CTRL + Print` |
-| **Control Center / Notifications (ZenShell)** | `SUPER + N` |
+| Terminal (kitty) | `SUPER + ENTER` |
+| Browser (Firefox) | `SUPER + B` |
+| Files (Thunar) | `SUPER + E` |
+| Editor (VSCodium) | `SUPER + C` |
+| wlogout | `SUPER + X` |
+| Caffeine (hold off idle) | `SUPER + SHIFT + C` |
+| Close window | `SUPER + Q` |
+| Fullscreen | `SUPER + F` |
+| Maximize | `SUPER + ALT + F` |
+| Float | `SUPER + SHIFT + F` |
+| Pseudo-tty | `SUPER + P` |
+| Opaque / blur | `SUPER + O` |
+| Focus | `SUPER + H/J/K/L` or arrows |
+| Move | `SUPER + SHIFT + H/J/K/L` |
+| Resize | `SUPER + ALT + arrows` |
+| Workspace 1–10 | `SUPER + 1…0` |
+| Send to workspace | `SUPER + SHIFT + 1…0` |
+| Cycle workspace | `SUPER + CTRL + ←/→`, `SUPER + scroll` |
+| Overview | `SUPER + TAB` |
+| Scratchpad | `SUPER + S` |
+| Screenshot (full / annotate / clipboard) | `Print` / `SUPER + Print` / `SUPER + CTRL + Print` |
+| Lock | `SUPER + SHIFT + L` |
+| Reload config | `SUPER + CTRL + R` |
+| Exit Hyprland | `SUPER + CTRL + Q` |
 
----
+Volume, mic, brightness and playback keys drive `wpctl` and `brightnessctl`
+directly — no OSD daemon to install or keep alive.
 
-## 🛠️ Structure
+Every binding is checked by `scripts/check_keybinds.py` at the repository root,
+which fails CI if a bound binary isn't in the installer's package list.
+
+## How theming works
+
+The point of the generator is that **no palette is hand-edited downstream**.
 
 ```text
-HyprZen/
-├── .config/
-│   ├── hypr/         # Core Hyprland configuration & rules
-│   ├── kitty/        # Terminal emulator themes
-│   ├── nvim/         # Neovim dotfiles integrated with global themes
-│   └── ...
-├── scripts/
-│   ├── theme-switch.sh          # Global VSCodium, Nvim, GTK, Kitty theme switcher
-│   ├── wallpaper-selector.sh    # Set current wallpaper (island picker calls this)
-│   └── ...
-├── install.sh        # Core symlink installer and backup utility
-└── setup.sh          # Dependency wrapper & font installer for Arch Linux
+themes/source/<name>.toml     ← the only file you edit
+        │
+        │  scripts/gen-themes.py
+        ▼
+themes/<name>.lua             ← borders, blur, rounding, shadows
+themes/<name>.conf            ← Hyprlang (animations, decorations)
+themes/<name>.css             ← GTK (wlogout, etc.)
+kitty/themes/<name>.conf      ← terminal colours
+themes/themes.json            ← manifest read by the UI and switcher
 ```
 
-> **No waybar, no rofi, no swaync, no eww** — ZenShell (Dynamic Island /
-> Dock / Spotlight / Desktop Widgets) is the default launcher, bar, wallpaper
-> picker, theme switcher, *and* notification center. Screenshots, clipboard,
-> and menus all live in the glass island now.
+`python3 scripts/gen-themes.py` regenerates all of it; `--check` fails if the
+committed artifacts are stale. Geometry — gaps, borders, rounding, blur passes,
+inactive opacity — comes from the same file, so a theme can change the *feel* of
+the compositor, not just its colours.
+
+## Structure
+
+```text
+hyprzen/
+├── .config/
+│   ├── hypr/            # core config, modules, themes
+│   ├── kitty/           # terminal config + generated themes
+│   ├── nvim/            # Neovim config, theme-aware
+│   ├── wlogout/         # logout screen, theme-aware
+│   ├── zsh/             # shell config (Oh My Zsh + Powerlevel10k)
+│   ├── fastfetch/       # neofetch-style system info
+│   └── wal/             # pywal templates
+├── scripts/
+│   ├── gen-themes.py           # theme generator
+│   ├── theme-switch.sh         # apply a theme everywhere
+│   ├── dynamic-colors.sh       # pywal → dynamic.lua / .conf
+│   ├── wallpaper-selector.sh   # apply a wallpaper (island calls this)
+│   ├── wallpaper-random.sh
+│   └── caffeine.sh
+├── wallpapers/          # per-theme wallpaper folders
+├── install.sh           # symlink configs into ~/.config
+└── setup.sh             # packages, AUR deps, fonts
+```
+
+## Notes
+
+- **ZenShell is the only UI.** waybar, rofi, swaync and eww are gone by design,
+  not by accident — see the [root README](../README.md#keybinds).
+- **Nothing here hardcodes a path.** Configs resolve through `~/scripts`,
+  `~/wallpapers` and `$HOME`, so the repo works wherever it's cloned.
 
 ---
+
 <div align="center">
-  <i>Stay Minimal. Stay Zen.</i>
+  <i>Stay minimal. Stay zen.</i>
 </div>

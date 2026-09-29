@@ -1,0 +1,45 @@
+# Eva Theme — sharp synthwave. Near-square corners with a saturated green
+# accent; the most "angular" of the dark themes.
+
+[meta]
+name = "Eva Theme"
+slug = "eva-theme"
+icon = "🤖"
+dark  = true
+
+[colors]
+bg      = "#1a0033"
+surface = "#26004d"
+overlay = "#0d001a"
+accent  = "#9ece6a"
+fg      = "#c0caf5"
+subfg   = "#a9b1d6"
+urgent  = "#ff5370"
+
+[geometry]
+rounding = 4
+border_size = 2
+gaps_in = 4
+gaps_out = 8
+blur_size = 4
+blur_passes = 2
+inactive_opacity = 0.92
+shadow_color = "rgba(0000008c)"
+
+[palette]
+black   = "#0d001a"
+red     = "#ff5370"
+green   = "#9ece6a"
+yellow  = "#e0af68"
+blue    = "#7aa2f7"
+magenta = "#bb9af7"
+cyan    = "#7dcfff"
+white   = "#a9b1d6"
+bright_black   = "#565f89"
+bright_red     = "#ff5370"
+bright_green   = "#b9f27c"
+bright_yellow  = "#ff9e64"
+bright_blue    = "#7da6ff"
+bright_magenta = "#c0aaf6"
+bright_cyan    = "#a4daff"
+bright_white   = "#c0caf5"

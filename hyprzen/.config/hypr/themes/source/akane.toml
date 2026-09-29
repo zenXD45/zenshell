@@ -1,0 +1,44 @@
+# Akane — bold festival red. Wide gaps and heavy rounding for a loud feel.
+
+[meta]
+name = "Akane"
+slug = "akane"
+icon = "🏮"
+dark  = true
+
+[colors]
+bg      = "#1a0f0f"
+surface = "#261717"
+overlay = "#0d0707"
+accent  = "#cc4343"
+fg      = "#dcd7ba"
+subfg   = "#a8a291"
+urgent  = "#e05a5a"
+
+[geometry]
+rounding = 16
+border_size = 2
+gaps_in = 6
+gaps_out = 14
+blur_size = 6
+blur_passes = 3
+inactive_opacity = 0.92
+shadow_color = "rgba(000000a6)"
+
+[palette]
+black   = "#261717"
+red     = "#e05a5a"
+green   = "#98bb6c"
+yellow  = "#d7af5f"
+blue    = "#6f9bb5"
+magenta = "#c586c0"
+cyan    = "#5fb3b3"
+white   = "#dcd7ba"
+bright_black   = "#5c5151"
+bright_red     = "#ff6b6b"
+bright_green   = "#b5d67f"
+bright_yellow  = "#f0c674"
+bright_blue    = "#83b4d4"
+bright_magenta = "#e0a3da"
+bright_cyan    = "#7ccdcd"
+bright_white   = "#f2ecd8"

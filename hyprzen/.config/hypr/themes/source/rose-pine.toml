@@ -1,0 +1,45 @@
+# Rosé Pine — soft and rounded, similar family to Lavender but warmer and
+# with a duskier base.
+
+[meta]
+name = "Rosé Pine"
+slug = "rose-pine"
+icon = "🌹"
+dark  = true
+
+[colors]
+bg      = "#191724"
+surface = "#1f1d2e"
+overlay = "#26233a"
+accent  = "#9ccfd8"
+fg      = "#e0def4"
+subfg   = "#908caa"
+urgent  = "#eb6f92"
+
+[geometry]
+rounding = 16
+border_size = 2
+gaps_in = 5
+gaps_out = 14
+blur_size = 6
+blur_passes = 3
+inactive_opacity = 0.92
+shadow_color = "rgba(00000080)"
+
+[palette]
+black   = "#26233a"
+red     = "#eb6f92"
+green   = "#9ccfd8"
+yellow  = "#f6c177"
+blue    = "#31748f"
+magenta = "#c4a7e7"
+cyan    = "#ebbcba"
+white   = "#e6e1e5"
+bright_black   = "#6e6a86"
+bright_red     = "#eb6f92"
+bright_green   = "#9ccfd8"
+bright_yellow  = "#f6c177"
+bright_blue    = "#31748f"
+bright_magenta = "#c4a7e7"
+bright_cyan    = "#ebbcba"
+bright_white   = "#f6e9ee"

@@ -1,22 +1,76 @@
+<div align="center">
+
 # HyprZen 🏝️
 
-A monorepo merging two projects — **HyprZen** (Hyprland dotfiles & theming) and **Zen Shell** (Quickshell Dynamic Island desktop suite) — into one cohesive, conflict-free desktop experience where **ZenShell is the default UI** (launcher, bar, dock, spotlight, theme/wallpaper pickers).
+**A Hyprland desktop where [ZenShell](zenshell/README.md) is the entire UI.**
 
-- [HyprZen — the base rice](hyprzen/README.md): ultra-minimal Hyprland config, 13 themes, swayosd OSD, wallpapers.
-- [Zen Shell — the glassmorphic shell](zenshell/README.md): Dynamic Island, Dock, Spotlight, Desktop Widgets — replaces not only rofi and waybar but also swaync (notifications) and eww (desktop clock).
+[![CI](https://github.com/zenXD45/HyprZen/actions/workflows/lint.yml/badge.svg)](https://github.com/zenXD45/HyprZen/actions/workflows/lint.yml)
+![Arch](https://img.shields.io/badge/base-Arch_Linux-1793d3?logo=archlinux&logoColor=white)
+![Hyprland](https://img.shields.io/badge/compositor-Hyprland-56b0f5?logo=hyprland&logoColor=white)
+![Quickshell](https://img.shields.io/badge/shell-Quickshell-1abc9c?logo=quickshell&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-blue)
+
+15 themes · 2 components · one installer
+
+[Install](#installation) · [Keybinds](#keybinds) · [Structure](#structure)
+
+</div>
+
+---
+
+![HyprZen desktop](docs/images/desktop-2.webp)
+
+One monorepo, two layers:
+
+- **[HyprZen](hyprzen/README.md)** — the base rice. A minimal Hyprland config with **15 generated themes**, a wallpaper + Matugen pipeline, and a scratchpad. Ships no bar, no launcher, no notification daemon.
+- **[ZenShell](zenshell/README.md)** — the glassmorphic suite on [Quickshell](https://quickshell.outfoxxed.me). Dynamic Island, dock, spotlight, control centre, theme and wallpaper pickers. It replaces **rofi, waybar, swaync *and* eww** in one process.
+
+The split is the whole point: HyprZen owns *behaviour and colour*, ZenShell owns *interface*. Neither can shadow the other, so there is nothing to disable or reconcile.
+
+## Gallery
+
+<p align="center">
+  <img src="docs/images/desktop-1.webp" alt="HyprZen workspace" width="49%">
+  <img src="docs/images/desktop-5.webp" alt="HyprZen themed workspace" width="49%">
+</p>
+<p align="center">
+  <img src="docs/images/desktop-8.webp" alt="ZenShell theme switcher" width="49%">
+  <img src="docs/images/desktop-6.webp" alt="ZenShell spotlight" width="49%">
+</p>
+
+ZenShell's island, dock and control centre:
+
+<p align="center">
+  <img src="docs/images/shell-1.webp" alt="ZenShell island" width="49%">
+  <img src="docs/images/shell-3.webp" alt="ZenShell dock" width="49%">
+  <img src="docs/images/shell-5.webp" alt="ZenShell control centre" width="49%">
+  <img src="docs/images/shell-7.webp" alt="ZenShell wallpaper picker" width="49%">
+</p>
+
+## Features
+
+| | |
+| :--- | :--- |
+| **15 themes, one source of truth** | Colours live in `themes/source/*.toml`; `gen-themes.py` emits Lua, Hyprlang, CSS, Kitty and a JSON manifest. No hand-edited palette can drift. |
+| **Dynamic colour** | `dynamic` and `matugen` themes derive the whole palette from your wallpaper via pywal / Matugen. |
+| **Theme-aware geometry** | Gaps, borders, rounding, blur and shadow opacity are read from the theme, not hardcoded. |
+| **No dead keybinds** | `scripts/check_keybinds.py` parses `keybinds.lua` and fails CI if a bound binary isn't installed by `install.sh`. |
+| **Media keys built in** | Volume, mic, brightness and playback go straight to `wpctl` / `brightnessctl` — no OSD daemon required. |
+| **Fonts handled** | GeistMono Nerd for the terminal, [Outfit](https://fonts.google.com/specimen/Outfit) for the UI. Installed and cached by the installer. |
+| **Portable** | Every path resolves through `$HOME` / `Qt.homePath()`. Clone it anywhere; no edits needed. |
 
 ## Structure
 
 ```text
-hyprzen/     Hyprland dotfiles & theming (installs to ~/.config, ~/scripts, ~/wallpapers)
-zenshell/    Quickshell Dynamic Island suite (installs to ~/.config/quickshell/dynamic-island)
+hyprzen/     Hyprland config & theming  → ~/.config/hypr, ~/scripts, ~/wallpapers
+zenshell/    Quickshell UI suite        → ~/.config/quickshell/dynamic-island
+docs/images/ screenshots used by this README
+scripts/     repo-level tooling (CI checks)
 ```
 
 ## Installation
 
-> One command installs everything on a from-scratch (or existing) Arch install:
-> official packages, AUR packages (tolerant of build failures), GeistMono Nerd
-> Font, scroll-overview plugin, GPU drivers, configs, ZenShell, services, theme.
+> Built for a from-scratch or existing **Arch Linux** install. Tested on Arch + `Hyprland` session; the installer is also safe to re-run and skips what is already in place.
 
 ```bash
 git clone https://github.com/zenXD45/HyprZen.git
@@ -24,113 +78,107 @@ cd HyprZen
 ./install.sh
 ```
 
-What `install.sh` does, in order:
+Then log into the `Hyprland` session (or `hyprctl reload`). ZenShell autostarts from `exec.lua` → `start_all.sh`; there is no manual `exec-once` line.
 
-1. Installs all official packages (Hyprland, kitty, pipewire, cliphist, python, toolchain…). **No waybar, no rofi, no swaync** — the island + dock are the default UI (ZenShell owns notifications too).
-2. Installs an AUR helper (`paru`/`yay`) and the AUR packages: `quickshell-git`, `hyprswitch`, `matugen`, `satty`, `hyprshot`, `waypaper`, `swayosd`, `bibata-cursor-theme`. Failures are warned, not fatal.
-3. Downloads + caches **GeistMono Nerd Font**.
-4. Adds + enables the **scroll-overview** hyprpm plugin.
-5. Detects NVIDIA GPUs and installs `nvidia-dkms`/`nvidia-utils`.
-6. Runs `hyprzen/install.sh` to symlink configs → `~/.config`, link `~/scripts`, copy wallpapers → `~/wallpapers`.
-7. Installs ZenShell → `~/.config/quickshell/dynamic-island` (backs up existing).
-8. Applies the default theme (`catppuccin`) and sets a default wallpaper.
-9. Enables NetworkManager, bluetooth, power-profiles-daemon + pipewire session services.
-10. Verifies key binaries/configs, warns if known deps are missing.
+What `install.sh` does:
 
-After install: **log into the `Hyprland` session** (or run `hyprctl reload`).
-ZenShell autostarts via `exec.lua` → `start_all.sh`; no manual `exec-once` line needed.
+1. Installs official packages — Hyprland, kitty, pipewire, `firefox`, `thunar`, `vscodium`, the toolchain and more. **No waybar, no rofi, no swaync**; the island and dock are the UI.
+2. Installs an AUR helper (`paru`, falling back to `yay`) and the AUR packages: `quickshell-git`, `matugen`, `hyprswitch`, `satty`, `hyprshot`, `waypaper`, `wlogout`, `pywal`, `adw-gtk3`, `bibata-cursor-theme`. **Failures warn, they don't abort.**
+3. Downloads and caches **GeistMono Nerd Font** + **Outfit**.
+4. Adds and enables the **scroll-overview** `hyprpm` plugin.
+5. Detects NVIDIA and installs `nvidia-dkms` / `nvidia-utils`.
+6. Configures **zsh**: Oh My Zsh + Powerlevel10k, plus `eza` / `bat` / `fzf` aliases, and offers `chsh`.
+7. Runs `hyprzen/install.sh` to symlink configs into `~/.config`, link `~/scripts`, and copy wallpapers into `~/wallpapers`.
+8. Installs ZenShell to `~/.config/quickshell/dynamic-island`, backing up anything already there.
+9. Applies the default theme (`catppuccin`) and a matching wallpaper.
+10. Enables NetworkManager, bluetooth and power-profiles-daemon.
+11. **Verifies** the result — key binaries, configs, fonts and the ZenShell Python helpers — and warns about anything missing.
 
-### Manual (order matters)
+### Manual
 
-Equivalent steps if you prefer to run the pieces yourself:
+If you'd rather run the pieces yourself, keep this order — ZenShell calls HyprZen's `theme-switch.sh`:
 
 ```bash
-# 1. HyprZen base — dependencies + symlinks
-cd hyprzen && ./setup.sh
-
-# 2. ZenShell — Quickshell suite
-cd zenshell && ./install.sh
-
-# 3. Reload
-SUPER + CTRL + R
+cd hyprzen  && ./setup.sh   # deps + symlinks
+cd zenshell && ./install.sh # Quickshell suite
+# then: hyprctl reload   (or SUPER+CTRL+R)
 ```
 
-## ⌨️ Unified Keybinds
+## ⌨️ Keybinds
 
-All keybinds live in `hyprzen/.config/hypr/modules/keybinds.lua`. Combos are **unique**. ZenShell owns the primary UI actions on plain `SUPER+` keys (launcher, clipboard, cheatsheet, themes, wallpapers); HyprZen keeps terminal/app/system binds on their own keys. Media/brightness keys remain on the keyboard keys.
+Everything lives in `hyprzen/.config/hypr/modules/keybinds.lua`. ZenShell claims the plain `SUPER+` keys; HyprZen keeps terminal, app and system binds out of the way. Combos are unique — the CI checker enforces it.
 
-### Apps & Launcher
+### ZenShell
 | Action | Shortcut |
 | :--- | :--- |
-| Terminal (Kitty) | `SUPER + Enter` |
-| **App Launcher (ZenShell island)** | `SUPER + Space` |
-| Window Switcher | `SUPER + Alt + Tab` |
-| Browser (LibreWolf) | `SUPER + B` |
-| Files (Nautilus) | `SUPER + E` |
+| App launcher | `SUPER + Space` |
+| Spotlight search | `SUPER + Shift + M` |
+| Clipboard | `SUPER + V` |
+| Keybind cheatsheet | `SUPER + comma` |
+| Control centre & notifications | `SUPER + N` |
+| Power menu | `SUPER + Escape` |
+| Theme switcher | `SUPER + T` |
+| Wallpaper picker | `SUPER + W` |
+| Power profiles | `SUPER + Shift + P` |
+| Desktop widgets (clock + weather) | `SUPER + D` |
+
+### Apps
+| Action | Shortcut |
+| :--- | :--- |
+| Terminal (kitty) | `SUPER + Enter` |
+| Browser (Firefox) | `SUPER + B` |
+| Files (Thunar) | `SUPER + E` |
 | Editor (VSCodium) | `SUPER + C` |
-| Desktop Widgets (clock + weather, toggle) | `SUPER + D` |
+| Screen switcher | `SUPER + Alt + Tab` |
 
-### ZenShell Dynamic Island
+### Windows & workspaces
 | Action | Shortcut |
 | :--- | :--- |
-| App Launcher | `SUPER + Space` |
-| Keybinds Cheatsheet | `SUPER + comma` |
-| Clipboard Manager | `SUPER + V` |
-| Control Center / Notifications | `SUPER + N` |
-| Power Menu | `SUPER + Escape` |
-| Power Profiles | `SUPER + Shift + P` |
-| Spotlight Search | `SUPER + Shift + M` |
+| Close | `SUPER + Q` |
+| Fullscreen | `SUPER + F` |
+| Maximize | `SUPER + Alt + F` |
+| Float | `SUPER + Shift + F` |
+| Pseudo-tty | `SUPER + P` |
+| Opaque / blur | `SUPER + O` |
+| Focus | `SUPER + H/J/K/L` or arrows |
+| Move | `SUPER + Shift + H/J/K/L` |
+| Resize | `SUPER + Alt + arrows` |
+| Workspace 1–10 | `SUPER + 1…0` |
+| Send to workspace | `SUPER + Shift + 1…0` |
+| Cycle workspace | `SUPER + Ctrl + ←/→`, `SUPER + scroll` |
+| Overview | `SUPER + Tab` |
+| Scratchpad | `SUPER + S` |
 
-### Clipboard
-| Action | Shortcut |
-| :--- | :--- |
-| Clipboard (ZenShell island) | `SUPER + V` |
-
-### Theme / Wallpaper
-| Action | Shortcut |
-| :--- | :--- |
-| Theme Switcher (island) | `SUPER + T` |
-| Wallpaper Picker (island) | `SUPER + W` |
-
-### Screenshots
+### Screenshots & system
 | Action | Shortcut |
 | :--- | :--- |
 | Full screen | `Print` |
 | Region → annotate | `SUPER + Print` |
 | Region → clipboard | `SUPER + Ctrl + Print` |
-
-### Windows / Workspaces
-| Action | Shortcut |
-| :--- | :--- |
-| Close window | `SUPER + Q` |
-| Fullscreen | `SUPER + F` |
-| Maximize | `SUPER + Alt + F` |
-| Toggle float | `SUPER + Shift + F` |
-| Toggle pseudo | `SUPER + P` |
-| Toggle opaque | `SUPER + O` |
-| Focus | `SUPER + H/J/K/L` / arrows |
-| Move window | `SUPER + Shift + H/J/K/L` |
-| Resize window | `SUPER + Alt + arrows` |
-| Workspace 1–10 | `SUPER + 1…0` |
-| Move to workspace | `SUPER + Shift + 1…0` |
-| Cycle workspace | `SUPER + Ctrl + ←/→`, `SUPER + scroll` |
-| Overview | `SUPER + Tab` |
-| Scratchpad (`special:magic`) | `SUPER + S` |
-
-### Media / System
-| Action | Shortcut |
-| :--- | :--- |
-| Volume / Mute / Mic | `XF86Audio*` |
-| Brightness | `XF86MonBrightness*` |
-| Playback / Next / Prev | `XF86AudioPlay/Next/Prev` |
 | Lock | `SUPER + Shift + L` |
-| Exit Hyprland | `SUPER + Ctrl + Q` |
-| Reload config | `SUPER + Ctrl + R` |
 | wlogout | `SUPER + X` |
-| Caffeine (idle toggle) | `SUPER + Shift + C` |
+| Caffeine (hold off idle) | `SUPER + Shift + C` |
+| Reload config | `SUPER + Ctrl + R` |
+| Exit Hyprland | `SUPER + Ctrl + Q` |
+
+Media keys (`XF86Audio*`, `XF86MonBrightness*`) drive `wpctl` and `brightnessctl` directly and need no separate OSD.
+
+## Development
+
+```bash
+python3 hyprzen/scripts/gen-themes.py          # regenerate theme artifacts
+python3 hyprzen/scripts/gen-themes.py --check  # fail if artifacts are stale
+python3 scripts/check_keybinds.py              # every bound binary is installed
+```
+
+CI runs on every push and PR: `bash -n` over the shell scripts, `luac -p` over the theme Lua, Python compilation, the theme-drift check, and the keybind checker.
 
 ## Notes
 
-- **rofi, waybar, swaync, and eww are removed from HyprZen** — ZenShell is the default UI everywhere: the island owns the launcher, clipboard, cheatsheet, theme/wallpaper pickers, **and notifications** (`SUPER+N` → control center); the dock replaces the bar; `SUPER+D` toggles the desktop clock + weather. Nothing can conflict.
-- Both projects previously hardcoded absolute paths (e.g. `~/Desktop/hyprzen/...` and a user home dir); these were normalized to `~/scripts` and `~/wallpapers` (the symlinks `hyprzen/install.sh` creates), and every `$HOME` / user-directory path inside ZenShell now resolves via `$HOME` / `Qt.homePath()`, so the repo works on any machine without edits.
-- Keep the install order above; ZenShell depends on HyprZen's `theme-switch.sh` for its ThemeSwitcher.
+- **ZenShell is the only UI.** rofi, waybar, swaync and eww were removed rather than left dormant — the island owns the launcher, clipboard, cheatsheet, pickers and notifications; the dock replaces the bar.
+- **Absolute paths are gone.** Both projects used to hardcode `~/Desktop/hyprzen/...` and a specific username. They now resolve via `~/scripts`, `~/wallpapers` and `$HOME` / `Qt.homePath()`.
+- **Themes are generated, never hand-edited.** Edit `hyprzen/.config/hypr/themes/source/*.toml` and re-run the generator; CI fails if you forget.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

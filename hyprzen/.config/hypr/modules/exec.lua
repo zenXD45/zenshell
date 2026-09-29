@@ -1,6 +1,7 @@
 -- ══════════════════════════════════════════════════════════════
 -- HyprZen — Autostart (exec-once)
--- SwayOSD for OSD — notifications owned by ZenShell's island
+-- OSD is ZenShell's own (OSD.qml, driven by wpctl/brightnessctl polling).
+-- Notifications are likewise owned by the island.
 -- ══════════════════════════════════════════════════════════════
 
 -- ── Core System ───────────────────────────────────────────────
@@ -31,7 +32,6 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP QT_QPA_PLATFORMTHEME")
     hl.exec_cmd("systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP QT_QPA_PLATFORMTHEME")
     hl.exec_cmd("sleep 2 && systemctl --user restart xdg-desktop-portal-hyprland xdg-desktop-portal")
-    hl.exec_cmd("swayosd-server")
     hl.exec_cmd("awww-daemon")
     hl.exec_cmd("sleep 0.5 && awww img ~/wallpapers/current --transition-type wipe")
     hl.exec_cmd("hypridle")

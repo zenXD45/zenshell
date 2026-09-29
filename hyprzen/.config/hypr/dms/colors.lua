@@ -26,10 +26,10 @@ hl.config({
 hl.config({
     group = {
         groupbar = {
-            col.active = "rgb(d0bcff)",
-            col.inactive = "rgb(948f99)",
-            col.locked_active = "rgb(f2b8b5)",
-            col.locked_inactive = "rgb(948f99)",
+            ["col.active"] = "rgb(d0bcff)",
+            ["col.inactive"] = "rgb(948f99)",
+            ["col.locked_active"] = "rgb(f2b8b5)",
+            ["col.locked_inactive"] = "rgb(948f99)",
         },
         col = {
             border_active = "rgb(d0bcff)",

@@ -36,10 +36,7 @@ sudo pacman -S --needed --noconfirm $PKGS
 # wlogout and pywal are no longer in official Arch repos (dropped upstream),
 # so they live here; --needed handles overlap with official packages.
 # quickshell-git is REQUIRED (the stable 'quickshell' package conflicts).
-AUR_PKGS="quickshell-git hyprswitch matugen satty hyprshot waypaper wlogout pywal adw-gtk3"
-if ! pacman -Qi swayosd &>/dev/null && ! pacman -Qi swayosd-git &>/dev/null; then
-    AUR_PKGS="swayosd $AUR_PKGS"
-fi
+AUR_PKGS="quickshell-git hyprswitch matugen satty hyprshot waypaper wlogout pywal adw-gtk3 bibata-cursor-theme"
 
 if command -v yay &> /dev/null; then
     echo "Running yay to install AUR packages..."

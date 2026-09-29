@@ -1,11 +1,13 @@
-@define-color bg_base       #1a1b26;
+/* Tokyo Night — generated from themes/source/tokyo-night.toml */
+
+@define-color bg_base       1a1b26;
 @define-color bg_surface    rgba(31, 35, 53, 0.88);
 @define-color bg_overlay    rgba(21, 22, 30, 0.75);
-@define-color accent        #7aa2f7;
+@define-color accent        7aa2f7;
 @define-color accent_soft   rgba(122, 162, 247, 0.18);
-@define-color accent_glow   transparent;
-@define-color secondary     #7aa2f7;
-@define-color text          #c0caf5;
-@define-color subtext       #a9b1d6;
-@define-color border_color  rgba(122, 162, 247, 0.20);
-@define-color urgent        #f7768e;
+@define-color accent_glow   rgba(122, 162, 247, 0.35);
+@define-color secondary     7aa2f7;
+@define-color text          c0caf5;
+@define-color subtext       a9b1d6;
+@define-color border_color  rgba(122, 162, 247, 0.2);
+@define-color urgent        f7768e;

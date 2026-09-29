@@ -1,11 +1,13 @@
-@define-color bg_base       #0f1715;
+/* Osaka Jade — generated from themes/source/osaka-jade.toml */
+
+@define-color bg_base       0f1715;
 @define-color bg_surface    rgba(24, 34, 31, 0.88);
 @define-color bg_overlay    rgba(8, 12, 11, 0.75);
-@define-color accent        #1db954;
+@define-color accent        1db954;
 @define-color accent_soft   rgba(29, 185, 84, 0.18);
-@define-color accent_glow   transparent;
-@define-color secondary     #1db954;
-@define-color text          #e2f3eb;
-@define-color subtext       #a3c9b9;
-@define-color border_color  rgba(29, 185, 84, 0.20);
-@define-color urgent        #e05252;
+@define-color accent_glow   rgba(29, 185, 84, 0.35);
+@define-color secondary     1db954;
+@define-color text          d3c6aa;
+@define-color subtext       9da9a0;
+@define-color border_color  rgba(29, 185, 84, 0.2);
+@define-color urgent        e67e80;

@@ -1,29 +1,158 @@
 #!/usr/bin/env bash
 # =============================================================
 #  Dynamic Wallpaper Colors Generator (Pywal)
+#
+#  Samples the current wallpaper and writes a full HyprZen theme.
+#
+#  This previously only emitted .conf/.css files, but Hyprland loads
+#  themes/<name>.lua via themes/current_theme.lua — so "dynamic" theming never
+#  actually reached the compositor. It now also writes dynamic.lua.
+#
+#  Usage: dynamic-colors.sh [path-to-wallpaper]
 # =============================================================
 
-if [ -z "$1" ]; then
-    echo "Usage: dynamic-colors.sh <path-to-wallpaper>"
+set -uo pipefail
+
+HYPR_DIR="$HOME/.config/hypr"
+KITTY_THEME_DIR="$HOME/.config/kitty/themes"
+THEMES_DIR="$HYPR_DIR/themes"
+
+WALLPAPER="${1:-$HOME/wallpapers/current}"
+
+if [ ! -f "$WALLPAPER" ]; then
+    echo "dynamic-colors: no wallpaper at $WALLPAPER" >&2
     exit 1
 fi
 
-WALLPAPER="$1"
+if ! command -v wal >/dev/null 2>&1; then
+    echo "dynamic-colors: pywal (wal) is not installed — skipping." >&2
+    exit 1
+fi
 
-# 1. Run pywal without changing the background (awww handles that)
-wal -i "$WALLPAPER" -n -q
+# 1. Sample the wallpaper (no background change; awww owns that)
+wal -i "$WALLPAPER" -n -q || { echo "dynamic-colors: wal failed" >&2; exit 1; }
 
-# 2. Copy the generated templates to the themes directories as 'dynamic'
-cp ~/.cache/wal/colors-hyprland.conf ~/.config/hypr/themes/dynamic.conf
-cp ~/.cache/wal/colors-kitty.conf ~/.config/kitty/themes/dynamic.conf
-# shared GUI colors for swayosd (waybar + swaync are gone; CSS lives in hypr/themes)
-cp ~/.cache/wal/colors-waybar.css ~/.config/hypr/themes/dynamic.css
-ln -sfn ~/.config/hypr/themes/dynamic.css ~/.config/hypr/themes/current.css
+PYWAL_HYPR="$HOME/.cache/wal/colors-hyprland.conf"
+if [ ! -f "$PYWAL_HYPR" ]; then
+    echo "dynamic-colors: pywal did not produce $PYWAL_HYPR" >&2
+    exit 1
+fi
 
-# 3. Reload everything
-echo "source = ~/.config/hypr/themes/dynamic.conf" > ~/.config/hypr/themes/current_theme.conf
-ln -sf ~/.config/kitty/themes/dynamic.conf ~/.config/kitty/themes/current.conf
+# 2. Copy pywal's own renderings for Kitty and GTK.
+#    (pywal names the generic CSS after waybar, but adw-gtk3 is what consumes
+#    themes/*.css — wlogout and any other GTK app pick it up from there.)
+[ -f "$HOME/.cache/wal/colors-kitty.conf" ] && cp "$HOME/.cache/wal/colors-kitty.conf" "$KITTY_THEME_DIR/dynamic.conf"
+[ -f "$HOME/.cache/wal/colors-waybar.css" ] && cp "$HOME/.cache/wal/colors-waybar.css" "$THEMES_DIR/dynamic.css"
+ln -sfn "$THEMES_DIR/dynamic.css" "$THEMES_DIR/current.css"
+ln -sf "$KITTY_THEME_DIR/dynamic.conf" "$KITTY_THEME_DIR/current.conf"
 
+# 3. Pull a pywal colour out of its hyprland template as bare `rrggbb`.
+#    Hyprland wants rgba(rrggbbaa), and a leading '#' is not accepted there.
+#
+#    Quoting note: the pattern is assembled from a single-quoted literal plus a
+#    double-quoted expansion on purpose. Writing it as one double-quoted string
+#    breaks in two ways — "\$" collapses to a bare "$" which GNU grep will not
+#    read as a literal dollar, and "$]" stops bash expanding, leaving "{name}"
+#    literal so every lookup silently returns the fallback colour.
+pywal_color() {
+    local name="$1" fallback="$2"
+    local raw
+    raw=$(grep -m1 -oE '^\$'"${name}"'[[:space:]]*=[[:space:]]*#([0-9a-fA-F]{6})' "$PYWAL_HYPR" \
+          | grep -oE '[0-9a-fA-F]{6}' | head -1)
+    printf '%s' "${raw:-$fallback}"
+}
+
+BG=$(pywal_color background 15180a)
+SURFACE=$(pywal_color color8 696d59)
+OVERLAY=$(pywal_color color0 15180a)
+ACCENT=$(pywal_color color4 90aa22)
+TEXT=$(pywal_color foreground ebdbb2)
+SUBTEXT=$(pywal_color color8 bdae93)
+URGENT=$(pywal_color color1 fb4934)
+
+# 4. Geometry cannot be sampled from an image, so it comes from the theme's
+#    TOML source — keeping themes/source/dynamic.toml the single place to tune
+#    the shape of the dynamic theme.
+GEOM_SOURCE="$THEMES_DIR/source/dynamic.toml"
+geom() { grep -m1 -E "^$1[[:space:]]*=" "$GEOM_SOURCE" 2>/dev/null | sed -E 's/.*=[[:space:]]*//;s/[[:space:]]*#.*$//' | tr -d '"'; }
+ROUNDING=$(geom rounding);     ROUNDING=${ROUNDING:-12}
+BORDER_SIZE=$(geom border_size); BORDER_SIZE=${BORDER_SIZE:-2}
+GAPS_IN=$(geom gaps_in);       GAPS_IN=${GAPS_IN:-5}
+GAPS_OUT=$(geom gaps_out);     GAPS_OUT=${GAPS_OUT:-12}
+BLUR_SIZE=$(geom blur_size);   BLUR_SIZE=${BLUR_SIZE:-4}
+BLUR_PASSES=$(geom blur_passes); BLUR_PASSES=${BLUR_PASSES:-2}
+INACTIVE_OPACITY=$(geom inactive_opacity); INACTIVE_OPACITY=${INACTIVE_OPACITY:-0.92}
+SHADOW_COLOR=$(geom shadow_color); SHADOW_COLOR=${SHADOW_COLOR:-rgba(00000066)}
+
+# 5. Write the Lua theme Hyprland actually loads.
+cat > "$THEMES_DIR/dynamic.lua" <<EOF
+-- Generated at runtime by dynamic-colors.sh from $WALLPAPER
+-- Colours from pywal; geometry from themes/source/dynamic.toml.
+-- Regenerating is expected to change this file.
+
+---@module 'hl'
+
+bg = "$BG"
+
+surface = "$SURFACE"
+
+overlay = "$OVERLAY"
+
+accent = "$ACCENT"
+
+text = "$TEXT"
+
+subtext = "$SUBTEXT"
+
+urgent = "$URGENT"
+
+border_active = "rgba(${ACCENT}ff)"
+
+border_inactive = "rgba(${SURFACE}a6)"
+
+rounding = $ROUNDING
+
+border_size = $BORDER_SIZE
+
+gaps_in = $GAPS_IN
+
+gaps_out = $GAPS_OUT
+
+blur_size = $BLUR_SIZE
+
+blur_passes = $BLUR_PASSES
+
+inactive_opacity = $INACTIVE_OPACITY
+
+shadow_color = "$SHADOW_COLOR"
+EOF
+
+# 6. Also emit the Hyprlang variable form for hyprlock and any .conf consumers.
+cat > "$THEMES_DIR/dynamic.conf" <<EOF
+# Generated by dynamic-colors.sh from $WALLPAPER
+\$bg = $BG
+\$surface = $SURFACE
+\$overlay = $OVERLAY
+\$accent = $ACCENT
+\$text = $TEXT
+\$urgent = $URGENT
+\$border_active = rgba(${ACCENT}ff)
+\$border_inactive = rgba(${SURFACE}a6)
+\$rounding = $ROUNDING
+\$border_size = $BORDER_SIZE
+\$gaps_in = $GAPS_IN
+\$gaps_out = $GAPS_OUT
+\$blur_size = $BLUR_SIZE
+\$blur_passes = $BLUR_PASSES
+\$inactive_opacity = $INACTIVE_OPACITY
+\$shadow_color = $SHADOW_COLOR
+EOF
+
+# 7. Point the active theme at the file we just wrote, so the change is visible.
+echo 'require("themes.dynamic")' > "$THEMES_DIR/current_theme.lua"
+echo 'source = ~/.config/hypr/themes/dynamic.conf' > "$THEMES_DIR/current_theme.conf"
+
+# 8. Reload everything
 hyprctl reload 2>/dev/null || true
 pkill -SIGUSR1 kitty 2>/dev/null || true
 

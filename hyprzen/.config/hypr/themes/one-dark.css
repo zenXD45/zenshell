@@ -1,11 +1,13 @@
-@define-color bg_base       #282c34;
-@define-color bg_surface    rgba(40, 44, 52, 0.88);
-@define-color bg_overlay    rgba(33, 37, 43, 0.75);
-@define-color accent        #61afef;
+/* One Dark — generated from themes/source/one-dark.toml */
+
+@define-color bg_base       282c34;
+@define-color bg_surface    rgba(33, 37, 43, 0.88);
+@define-color bg_overlay    rgba(27, 29, 35, 0.75);
+@define-color accent        61afef;
 @define-color accent_soft   rgba(97, 175, 239, 0.18);
-@define-color accent_glow   transparent;
-@define-color secondary     #c678dd;
-@define-color text          #abb2bf;
-@define-color subtext       #5c6370;
-@define-color border_color  rgba(97, 175, 239, 0.20);
-@define-color urgent        #e06c75;
+@define-color accent_glow   rgba(97, 175, 239, 0.35);
+@define-color secondary     61afef;
+@define-color text          abb2bf;
+@define-color subtext       9da5b4;
+@define-color border_color  rgba(97, 175, 239, 0.2);
+@define-color urgent        e06c75;

@@ -1,11 +1,13 @@
-@define-color bg_base       #1a0033;
+/* Eva Theme — generated from themes/source/eva-theme.toml */
+
+@define-color bg_base       1a0033;
 @define-color bg_surface    rgba(38, 0, 77, 0.88);
 @define-color bg_overlay    rgba(13, 0, 26, 0.75);
-@define-color accent        #73e600;
-@define-color accent_soft   rgba(115, 230, 0, 0.18);
-@define-color accent_glow   transparent;
-@define-color secondary     #73e600;
-@define-color text          #e6ccff;
-@define-color subtext       #9933ff;
-@define-color border_color  rgba(115, 230, 0, 0.20);
-@define-color urgent        #ff3300;
+@define-color accent        9ece6a;
+@define-color accent_soft   rgba(158, 206, 106, 0.18);
+@define-color accent_glow   rgba(158, 206, 106, 0.35);
+@define-color secondary     9ece6a;
+@define-color text          c0caf5;
+@define-color subtext       a9b1d6;
+@define-color border_color  rgba(158, 206, 106, 0.2);
+@define-color urgent        ff5370;

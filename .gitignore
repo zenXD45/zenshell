@@ -1,3 +1,6 @@
 __pycache__/
 *.pyc
 *.log
+# zsh completion dumps (generated at runtime)
+hyprzen/.config/zsh/.zcompdump*
+hyprzen/.config/zsh/zcompdump*

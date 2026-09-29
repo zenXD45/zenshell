@@ -1,11 +1,13 @@
-@define-color bg_base       #fafafa;
+/* Aetheria — generated from themes/source/aetheria.toml */
+
+@define-color bg_base       fafafa;
 @define-color bg_surface    rgba(240, 240, 240, 0.88);
 @define-color bg_overlay    rgba(229, 229, 229, 0.75);
-@define-color accent        #a3b8cc;
-@define-color accent_soft   rgba(163, 184, 204, 0.18);
-@define-color accent_glow   transparent;
-@define-color secondary     #a3b8cc;
-@define-color text          #333333;
-@define-color subtext       #666666;
-@define-color border_color  rgba(163, 184, 204, 0.20);
-@define-color urgent        #e57373;
+@define-color accent        7287fd;
+@define-color accent_soft   rgba(114, 135, 253, 0.18);
+@define-color accent_glow   rgba(114, 135, 253, 0.35);
+@define-color secondary     7287fd;
+@define-color text          4c4f69;
+@define-color subtext       6c6f85;
+@define-color border_color  rgba(114, 135, 253, 0.2);
+@define-color urgent        ea76cb;

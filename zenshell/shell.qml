@@ -123,7 +123,11 @@ Scope {
         query = query.toLowerCase();
         for (var i = 0; i < root.allWallpapers.length; i++) {
             var wp = root.allWallpapers[i];
-            if (query === "" || wp.name.toLowerCase().indexOf(query) !== -1) {
+            // `name` was missing from get_wallpapers.py, so this threw a
+            // TypeError on the first keystroke. Guard anyway — an entry with
+            // no label should degrade to "shown unfiltered", not crash the shell.
+            var label = (wp && wp.name) ? wp.name : "";
+            if (query === "" || label.toLowerCase().indexOf(query) !== -1) {
                 wallpapersModel.append(wp);
             }
         }

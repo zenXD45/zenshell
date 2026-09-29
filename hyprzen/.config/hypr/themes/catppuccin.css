@@ -1,11 +1,13 @@
-@define-color bg_base       #1e1e2e;
+/* Catppuccin — generated from themes/source/catppuccin.toml */
+
+@define-color bg_base       1e1e2e;
 @define-color bg_surface    rgba(24, 24, 37, 0.88);
 @define-color bg_overlay    rgba(17, 17, 27, 0.75);
-@define-color accent        #cba6f7;
+@define-color accent        cba6f7;
 @define-color accent_soft   rgba(203, 166, 247, 0.18);
-@define-color accent_glow   transparent;
-@define-color secondary     #cba6f7;
-@define-color text          #cdd6f4;
-@define-color subtext       #a6adc8;
-@define-color border_color  rgba(203, 166, 247, 0.20);
-@define-color urgent        #f38ba8;
+@define-color accent_glow   rgba(203, 166, 247, 0.35);
+@define-color secondary     cba6f7;
+@define-color text          cdd6f4;
+@define-color subtext       bac2de;
+@define-color border_color  rgba(203, 166, 247, 0.2);
+@define-color urgent        f38ba8;

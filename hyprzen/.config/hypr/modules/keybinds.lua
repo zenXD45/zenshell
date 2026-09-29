@@ -12,9 +12,12 @@ local SC = "SUPER + CTRL"
 local SA = "SUPER + ALT"
 
 -- ── Apps ──────────────────────────────────────────────────────
+-- Each binary here must be installed by ../install.sh. These previously bound
+-- to librewolf / nautilus / codium, none of which the installer shipped, so
+-- SUPER+B, SUPER+E and SUPER+C all silently did nothing on a fresh install.
 hl.bind(S .. " + RETURN", hl.dsp.exec_cmd("kitty"))
-hl.bind(S .. " + B", hl.dsp.exec_cmd("librewolf"))
-hl.bind(S .. " + E", hl.dsp.exec_cmd("nautilus"))
+hl.bind(S .. " + B", hl.dsp.exec_cmd("firefox"))
+hl.bind(S .. " + E", hl.dsp.exec_cmd("thunar"))
 hl.bind(S .. " + C", hl.dsp.exec_cmd("codium"))
 hl.bind(S .. " + D", hl.dsp.exec_cmd("quickshell ipc -p ~/.config/quickshell/dynamic-island/modules/desktop-widgets call widgets toggle"))
 
@@ -30,6 +33,8 @@ hl.bind(S .. " + V", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/island
 hl.bind(S .. " + N", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/island_ctl.sh control"))
 
 -- ── Power / Session ───────────────────────────────────────────
+-- wlogout comes from the AUR list in install.sh. ZenShell also ships a power
+-- menu on SUPER+ESC; both are intentionally available.
 hl.bind(S .. " + X", hl.dsp.exec_cmd("wlogout -b 5 -T 350 -B 350"))
 hl.bind(SS .. " + L", hl.dsp.exec_cmd("hyprlock"))
 hl.bind(SS .. " + C", hl.dsp.exec_cmd("~/scripts/caffeine.sh"))
@@ -121,17 +126,22 @@ hl.bind(S .. " + mouse:272", hl.dsp.window.drag())
 hl.bind(S .. " + mouse:273", hl.dsp.window.resize())
 
 -- ── Media Keys ────────────────────────────────────────────────
-hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("swayosd-client --output-volume raise"), { locked = true, repeating = true })
-hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("swayosd-client --output-volume lower"), { locked = true, repeating = true })
-hl.bind("XF86AudioMute", hl.dsp.exec_cmd("swayosd-client --output-volume mute-toggle"), { locked = true })
-hl.bind("XF86AudioMicMute", hl.dsp.exec_cmd("swayosd-client --input-volume  mute-toggle"), { locked = true })
+-- These adjust volume/brightness directly. ZenShell polls `wpctl` and
+-- `brightnessctl` (zenshell/shell.qml) and draws its own theme-aware OSD, so
+-- there is no need for swayosd-client here — and running both meant every
+-- volume key flashed two overlapping overlays, one of them unstyled because
+-- swayosd-server was starting with no config.yaml.
+hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"), { locked = true, repeating = true })
+hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"), { locked = true, repeating = true })
+hl.bind("XF86AudioMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"), { locked = true })
+hl.bind("XF86AudioMicMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"), { locked = true })
 hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioNext", hl.dsp.exec_cmd("playerctl next"), { locked = true })
 hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"), { locked = true })
 
 -- ── Brightness ────────────────────────────────────────────────
-hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("swayosd-client --brightness raise"), { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("swayosd-client --brightness lower"), { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("brightnessctl set 5%+"), { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl set 5%-"), { locked = true, repeating = true })
 
 -- ── ZenShell Dynamic Island ───────────────────────────────────
 -- Notification/control center is SUPER+N (plain, section above).

@@ -9,18 +9,27 @@
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-THEMES=(
-    "catppuccin" "tokyo-night" "gruvbox" "nord" "osaka-jade"
-    "aetheria" "akane" "alabaster" "lavender" "eva-theme" "noir"
-    "one-dark" "rose-pine"
-)
-
 HYPR_DIR="$HOME/.config/hypr"
 KITTY_THEME_DIR="$HOME/.config/kitty/themes"
+THEMES_JSON="$HOME/.config/hypr/themes/source"
+
+# Theme list comes from the generated manifest, so adding a theme means adding
+# one TOML file — not editing a bash array that will drift out of sync again.
+if [ -f "$HYPR_DIR/themes/themes.json" ]; then
+    THEMES=($(jq -r '.[].id' "$HYPR_DIR/themes/themes.json"))
+else
+    THEMES=($(ls "$HYPR_DIR/themes/source"/*.toml 2>/dev/null | xargs -n1 basename 2>/dev/null | sed 's/\.toml$//'))
+fi
+
+if [ ${#THEMES[@]} -eq 0 ]; then
+    echo "theme-switch: no themes found in $THEMES_JSON" >&2
+    exit 1
+fi
 
 # ── Get theme ─────────────────────────────────────────────────
 if [ -z "${1:-}" ]; then
     echo "Usage: theme-switch.sh <theme-name>"
+    echo "Available: ${THEMES[*]}"
     exit 1
 fi
 SELECTED="$1"
@@ -28,12 +37,37 @@ SELECTED="$1"
 # Validate
 VALID=false
 for t in "${THEMES[@]}"; do
-    [ "$t" = "$SELECTED" ] && VALID=true && break
+    if [ "$t" = "$SELECTED" ]; then
+        VALID=true
+        break
+    fi
 done
 
 if [ "$VALID" = false ]; then
-    notify-send "HyprZen" "Unknown theme: $SELECTED" --icon=dialog-error
+    notify-send "HyprZen" "Unknown theme: $SELECTED" --icon=dialog-error 2>/dev/null || true
+    echo "theme-switch: unknown theme '$SELECTED'. Available: ${THEMES[*]}" >&2
     exit 1
+fi
+
+# ── Wallpaper-derived themes ─────────────────────────────────
+# `dynamic` and `matugen` build their palette from the current wallpaper rather
+# than from a static TOML, so they must be (re)generated before they are applied.
+# Previously both were offered in the picker but did nothing useful: matugen was
+# rejected as "Unknown theme", and dynamic never updated the Lua file that
+# Hyprland actually loads.
+CURRENT_WALLPAPER="$HOME/wallpapers/current"
+if [ "$SELECTED" = "dynamic" ]; then
+    if [ -f "$SCRIPT_DIR/dynamic-colors.sh" ]; then
+        "$SCRIPT_DIR/dynamic-colors.sh" "$CURRENT_WALLPAPER" || \
+            echo "theme-switch: pywal generation failed, falling back to bundled defaults" >&2
+    fi
+elif [ "$SELECTED" = "matugen" ]; then
+    if command -v matugen >/dev/null 2>&1 && [ -f "$CURRENT_WALLPAPER" ]; then
+        matugen -t hyprzen -m dark -i "$CURRENT_WALLPAPER" || \
+            echo "theme-switch: matugen failed, falling back to bundled defaults" >&2
+    else
+        echo "theme-switch: matugen or wallpaper missing, using bundled defaults" >&2
+    fi
 fi
 
 # ── Apply theme ────────────────────────────────────────────────
@@ -42,7 +76,7 @@ fi
 echo "require(\"themes.$SELECTED\")" > "$HYPR_DIR/themes/current_theme.lua"
 echo "source = ~/.config/hypr/themes/$SELECTED.conf" > "$HYPR_DIR/themes/current_theme.conf"
 
-# 2. Shared GUI colors for swayosd (waybar is gone; the CSS
+# 2. Shared GUI colors for GTK apps (the CSS
 #    variables now live alongside the theme instead)
 ln -sfn "$HYPR_DIR/themes/$SELECTED.css" "$HYPR_DIR/themes/current.css"
 
@@ -62,11 +96,9 @@ fi
 # 6. Reload Kitty (sends SIGUSR1 to all kitty instances)
 pkill -SIGUSR1 kitty 2>/dev/null || true
 
-# 7. Reload SwayOSD to pick up the new CSS
-killall swayosd-server 2>/dev/null || true
-if [ -n "$HYPRLAND_INSTANCE_SIGNATURE" ]; then
-    hyprctl dispatch exec swayosd-server >/dev/null 2>&1
-fi
+# 7. (removed) SwayOSD reload — SwayOSD was dropped in favour of ZenShell's
+#    own theme-aware OSD. Starting it here also ran a second, unstyled overlay
+#    on top of the island's.
 
 # 8. Sync Neovim Theme
 case "$SELECTED" in

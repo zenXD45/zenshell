@@ -1,11 +1,13 @@
-@define-color bg_base       #1a1525;
+/* Lavender — generated from themes/source/lavender.toml */
+
+@define-color bg_base       1a1525;
 @define-color bg_surface    rgba(34, 27, 51, 0.88);
 @define-color bg_overlay    rgba(18, 14, 26, 0.75);
-@define-color accent        #a37acc;
-@define-color accent_soft   rgba(163, 122, 204, 0.18);
-@define-color accent_glow   transparent;
-@define-color secondary     #a37acc;
-@define-color text          #e6d9f2;
-@define-color subtext       #a693bf;
-@define-color border_color  rgba(163, 122, 204, 0.20);
-@define-color urgent        #ff6699;
+@define-color accent        b4befe;
+@define-color accent_soft   rgba(180, 190, 254, 0.18);
+@define-color accent_glow   rgba(180, 190, 254, 0.35);
+@define-color secondary     b4befe;
+@define-color text          c8d3f5;
+@define-color subtext       a5abd8;
+@define-color border_color  rgba(180, 190, 254, 0.2);
+@define-color urgent        ff757f;

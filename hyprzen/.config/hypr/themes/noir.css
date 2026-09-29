@@ -1,11 +1,13 @@
-@define-color bg_base       #0f0f0f;
+/* Noir — generated from themes/source/noir.toml */
+
+@define-color bg_base       0f0f0f;
 @define-color bg_surface    rgba(20, 20, 20, 0.88);
 @define-color bg_overlay    rgba(26, 26, 26, 0.75);
-@define-color accent        #838996;
+@define-color accent        838996;
 @define-color accent_soft   rgba(131, 137, 150, 0.18);
-@define-color accent_glow   transparent;
-@define-color secondary     #838996;
-@define-color text          #cccccc;
-@define-color subtext       #888888;
-@define-color border_color  rgba(131, 137, 150, 0.20);
-@define-color urgent        #d75f5f;
+@define-color accent_glow   rgba(131, 137, 150, 0.35);
+@define-color secondary     838996;
+@define-color text          c0c0c0;
+@define-color subtext       8a8a8a;
+@define-color border_color  rgba(131, 137, 150, 0.2);
+@define-color urgent        c23b3b;

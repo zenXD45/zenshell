@@ -1,0 +1,45 @@
+# Alabaster — light and deliberately flat. Square-ish corners, hairline
+# borders, minimal blur: the light counterpart to Noir.
+
+[meta]
+name = "Alabaster"
+slug = "alabaster"
+icon = "🤍"
+dark  = false
+
+[colors]
+bg      = "#f7f7f7"
+surface = "#ffffff"
+overlay = "#eeeeee"
+accent  = "#555555"
+fg      = "#434343"
+subfg   = "#6b6b6b"
+urgent  = "#aa3731"
+
+[geometry]
+rounding = 12
+border_size = 1
+gaps_in = 5
+gaps_out = 12
+blur_size = 3
+blur_passes = 2
+inactive_opacity = 0.95
+shadow_color = "rgba(0000001f)"
+
+[palette]
+black   = "#eeeeee"
+red     = "#aa3731"
+green   = "#44891b"
+yellow  = "#b58900"
+blue    = "#3f6fb5"
+magenta = "#8959a8"
+cyan    = "#2b8a8a"
+white   = "#6b6b6b"
+bright_black   = "#9a9a9a"
+bright_red     = "#dc322f"
+bright_green   = "#5fa022"
+bright_yellow  = "#d8a300"
+bright_blue    = "#4f8fd4"
+bright_magenta = "#a06bbd"
+bright_cyan    = "#3fa3a3"
+bright_white   = "#434343"

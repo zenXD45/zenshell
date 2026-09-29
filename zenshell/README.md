@@ -1,140 +1,167 @@
 <div align="center">
-  <h1>Zen Shell 🏝️</h1>
-  <p><b>A complete, ultra-sleek, glassmorphic Desktop Shell Suite (Dynamic Island, Dock, Spotlight Search & Desktop Widgets) built for Hyprland using Quickshell.</b></p>
-  
-  <p>
-    <img src="https://img.shields.io/badge/Desktop-Hyprland-blue?style=for-the-badge&logo=linux" alt="Hyprland" />
-    <img src="https://img.shields.io/badge/Shell-Quickshell-purple?style=for-the-badge&logo=qt" alt="Quickshell" />
-    <img src="https://img.shields.io/badge/Scripts-Python%20%7C%20Bash-yellow?style=for-the-badge&logo=python" alt="Python & Bash" />
-  </p>
+
+# Zen Shell 🏝️
+
+**The entire interface of [HyprZen](../README.md), in one Quickshell process.**
+
+Dynamic Island, dock, spotlight, control centre, theme & wallpaper pickers,
+clipboard, and notifications.
+
+<p>
+  <img src="https://img.shields.io/badge/desktop-Hyprland-blue?style=flat-square&logo=hyprland" alt="Hyprland" />
+  <img src="https://img.shields.io/badge/shell-Quickshell-purple?style=flat-square&logo=qt" alt="Quickshell" />
+  <img src="https://img.shields.io/badge/scripts-Python%20%7C%20Bash-yellow?style=flat-square&logo=python" alt="Python &amp; Bash" />
+</p>
+
+<p>
+  <a href="#previews">Previews</a> •
+  <a href="#whats-in-the-box">What's in the box</a> •
+  <a href="#installation">Installation</a> •
+  <a href="#hyprland-integration">Hyprland integration</a>
+</p>
+
 </div>
 
 ---
 
-Zen Shell brings a unified, modern desktop experience to your Linux environment. It combines an interactive **Dynamic Island**, a glassmorphic **Application Dock**, a macOS-style **Spotlight Search**, and customizable **Desktop Widgets**.
+Zen Shell replaces the four programs a Hyprland setup usually reaches for:
+**rofi** (launcher), **waybar** (bar), **swaync** (notifications) and **eww**
+(clock/widgets). HyprZen ships none of them, so nothing can conflict with this.
 
-## ✨ Suite Features
+It talks to the system through small Python and Bash helpers in `scripts/` —
+that seam is the easiest place to extend it.
 
-- **Interactive Dynamic Island**: Live Now Playing media, lyrics sync, active Notifications, and smooth Volume/Brightness OSD controls.
-- **Glassmorphic Dock**: Interactive bottom taskbar with active window indicators and application shortcuts.
-- **Spotlight Search**: Fast, center-screen fuzzy application finder.
-- **Desktop Widgets & Clock**: Sleek wallpaper-integrated widgets for Weather, System Stats, and Time.
-- **Control Center**: System toggles for Wi-Fi, Bluetooth, Caffeine mode, and Microphone muting in real-time.
-- **Keybinds Cheatsheet**: Live, searchable index of your `hyprland` shortcuts mapped to clean actions.
-- **Clipboard Manager**: Powered by `cliphist`, view and decode recent clipboard history instantly.
-- **Wallpaper & Theme Selectors**: Change your system's aesthetic on the fly.
-
-## 📸 Previews
-
-Below are some previews of Zen Shell in action!
+## Previews
 
 <p align="center">
-  <img src="assets/preview1.png" alt="Preview 1" width="45%" />
-  <img src="assets/preview2.png" alt="Preview 2" width="45%" />
+  <img src="../docs/images/shell-1.webp" alt="Dynamic Island" width="49%" />
+  <img src="../docs/images/shell-2.webp" alt="Dock and widgets" width="49%" />
 </p>
 <p align="center">
-  <img src="assets/preview3.png" alt="Preview 3" width="45%" />
-  <img src="assets/preview4.png" alt="Preview 4" width="45%" />
+  <img src="../docs/images/shell-3.webp" alt="Control centre" width="49%" />
+  <img src="../docs/images/shell-4.webp" alt="Clipboard manager" width="49%" />
 </p>
 <p align="center">
-  <img src="assets/preview5.png" alt="Preview 5" width="45%" />
-  <img src="assets/preview6.png" alt="Preview 6" width="45%" />
+  <img src="../docs/images/shell-5.webp" alt="Theme switcher" width="49%" />
+  <img src="../docs/images/shell-6.webp" alt="Wallpaper picker" width="49%" />
 </p>
 <p align="center">
-  <img src="assets/preview7.png" alt="Preview 7" width="90%" />
+  <img src="../docs/images/shell-7.webp" alt="Spotlight search" width="90%" />
 </p>
 
-## 🚀 One-Click Installation
+## What's in the box
 
-To make getting started as easy as possible, Zen Shell includes a robust, automated installation script. 
+- **Dynamic Island** — live now-playing with lyrics, notification stack, and
+  volume/brightness OSD. Theme-aware: the accent comes from the active theme
+  rather than a hardcoded colour.
+- **Glassmorphic dock** — bottom taskbar with active-window indicators.
+- **Spotlight search** — centre-screen fuzzy app finder (`SUPER + SHIFT + M`).
+- **Desktop widgets** — wallpaper-integrated clock, weather and system stats
+  (`SUPER + D`).
+- **Control centre** — Wi-Fi, Bluetooth, caffeine and microphone mute.
+- **Clipboard manager** — `cliphist`-backed history.
+- **Keybind cheatsheet** — a searchable index generated from your *actual*
+  `keybinds.lua`, so it can't go stale.
+- **Theme & wallpaper pickers** — read from the generated theme manifest, so all
+  15 themes appear without touching a line of QML.
 
-The installer will safely backup any existing configurations, resolve all your system dependencies (via `yay` or `paru`), and ensure all scripts have the correct execution permissions.
+## Installation
 
-Simply run the following command in your terminal:
+**Recommended** — the top-level installer handles this and everything ZenShell
+depends on:
 
 ```bash
 git clone https://github.com/zenXD45/HyprZen.git
-~/HyprZen/zenshell/install.sh
+cd HyprZen
+./install.sh
 ```
 
-*(Note: ZenShell lives in the `zenshell/` directory of the HyprZen monorepo. If you run into a password prompt, it's just your AUR helper safely fetching missing dependencies like `socat` or `playerctl`!)*
+Standalone:
 
-## ⚙️ Hyprland Integration
+```bash
+git clone https://github.com/zenXD45/HyprZen.git
+./zenshell/install.sh
+```
 
-Once installed, you must tell Hyprland to launch Zen Shell on boot. Add the following lines to your configuration depending on whether you use the standard `.conf` or a Lua-based setup.
+The installer backs up anything already at
+`~/.config/quickshell/dynamic-island`, resolves dependencies through `paru` or
+`yay`, and marks the helper scripts executable. A password prompt is normal —
+it's your AUR helper fetching `socat`, `playerctl` and friends.
 
-### Standard `hyprland.conf`
+ZenShell reads themes from `~/scripts/theme-switch.sh` and wallpapers from
+`~/wallpapers`, both provided by [HyprZen](../hyprzen/README.md), so install
+that half first.
+
+## Hyprland integration
+
+The suite autostarts from HyprZen's `exec.lua` via `start_all.sh` — there's
+nothing to add. If you're wiring ZenShell into a *different* Hyprland config:
 
 ```ini
-# Start the full Zen Shell Desktop Suite on boot
 exec-once = ~/.config/quickshell/dynamic-island/start_all.sh
 ```
 
-### Lua Configuration (e.g. `hyprland-lua`)
-
-If you use a Lua-based Hyprland config:
+or, in a Lua config:
 
 ```lua
--- Start the full Zen Shell Desktop Suite on boot
 hl.exec_cmd("~/.config/quickshell/dynamic-island/start_all.sh")
 ```
 
-### Keybind Setup
+### Keybinds
 
-You can bind the different modules to whatever keys you prefer. 
+With HyprZen these are already bound. If you need them elsewhere, everything
+routes through `island_ctl.sh` except spotlight and widgets, which are their own
+Quickshell processes:
 
-**Standard `.conf` bindings:**
-```ini
-# App Launcher (default)
-bind = SUPER, Space, exec, ~/.config/quickshell/dynamic-island/island_ctl.sh launcher
-
-# Keybinds Cheatsheet (default)
-bind = SUPER, comma, exec, ~/.config/quickshell/dynamic-island/island_ctl.sh cheatsheet
-
-# Clipboard Manager (default)
-bind = SUPER, V, exec, ~/.config/quickshell/dynamic-island/island_ctl.sh clipboard
-
-# Theme Switcher (default)
-bind = SUPER, T, exec, ~/.config/quickshell/dynamic-island/island_ctl.sh themes
-
-# Wallpaper Selector (default)
-bind = SUPER, W, exec, ~/.config/quickshell/dynamic-island/island_ctl.sh wallpapers
-
-# Control Center / Notifications (default)
-bind = SUPER, N, exec, ~/.config/quickshell/dynamic-island/island_ctl.sh control
-
-# Power Menu
-bind = SUPER, Escape, exec, ~/.config/quickshell/dynamic-island/island_ctl.sh power
-
-# Power Profiles
-bind = SUPER_SHIFT, P, exec, ~/.config/quickshell/dynamic-island/island_ctl.sh powerprofile
-```
-
-**Lua bindings (ZenShell is the default UI — hyprzen ships no waybar/rofi/swaync):**
 ```lua
--- ZenShell Dynamic Island — launcher/clipboard/cheatsheet/themes/
--- wallpapers + the control/notification center own the plain SUPER+
--- keys; the rest use SUPER+SHIFT.
-
 local ISLAND = "~/.config/quickshell/dynamic-island/island_ctl.sh"
 
-hl.bind("SUPER", "SPACE", hl.dsp.exec_cmd(ISLAND .. " launcher"))
-hl.bind("SUPER", "comma", hl.dsp.exec_cmd(ISLAND .. " cheatsheet"))
-hl.bind("SUPER", "V", hl.dsp.exec_cmd(ISLAND .. " clipboard"))
-hl.bind("SUPER", "T", hl.dsp.exec_cmd(ISLAND .. " themes"))
-hl.bind("SUPER", "W", hl.dsp.exec_cmd(ISLAND .. " wallpapers"))
-hl.bind("SUPER", "N", hl.dsp.exec_cmd(ISLAND .. " control"))
-hl.bind("SUPER", "escape", hl.dsp.exec_cmd(ISLAND .. " power"))
+hl.bind("SUPER", "SPACE",   hl.dsp.exec_cmd(ISLAND .. " launcher"))
+hl.bind("SUPER", "comma",   hl.dsp.exec_cmd(ISLAND .. " cheatsheet"))
+hl.bind("SUPER", "V",       hl.dsp.exec_cmd(ISLAND .. " clipboard"))
+hl.bind("SUPER", "T",       hl.dsp.exec_cmd(ISLAND .. " themes"))
+hl.bind("SUPER", "W",       hl.dsp.exec_cmd(ISLAND .. " wallpapers"))
+hl.bind("SUPER", "N",       hl.dsp.exec_cmd(ISLAND .. " control"))
+hl.bind("SUPER", "escape",  hl.dsp.exec_cmd(ISLAND .. " power"))
 hl.bind("SUPER + SHIFT", "P", hl.dsp.exec_cmd(ISLAND .. " powerprofile"))
+hl.bind("SUPER + SHIFT", "M",
+    hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/modules/spotlight/toggle.sh"))
+hl.bind("SUPER", "D", hl.dsp.exec_cmd(
+    "quickshell ipc -p ~/.config/quickshell/dynamic-island/modules/desktop-widgets call widgets toggle"))
 ```
 
-## 🛠️ Directory Structure
+## Structure
 
-The repository is built to be extremely clean and easy to modify:
-- `shell.qml`: The main Quickshell entry point and root window logic.
-- `island_ctl.sh`: The core bash controller for opening/closing modules via IPC.
-- `components/`: All modular QML UI elements (e.g. `AppLauncher.qml`, `ControlPanel.qml`).
-- `scripts/`: Modular backend scripts (Python/Bash) that handle system data parsing.
-- `assets/`: Upscaled screenshots and repository imagery.
+```text
+zenshell/
+├── shell.qml            # entry point and root island window
+├── island_ctl.sh        # open/close island modules over Quickshell IPC
+├── start_all.sh         # starts island, dock, widgets and the monitors
+├── components/          # UI: launcher, OSD, control panel, pickers, ...
+├── modules/
+│   ├── dock/            # separate Quickshell process
+│   ├── spotlight/       # separate Quickshell process
+│   └── desktop-widgets/ # separate Quickshell process
+└── scripts/             # the system-data seam: Python & Bash helpers
+    ├── get_apps.py          # launcher entries
+    ├── get_keybinds.py      # cheatsheet source (parses keybinds.lua)
+    ├── get_themes.py        # reads HyprZen's generated themes.json
+    ├── get_wallpapers.py    # scans ~/wallpapers and ~/Pictures/Wallpapers
+    ├── get_clipboard.py     # cliphist wrapper
+    ├── get_lyrics.py        # now-playing lyrics
+    ├── get_search.py        # spotlight web search
+    ├── network_ctl.py       # NetworkManager
+    ├── bluetooth_ctl.py     # bluez
+    └── themes.json          # generated manifest (do not hand-edit)
+```
 
-Enjoy your beautiful new desktop!
+## Notes
+
+- **`themes.json` is generated.** It's produced by
+  `hyprzen/scripts/gen-themes.py` and copied by the installer. Edit the TOML
+  sources under `hyprzen/.config/hypr/themes/source/`, never this file.
+- **Settings are seeded, not owned.** The installer copies `shell_settings.json`
+  into `~/.config/quickshell/` only if it's absent, so your runtime changes
+  survive reinstalls.
+- **Paths are relative.** Everything resolves through `$HOME` /
+  `Qt.homePath()`, so the repo runs wherever it's cloned.

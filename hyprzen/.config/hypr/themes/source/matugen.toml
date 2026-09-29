@@ -1,0 +1,48 @@
+# Matugen — fallback defaults.
+#
+# Same contract as dynamic.toml: this is only what Hyprland sees before matugen
+# has sampled a wallpaper. `matugen` rewrites themes/matugen.{lua,conf,css} at
+# runtime. Run `matugen -t hyprzen -m dark -i <wallpaper>` after switching to it.
+
+[meta]
+name = "Matugen"
+slug = "matugen"
+icon = "🎨"
+dark  = true
+
+[colors]
+bg      = "#131318"
+surface = "#1f1f25"
+overlay = "#47464f"
+accent  = "#c2c1ff"
+fg      = "#e4e1e9"
+subfg   = "#c8c5d0"
+urgent  = "#ffb4ab"
+
+[geometry]
+rounding = 14
+border_size = 2
+gaps_in = 5
+gaps_out = 14
+blur_size = 5
+blur_passes = 3
+inactive_opacity = 0.93
+shadow_color = "rgba(0000008c)"
+
+[palette]
+black   = "#131318"
+red     = "#ffb4ab"
+green   = "#b6f6bc"
+yellow  = "#f7f4b4"
+blue    = "#89b4fa"
+magenta = "#f4b8e4"
+cyan    = "#81c8be"
+white   = "#e4e1e9"
+bright_black   = "#47464f"
+bright_red     = "#ffb4ab"
+bright_green   = "#b6f6bc"
+bright_yellow  = "#f9f6be"
+bright_blue    = "#a8c7fa"
+bright_magenta = "#f6c3e8"
+bright_cyan    = "#99d9cf"
+bright_white   = "#ffffff"

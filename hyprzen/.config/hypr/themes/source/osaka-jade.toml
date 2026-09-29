@@ -1,0 +1,44 @@
+# Osaka Jade — smooth deep-green. Rounded like Catppuccin but cooler and denser.
+
+[meta]
+name = "Osaka Jade"
+slug = "osaka-jade"
+icon = "🪨"
+dark  = true
+
+[colors]
+bg      = "#0f1715"
+surface = "#18221f"
+overlay = "#080c0b"
+accent  = "#1db954"
+fg      = "#d3c6aa"
+subfg   = "#9da9a0"
+urgent  = "#e67e80"
+
+[geometry]
+rounding = 14
+border_size = 2
+gaps_in = 5
+gaps_out = 12
+blur_size = 5
+blur_passes = 3
+inactive_opacity = 0.93
+shadow_color = "rgba(00000080)"
+
+[palette]
+black   = "#232a27"
+red     = "#e67e80"
+green   = "#a7c080"
+yellow  = "#dbbc7f"
+blue    = "#7fbbb3"
+magenta = "#d699b6"
+cyan    = "#83c092"
+white   = "#d3c6aa"
+bright_black   = "#586e75"
+bright_red     = "#e67e80"
+bright_green   = "#a7c080"
+bright_yellow  = "#dbbc7f"
+bright_blue    = "#7fbbb3"
+bright_magenta = "#d699b6"
+bright_cyan    = "#83c092"
+bright_white   = "#f2e9dc"

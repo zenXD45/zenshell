@@ -1,11 +1,13 @@
-@define-color bg_base       #1a0f0f;
+/* Akane — generated from themes/source/akane.toml */
+
+@define-color bg_base       1a0f0f;
 @define-color bg_surface    rgba(38, 23, 23, 0.88);
 @define-color bg_overlay    rgba(13, 7, 7, 0.75);
-@define-color accent        #cc4343;
+@define-color accent        cc4343;
 @define-color accent_soft   rgba(204, 67, 67, 0.18);
-@define-color accent_glow   transparent;
-@define-color secondary     #cc4343;
-@define-color text          #f2d9d9;
-@define-color subtext       #b38c8c;
-@define-color border_color  rgba(204, 67, 67, 0.20);
-@define-color urgent        #ff4d4d;
+@define-color accent_glow   rgba(204, 67, 67, 0.35);
+@define-color secondary     cc4343;
+@define-color text          dcd7ba;
+@define-color subtext       a8a291;
+@define-color border_color  rgba(204, 67, 67, 0.2);
+@define-color urgent        e05a5a;

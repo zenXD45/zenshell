@@ -56,7 +56,12 @@ Item {
                     var targetIdx = (wpListView.currentIndex >= 0 && wpListView.currentIndex < wallpapersModel.count) ? wpListView.currentIndex : 0;
                     var selectedWp = wallpapersModel.get(targetIdx);
                     root.displayState = 0; root.updateState();
-                    runCmd.command = ["awww", "img", selectedWp.path, "--transition-type", "grow", "--transition-pos", "0.5,0.01", "--transition-step", "90"];
+                    // Go through wallpaper-selector.sh rather than calling awww
+                    // directly, exactly like the click handler below. Calling awww
+                    // raw skipped updating ~/wallpapers/current, so the matugen /
+                    // pywal theming and the hyprlock background never picked up the
+                    // change — Enter and click behaved differently.
+                    runCmd.command = ["bash", Quickshell.env("HOME") + "/scripts/wallpaper-selector.sh", selectedWp.path];
                     runCmd.running = true;
                 }
             }
@@ -155,8 +160,8 @@ Item {
                         cursorShape: Qt.PointingHandCursor
                         onPressed: wpCard.s = 0.92
                         onReleased: wpCard.s = 1.0
-                        onEntered: wpListView.hoveredWpName = model.filename
-                        onExited: { if (wpListView.hoveredWpName === model.filename) wpListView.hoveredWpName = "" }
+                        onEntered: wpListView.hoveredWpName = model.name || model.filename
+                        onExited: { if (wpListView.hoveredWpName === (model.name || model.filename)) wpListView.hoveredWpName = "" }
                         onClicked: {
                             root.displayState = 0; root.updateState();
                             runCmd.command = ["bash", Quickshell.env("HOME") + "/scripts/wallpaper-selector.sh", model.path];
@@ -182,8 +187,8 @@ Item {
                 if (wallpapersModel && wallpapersModel.count > 0) {
                     var idx = (wpListView.currentIndex >= 0 && wpListView.currentIndex < wallpapersModel.count) ? wpListView.currentIndex : 0;
                     var item = wallpapersModel.get(idx);
-                    if (item && item.filename) return item.filename;
                     if (item && item.name) return item.name;
+                    if (item && item.filename) return item.filename;
                 }
                 return "";
             }

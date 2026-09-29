@@ -1,0 +1,45 @@
+# Lavender — the roundest theme. Large corners, wide gaps, heavy blur.
+# Deliberately the softest/"dreamy" option in the set.
+
+[meta]
+name = "Lavender"
+slug = "lavender"
+icon = "🪻"
+dark  = true
+
+[colors]
+bg      = "#1a1525"
+surface = "#221b33"
+overlay = "#120e1a"
+accent  = "#b4befe"
+fg      = "#c8d3f5"
+subfg   = "#a5abd8"
+urgent  = "#ff757f"
+
+[geometry]
+rounding = 20
+border_size = 2
+gaps_in = 6
+gaps_out = 16
+blur_size = 8
+blur_passes = 3
+inactive_opacity = 0.92
+shadow_color = "rgba(0000008c)"
+
+[palette]
+black   = "#221b33"
+red     = "#ff757f"
+green   = "#c3e88d"
+yellow  = "#ffcb8b"
+blue    = "#82aaff"
+magenta = "#c792ea"
+cyan    = "#89ddff"
+white   = "#c8d3f5"
+bright_black   = "#4f4a68"
+bright_red     = "#ff8b93"
+bright_green   = "#d7f39d"
+bright_yellow  = "#ffd79c"
+bright_blue    = "#9ab8ff"
+bright_magenta = "#d8a6f5"
+bright_cyan    = "#a3e6ff"
+bright_white   = "#e6ecff"

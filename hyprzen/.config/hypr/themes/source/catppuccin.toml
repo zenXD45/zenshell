@@ -1,0 +1,45 @@
+# Catppuccin (Mocha) — the soft default. Generous rounding and blur; this is
+# the most "glassy" of the dark themes.
+
+[meta]
+name = "Catppuccin"
+slug = "catppuccin"
+icon = "☕"
+dark  = true
+
+[colors]
+bg      = "#1e1e2e"
+surface = "#181825"
+overlay = "#11111b"
+accent  = "#cba6f7"
+fg      = "#cdd6f4"
+subfg   = "#bac2de"
+urgent  = "#f38ba8"
+
+[geometry]
+rounding = 14
+border_size = 2
+gaps_in = 5
+gaps_out = 14
+blur_size = 6
+blur_passes = 3
+inactive_opacity = 0.92
+shadow_color = "rgba(00000073)"
+
+[palette]
+black   = "#45475a"
+red     = "#f38ba8"
+green   = "#a6e3a1"
+yellow  = "#f9e2af"
+blue    = "#89b4fa"
+magenta = "#f5c2e7"
+cyan    = "#94e2d5"
+white   = "#bac2de"
+bright_black   = "#585b70"
+bright_red     = "#f38ba8"
+bright_green   = "#a6e3a1"
+bright_yellow  = "#f9e2af"
+bright_blue    = "#89b4fa"
+bright_magenta = "#f5c2e7"
+bright_cyan    = "#94e2d5"
+bright_white   = "#a6adc8"

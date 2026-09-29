@@ -1,11 +1,13 @@
-@define-color bg_base       #282828;
+/* Gruvbox — generated from themes/source/gruvbox.toml */
+
+@define-color bg_base       282828;
 @define-color bg_surface    rgba(60, 56, 54, 0.88);
 @define-color bg_overlay    rgba(29, 32, 33, 0.75);
-@define-color accent        #d79921;
+@define-color accent        d79921;
 @define-color accent_soft   rgba(215, 153, 33, 0.18);
-@define-color accent_glow   transparent;
-@define-color secondary     #d79921;
-@define-color text          #ebdbb2;
-@define-color subtext       #a89984;
-@define-color border_color  rgba(215, 153, 33, 0.20);
-@define-color urgent        #cc241d;
+@define-color accent_glow   rgba(215, 153, 33, 0.35);
+@define-color secondary     d79921;
+@define-color text          ebdbb2;
+@define-color subtext       d5c4a1;
+@define-color border_color  rgba(215, 153, 33, 0.2);
+@define-color urgent        fb4934;

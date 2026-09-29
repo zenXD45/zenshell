@@ -1,11 +1,13 @@
-@define-color bg_base       #2e3440;
+/* Nord — generated from themes/source/nord.toml */
+
+@define-color bg_base       2e3440;
 @define-color bg_surface    rgba(59, 66, 82, 0.88);
 @define-color bg_overlay    rgba(36, 41, 51, 0.75);
-@define-color accent        #88c0d0;
+@define-color accent        88c0d0;
 @define-color accent_soft   rgba(136, 192, 208, 0.18);
-@define-color accent_glow   transparent;
-@define-color secondary     #88c0d0;
-@define-color text          #d8dee9;
-@define-color subtext       #e5e9f0;
-@define-color border_color  rgba(136, 192, 208, 0.20);
-@define-color urgent        #bf616a;
+@define-color accent_glow   rgba(136, 192, 208, 0.35);
+@define-color secondary     88c0d0;
+@define-color text          d8dee9;
+@define-color subtext       e5e9f0;
+@define-color border_color  rgba(136, 192, 208, 0.2);
+@define-color urgent        bf616a;

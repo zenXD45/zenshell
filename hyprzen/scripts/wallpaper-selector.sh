@@ -34,12 +34,20 @@ awww img "$WALL" \
 if command -v matugen &> /dev/null; then
     matugen image "$WALL" -m dark --source-color-index 0
 
-    echo "source = ~/.config/hypr/themes/matugen.conf" > ~/.config/hypr/themes/current_theme.conf
+    # Point BOTH theme pointers at the material theme. Hyprland loads
+    # themes/current_theme.lua (hyprland.lua does require("themes.current_theme")),
+    # so writing only current_theme.conf left the wallpaper-derived colours
+    # applied to nothing at all — the compositor never changed.
+    echo 'require("themes.matugen")' > "$HOME/.config/hypr/themes/current_theme.lua"
+    echo 'source = ~/.config/hypr/themes/matugen.conf' > "$HOME/.config/hypr/themes/current_theme.conf"
     ln -sf ~/.config/kitty/themes/matugen.conf ~/.config/kitty/themes/current.conf
 
-    # Refresh shared GUI colors (swayosd) if matugen rendered a css theme
+    # Refresh shared GUI colors if matugen rendered a css theme
     for cand in "$HOME/.cache/matugen/colors-waybar.css" "$HOME/.config/matugen/templates/colors-waybar.css"; do
-        [ -f "$cand" ] && ln -sfn "$cand" ~/.config/hypr/themes/current.css && break
+        if [ -f "$cand" ]; then
+            ln -sfn "$cand" ~/.config/hypr/themes/current.css
+            break
+        fi
     done
 
     hyprctl reload 2>/dev/null || true

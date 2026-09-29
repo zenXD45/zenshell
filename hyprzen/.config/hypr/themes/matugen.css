@@ -1,11 +1,13 @@
-@define-color bg_base #131318;
-@define-color bg_surface alpha(#131318, 0.88);
-@define-color bg_overlay alpha(#47464f, 0.75);
-@define-color accent #c2c1ff;
-@define-color accent_soft alpha(#c2c1ff, 0.18);
-@define-color accent_glow transparent;
-@define-color secondary #c6c4dd;
-@define-color text #e4e1e9;
-@define-color subtext #c8c5d0;
-@define-color border_color alpha(#c2c1ff, 0.20);
-@define-color urgent #ffb4ab;
+/* Matugen — generated from themes/source/matugen.toml */
+
+@define-color bg_base       131318;
+@define-color bg_surface    rgba(31, 31, 37, 0.88);
+@define-color bg_overlay    rgba(71, 70, 79, 0.75);
+@define-color accent        c2c1ff;
+@define-color accent_soft   rgba(194, 193, 255, 0.18);
+@define-color accent_glow   rgba(194, 193, 255, 0.35);
+@define-color secondary     c2c1ff;
+@define-color text          e4e1e9;
+@define-color subtext       c8c5d0;
+@define-color border_color  rgba(194, 193, 255, 0.2);
+@define-color urgent        ffb4ab;

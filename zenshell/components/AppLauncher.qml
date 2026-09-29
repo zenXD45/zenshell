@@ -4,22 +4,17 @@ import Quickshell
 import Quickshell.Io
 
 Item {
-    id: launcher
     anchors.fill: parent
     opacity: root.displayState === 3 ? 1 : 0
     visible: opacity > 0
     clip: true
     Behavior on opacity {
-        NumberAnimation { duration: root.displayState === 3 ? 220 : 160; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: root.displayState === 3 ? 240 : 160; easing.type: Easing.OutCubic }
     }
-
-    property color themeAccent: root.currentThemeAccent || "#838996"
-    property bool loading: false
 
     // ── Actions ─────────────────────────────────────────────────
     function runSearch() {
-        loading = true;
-        searchProc.command = ["python3", Quickshell.shellDir + "/scripts/get_search.py", searchInput.text.trim()];
+        searchProc.command = ["python3", Quickshell.env("HOME") + "/.config/quickshell/dynamic-island/scripts/get_search.py", searchInput.text.trim()];
         searchProc.running = true;
     }
 
@@ -49,15 +44,13 @@ Item {
         id: searchProc
         stdout: SplitParser {
             onRead: data => {
-                loading = false;
                 try {
                     var results = JSON.parse(data);
                     searchModel.clear();
                     for (var i = 0; i < results.length; i++) searchModel.append(results[i]);
-                    resultList.currentIndex = searchModel.count > 0 ? 0 : -1;
+                    resultList.currentIndex = 0;
                 } catch(e) {
                     searchModel.clear();
-                    resultList.currentIndex = -1;
                 }
             }
         }
@@ -77,54 +70,39 @@ Item {
 
     // ── Layout ───────────────────────────────────────────────────
     ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: 20
+        width: 740
+        height: parent.height - 8
+        anchors.top: parent.top
+        anchors.topMargin: 8
+        anchors.horizontalCenter: parent.horizontalCenter
         spacing: 12
 
         // ── Search Bar ──
         Rectangle {
-            id: searchField
-            Layout.fillWidth: true
-            Layout.preferredHeight: 56
-            radius: 22
-            color: searchInput.activeFocus ? "#0D14FFFFFF" : "#0AFFFFFF"
-            border.color: searchInput.activeFocus ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.45) : "#14FFFFFF"
-            border.width: 1
-            Behavior on color { ColorAnimation { duration: 180 } }
-            Behavior on border.color { ColorAnimation { duration: 180 } }
+            Layout.alignment: Qt.AlignHCenter
+            Layout.preferredWidth: 520
+            Layout.preferredHeight: 32
+            radius: 16
+            color: "#0AFFFFFF"
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 18
+                anchors.leftMargin: 14
                 anchors.rightMargin: 14
-                spacing: 10
+                spacing: 8
 
-                // Magnifier — nudges onto the accent + scales on focus
                 Text {
-                    id: searchIcon
-                    property real iconZoom: searchInput.activeFocus ? 1.08 : 1.0
                     text: "\uf002"
-                    color: searchInput.activeFocus ? themeAccent : "#55555A"
+                    color: "#44411"
                     font.family: root.font
-                    font.pixelSize: 13
-                    Behavior on color { ColorAnimation { duration: 180 } }
-                    transform: Scale {
-                        origin.x: width / 2; origin.y: height / 2
-                        xScale: searchIcon.iconZoom
-                        yScale: searchIcon.iconZoom
-                    }
-                    Behavior on iconZoom { NumberAnimation { duration: 220; easing.type: Easing.OutBack } }
+                    font.pixelSize: 12
                 }
-
                 TextInput {
                     id: searchInput
                     Layout.fillWidth: true
                     color: "#EEEEF0"
-                    selectionColor: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.4)
-                    cursorColor: themeAccent
                     font.family: "Outfit"
-                    font.pixelSize: 15
-                    font.weight: Font.Medium
+                    font.pixelSize: 12
                     verticalAlignment: TextInput.AlignVCenter
                     clip: true
                     focus: root.displayState === 3
@@ -172,147 +150,62 @@ Item {
                     }
 
                     Text {
-                        id: placeholderText
                         anchors.fill: parent
                         verticalAlignment: Text.AlignVCenter
-                        text: "Search apps, files, and math\u2026"
-                        color: "#59595F"
+                        text: "Search apps, files, and solve math\u2026"
+                        color: "#333338"
                         font.family: "Outfit"
-                        font.pixelSize: 14
+                        font.pixelSize: 12
                         visible: !searchInput.text && !searchInput.activeFocus
                     }
-
-                    // Right-side hint pill (esc)
-                    Rectangle {
-                        anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: 34; height: 22; radius: 11
-                        color: "#0AFFFFFF"
-                        border.color: "#14FFFFFF"
-                        border.width: 1
-                        visible: searchInput.activeFocus
-                        Text {
-                            anchors.centerIn: parent
-                            text: "esc"
-                            color: "#6A6A70"
-                            font.family: root.font
-                            font.pixelSize: 8
-                        }
-                    }
-                }
-            }
-
-            // Loading sweep — thin accent bar gliding under the field
-            Rectangle {
-                id: loadingBar
-                width: 110
-                height: 2
-                radius: 1
-                y: searchField.height - 4
-                x: -120
-                color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.85)
-                opacity: launcher.loading ? 1 : 0
-                Behavior on opacity { NumberAnimation { duration: 150 } }
-                NumberAnimation on x {
-                    running: launcher.loading
-                    loops: Animation.Infinite
-                    from: -120
-                    to: searchField.width
-                    duration: 900
-                    easing.type: Easing.InOutQuad
                 }
             }
         }
 
         // ── Results ──
-        Item {
+        ListView {
+            id: resultList
             Layout.fillWidth: true
             Layout.fillHeight: true
+            spacing: 8
+            clip: true
+            model: searchModel
+            boundsBehavior: Flickable.StopAtBounds
 
-            ListView {
-                id: resultList
-                anchors.fill: parent
-                model: searchModel
-                clip: true
-                spacing: 6
-                boundsBehavior: Flickable.StopAtBounds
-                highlightFollowsCurrentItem: true
-                highlightMoveDuration: 200
-                highlightResizeDuration: 0
-                currentIndex: -1
+            delegate: Item {
+                width: resultList.width
+                height: 54
 
-                highlight: Rectangle {
-                    z: -1
+                property bool isSel: index === resultList.currentIndex
+                property bool isHov: rowArea.containsMouse
+
+                Rectangle {
+                    anchors.fill: parent
                     radius: 16
-                    color: Qt.rgba(launcher.themeAccent.r, launcher.themeAccent.g, launcher.themeAccent.b, 0.11)
-                    border.color: Qt.rgba(launcher.themeAccent.r, launcher.themeAccent.g, launcher.themeAccent.b, 0.28)
+                    color: isSel ? "#1AFFFFFF" : (isHov ? "#12FFFFFF" : "#0AFFFFFF")
+                    border.color: isSel ? "#44FFFFFF" : "transparent"
                     border.width: 1
-                }
-
-                delegate: Item {
-                    id: delegateRoot
-                    required property var model
-                    width: resultList.width
-                    height: 60
-
-                    property bool isHov: rowArea.containsMouse
-                    property real press: 1.0
-                    property real entryY: 14
-
-                    opacity: 0
-                    Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-                    Behavior on entryY { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
-                    Behavior on press { NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
-
-                    transform: [
-                        Translate { y: delegateRoot.entryY },
-                        Scale {
-                            origin.x: width / 2
-                            origin.y: height / 2
-                            xScale: delegateRoot.press
-                            yScale: delegateRoot.press
-                        }
-                    ]
-
-                    Timer {
-                        running: true
-                        interval: Math.min(index * 24, 320)
-                        repeat: false
-                        onTriggered: {
-                            delegateRoot.entryY = 0;
-                            delegateRoot.opacity = 1;
-                        }
-                    }
-
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: 16
-                        color: isHov && !(index === resultList.currentIndex) ? "#10FFFFFF" : "transparent"
-                        border.color: "transparent"
-                        Behavior on color { ColorAnimation { duration: 150 } }
-                    }
+                    Behavior on color { ColorAnimation { duration: 150 } }
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: 10
-                        anchors.rightMargin: 14
-                        spacing: 12
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 16
+                        spacing: 14
 
-                        // Icon tile
+                        // Icon box
                         Rectangle {
                             Layout.preferredWidth: 44
                             Layout.preferredHeight: 44
                             Layout.alignment: Qt.AlignVCenter
-                            radius: 13
-                            color: (index === resultList.currentIndex)
-                                   ? Qt.rgba(launcher.themeAccent.r, launcher.themeAccent.g, launcher.themeAccent.b, 0.16)
-                                   : "#1212140F"
+                            radius: 14
+                            color: "#15FFFFFF"
 
                             Image {
                                 id: rowIcon
                                 anchors.centerIn: parent
-                                width: 24
-                                height: 24
+                                width: 26
+                                height: 26
                                 source: (model.icon && model.icon.startsWith("/")) ? "file://" + model.icon : (model.icon ? "image://icon/" + model.icon : "")
                                 sourceSize: Qt.size(44, 44)
                                 asynchronous: true
@@ -322,9 +215,9 @@ Item {
                             Text {
                                 anchors.centerIn: parent
                                 text: model.kind === "calc" ? "\uf1ec" : (model.kind === "file" ? "\uf016" : "\uf061")
-                                color: (index === resultList.currentIndex) ? launcher.themeAccent : "#6A6A70"
+                                color: "#88888E"
                                 font.family: root.font
-                                font.pixelSize: 16
+                                font.pixelSize: 18
                                 visible: model.kind === "calc" || model.kind === "file" || rowIcon.status !== Image.Ready || model.icon === ""
                             }
                         }
@@ -338,12 +231,10 @@ Item {
                             Text {
                                 Layout.fillWidth: true
                                 text: model.name
-                                color: (index === resultList.currentIndex)
-                                       ? "#FFFFFF"
-                                       : (isHov ? "#F0F0F2" : "#CFCFD4")
+                                color: isSel ? "#FFFFFF" : (isHov ? "#F0F0F2" : "#D8D8DC")
                                 font.family: "Outfit"
-                                font.pixelSize: 14
-                                font.weight: (index === resultList.currentIndex) ? Font.DemiBold : Font.Normal
+                                font.pixelSize: 13
+                                font.weight: isSel ? Font.DemiBold : Font.Normal
                                 elide: Text.ElideRight
                                 maximumLineCount: 1
                             }
@@ -361,114 +252,22 @@ Item {
 
                         // Kind tag
                         Text {
-                            text: model.kind === "app" ? "\uf1c0" : (model.kind === "file" ? "\uf0c5" : (model.kind === "calc" ? "\uf1ec" : ""))
-                            color: (index === resultList.currentIndex) ? launcher.themeAccent : "#484850"
+                            text: model.kind === "app" ? "\uf1c0" : (model.kind === "file" ? "\uf0c5" : "\uf1ec")
+                            color: (isSel ? "#5A86F6" : "#4A4A50")
                             font.family: root.font
                             font.pixelSize: 11
                         }
                     }
-
-                    MouseArea {
-                        id: rowArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onEntered: resultList.currentIndex = index
-                        onPressed: delegateRoot.press = 0.97
-                        onReleased: delegateRoot.press = 1.0
-                        onCanceled: delegateRoot.press = 1.0
-                        onClicked: launchEntry(model)
-                    }
                 }
-            }
 
-            // ── Empty state ──
-            Rectangle {
-                anchors.fill: parent
-                radius: 16
-                color: "transparent"
-                visible: searchModel.count === 0 && !launcher.loading
-
-                Column {
-                    anchors.centerIn: parent
-                    spacing: 10
-
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: searchInput.text.length === 0 ? "\uf002" : "\uf05e"
-                        color: "#3A3A40"
-                        font.family: root.font
-                        font.pixelSize: 30
-                    }
-
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: searchInput.text.length === 0 ? "Start typing to search" : "No results for \u201c" + searchInput.text.trim() + "\u201d"
-                        color: "#77777C"
-                        font.family: "Outfit"
-                        font.pixelSize: 12
-                        font.weight: Font.Medium
-                    }
-
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: "Apps, files, and quick math"
-                        color: "#4A4A50"
-                        font.family: "Outfit"
-                        font.pixelSize: 10
-                    }
+                MouseArea {
+                    id: rowArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onEntered: resultList.currentIndex = index
+                    onClicked: launchEntry(model)
                 }
-            }
-        }
-
-        // ── Footer hints ──
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 8
-
-            Text {
-                text: searchModel.count + " results"
-                color: "#55555A"
-                font.family: root.font
-                font.pixelSize: 9
-                visible: searchModel.count > 0
-            }
-
-            Item { Layout.fillWidth: true }
-
-            Text {
-                text: "\u2191\u2193   navigate"
-                color: "#4A4A50"
-                font.family: root.font
-                font.pixelSize: 9
-            }
-
-            Text {
-                text: "\u2022"
-                color: "#333338"
-                font.family: root.font
-                font.pixelSize: 9
-            }
-
-            Text {
-                text: "\uf112   launch"
-                color: "#4A4A50"
-                font.family: root.font
-                font.pixelSize: 9
-            }
-
-            Text {
-                text: "\u2022"
-                color: "#333338"
-                font.family: root.font
-                font.pixelSize: 9
-            }
-
-            Text {
-                text: "esc   close"
-                color: "#4A4A50"
-                font.family: root.font
-                font.pixelSize: 9
             }
         }
     }

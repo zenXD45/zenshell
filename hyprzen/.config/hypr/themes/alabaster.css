@@ -1,11 +1,13 @@
-@define-color bg_base       #f7f7f7;
+/* Alabaster — generated from themes/source/alabaster.toml */
+
+@define-color bg_base       f7f7f7;
 @define-color bg_surface    rgba(255, 255, 255, 0.88);
 @define-color bg_overlay    rgba(238, 238, 238, 0.75);
-@define-color accent        #555555;
+@define-color accent        555555;
 @define-color accent_soft   rgba(85, 85, 85, 0.18);
-@define-color accent_glow   transparent;
-@define-color secondary     #555555;
-@define-color text          #111111;
-@define-color subtext       #888888;
-@define-color border_color  rgba(85, 85, 85, 0.20);
-@define-color urgent        #cc3333;
+@define-color accent_glow   rgba(85, 85, 85, 0.35);
+@define-color secondary     555555;
+@define-color text          434343;
+@define-color subtext       6b6b6b;
+@define-color border_color  rgba(85, 85, 85, 0.2);
+@define-color urgent        aa3731;

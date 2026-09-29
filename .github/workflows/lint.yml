@@ -1,0 +1,100 @@
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tooling
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck lua5.4 luarocks
+          # qmllint ships with Qt6 declarative; pull just the tools we need.
+          sudo apt-get install -y -qq qt6-declarative-dev-tools || true
+          pip install --quiet --upgrade pip
+
+      - name: Shell scripts parse
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            if ! bash -n "$f"; then echo "::error file=$f::bash syntax error"; fail=1; fi
+          done < <(find . -name '*.sh' -not -path './.git/*')
+          exit $fail
+
+      - name: ShellCheck
+        run: |
+          # Report, but never fail the build on style findings. The parse check
+          # above is the hard gate; shellcheck is advisory until the scripts are
+          # actually shellcheck-clean.
+          shellcheck -S warning -e SC1091,SC2086,SC2016 \
+            install.sh hyprzen/install.sh hyprzen/setup.sh \
+            hyprzen/scripts/*.sh zenshell/*.sh || true
+
+      - name: Lua syntax (Hyprland config + generator)
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            if ! luac -p "$f"; then echo "::error file=$f::lua syntax error"; fail=1; fi
+          done < <(find hyprzen/.config/hypr zenshell -name '*.lua' -not -path '*/.git/*')
+          exit $fail
+
+      - name: Every theme defines the variables the config consumes
+        run: |
+          # One Dark and Rosé Pine shipped only border_active/border_inactive and
+          # crashed the whole Hyprland config when selected. This asserts the
+          # contract that prevents a recurrence.
+          fail=0
+          for t in hyprzen/.config/hypr/themes/*.lua; do
+            case "$(basename "$t")" in current_theme.lua) continue;; esac
+            for key in rounding border_size gaps_in gaps_out blur_size blur_passes inactive_opacity shadow_color border_active border_inactive; do
+              if ! grep -qE "^${key}[[:space:]]*=" "$t"; then
+                echo "::error file=$t::missing theme variable '$key'"
+                fail=1
+              fi
+            done
+          done
+          exit $fail
+
+      - name: Theme sources and generated artifacts are in sync
+        run: python3 hyprzen/scripts/gen-themes.py --check
+
+      - name: Python compiles
+        run: |
+          python3 -m compileall -q zenshell/scripts hyprzen/scripts
+
+      - name: QML has no pasted-URL / malformed-literal corruption
+        run: |
+          # This is the check that would have caught OSD.qml, where a browser
+          # URL had been pasted into a numeric binding:
+          #     Layout.preferredHeight: 6https://www.amazon.in/...
+          # leaving the OSD silently failing to load at runtime.
+          fail=0
+          while IFS= read -r f; do
+            if grep -nE ':[[:space:]]*[0-9]+(https?|www\.)' "$f"; then
+              echo "::error file=$f::URL pasted into a numeric binding"
+              fail=1
+            fi
+          done < <(find zenshell -name '*.qml')
+          exit $fail
+
+      - name: qmllint (advisory)
+        run: |
+          if ! command -v qmllint >/dev/null 2>&1; then
+            echo "qmllint unavailable — skipping"
+            exit 0
+          fi
+          find zenshell -name '*.qml' -print0 \
+            | xargs -0 -n1 qmllint --bare --unqualified 2>&1 | tee /tmp/qmllint.log || true
+          # Quickshell's own types are not on the import path in CI, so qmllint
+          # cannot resolve them; informational only.
+          exit 0
+
+      - name: Keybinds resolve to binaries the installer provides
+        run: |
+          python3 scripts/check_keybinds.py

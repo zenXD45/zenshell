@@ -1,0 +1,44 @@
+# Nord — calm arctic. Slightly tight gaps and a soft drop shadow.
+
+[meta]
+name = "Nord"
+slug = "nord"
+icon = "❄️"
+dark  = true
+
+[colors]
+bg      = "#2e3440"
+surface = "#3b4252"
+overlay = "#242933"
+accent  = "#88c0d0"
+fg      = "#d8dee9"
+subfg   = "#e5e9f0"
+urgent  = "#bf616a"
+
+[geometry]
+rounding = 10
+border_size = 2
+gaps_in = 5
+gaps_out = 12
+blur_size = 4
+blur_passes = 2
+inactive_opacity = 0.92
+shadow_color = "rgba(00000059)"
+
+[palette]
+black   = "#3b4252"
+red     = "#bf616a"
+green   = "#a3be8c"
+yellow  = "#ebcb8b"
+blue    = "#81a1c1"
+magenta = "#b48ead"
+cyan    = "#88c0d0"
+white   = "#e5e9f0"
+bright_black   = "#4c566a"
+bright_red     = "#d08a92"
+bright_green   = "#b9d3a3"
+bright_yellow  = "#f0dcae"
+bright_blue    = "#9ab7d4"
+bright_magenta = "#c9a9c2"
+bright_cyan    = "#a3c4d4"
+bright_white   = "#eceff4"

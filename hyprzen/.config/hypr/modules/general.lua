@@ -1,8 +1,11 @@
+-- Geometry comes from the active theme (themes/current_theme.lua) so that
+-- switching themes actually changes the shape of the desktop, not just colours.
+-- Fallbacks keep a malformed/partial theme file from breaking the whole config.
 hl.config({
     general = {
-        gaps_in = 10,
-        gaps_out = 20,
-        border_size = 0,
+        gaps_in = gaps_in or 4,
+        gaps_out = gaps_out or 8,
+        border_size = border_size or 2,
         col = {
             active_border = border_active,
             inactive_border = border_inactive,
