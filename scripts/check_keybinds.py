@@ -6,6 +6,12 @@ Four binds used to point at librewolf / nautilus / codium / wlogout, none of
 which the installer shipped, so SUPER+B, SUPER+E, SUPER+C and SUPER+X all did
 nothing on a clean machine. This turns that class of bug into a build failure.
 
+It also pins the media keys to osd_control.sh. Those binds once called
+`wpctl`/`brightnessctl` directly, which changed the value but drew no OSD:
+OSD.qml only renders while shell.qml has displayState = 2, and the only thing
+that sets it is the osd_control.sh -> `quickshell ipc call osd ...` call. Any
+bind that skips the script is a silent regression, so it fails here.
+
 Binaries that come from the base system, the AUR helper's own dependency graph,
 or Hyprland itself are listed in EXTERNAL. Anything else must appear in
 install.sh's OFFICIAL_PKGS or AUR_PKGS array.
@@ -45,6 +51,18 @@ EXTERNAL = {
     "caffeine.sh",
     # installed as a side effect of a listed package
     "vscodium", "codium",
+}
+
+# Every media key must go through osd_control.sh, which performs the change and
+# then fires the island IPC call that draws the OSD. Compared as a substring
+# because the bind invokes the script by its ~/.config path.
+OSD_KEYS = {
+    "XF86AudioRaiseVolume": "osd_control.sh volume up",
+    "XF86AudioLowerVolume": "osd_control.sh volume down",
+    "XF86AudioMute": "osd_control.sh volume mute",
+    "XF86AudioMicMute": "osd_control.sh volume mic-mute",
+    "XF86MonBrightnessUp": "osd_control.sh brightness up",
+    "XF86MonBrightnessDown": "osd_control.sh brightness down",
 }
 
 
@@ -107,6 +125,32 @@ def main() -> int:
         for combo, command in unresolved:
             print(f"  {combo:<28} -> {command}", file=sys.stderr)
         print("\nAdd the package to install.sh, or remove the bind.", file=sys.stderr)
+        return 1
+
+    commands: dict[str, str] = {}
+    for combo, command in binds:
+        commands.setdefault(combo, command)
+
+    osd_problems = []
+    for key, expected in OSD_KEYS.items():
+        command = commands.get(key)
+        if command is None:
+            osd_problems.append(f"{key:<26} not bound")
+        elif "osd_control.sh" not in command:
+            osd_problems.append(f"{key:<26} {command}   (expected ... {expected})")
+
+    if osd_problems:
+        print(
+            "check_keybinds: media keys must go through osd_control.sh so the OSD shows:\n",
+            file=sys.stderr,
+        )
+        for problem in osd_problems:
+            print(f"  {problem}", file=sys.stderr)
+        print(
+            "\nOSD.qml only renders while the island's osd IPC handler runs;\n"
+            "a raw wpctl/brightnessctl bind changes the value with no overlay.",
+            file=sys.stderr,
+        )
         return 1
 
     print(f"check_keybinds: {len(binds)} binds checked, all binaries accounted for.")
