@@ -1,0 +1,12 @@
+# Matugen 4.x — HyprZen dynamic palette.
+#
+# Matugen 4 removed the old positional `-t hyprzen -i <image>` template-type
+# syntax: templates are now declared here and rendered into a file. The HyprZen
+# template rewrites themes/source/matugen.toml, after which theme-switch.sh /
+# wallpaper-selector.sh run scripts/gen-themes.py to fan that palette out to
+# themes/matugen.{lua,conf,css} and the kitty theme.
+[config]
+
+[templates.hyprzen]
+input_path = "~/.config/matugen/templates/hyprzen.toml"
+output_path = "~/.config/hypr/themes/source/matugen.toml"

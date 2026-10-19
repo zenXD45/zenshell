@@ -62,9 +62,18 @@ if [ "$SELECTED" = "dynamic" ]; then
             echo "theme-switch: pywal generation failed, falling back to bundled defaults" >&2
     fi
 elif [ "$SELECTED" = "matugen" ]; then
+    # Matugen 4: templates live in ~/.config/matugen/config.toml and rewrite
+    # themes/source/matugen.toml; gen-themes.py then regenerates the artifacts
+    # Hyprland/Kitty/GTK actually read. --source-color-index 0 keeps this
+    # non-interactive (Matugen 4.2 prompts when several source colours exist).
     if command -v matugen >/dev/null 2>&1 && [ -f "$CURRENT_WALLPAPER" ]; then
-        matugen -t hyprzen -m dark -i "$CURRENT_WALLPAPER" || \
+        if matugen -c "$HOME/.config/matugen/config.toml" image "$CURRENT_WALLPAPER" \
+                --prefer saturation --source-color-index 0 >/dev/null 2>&1; then
+            python3 "$SCRIPT_DIR/gen-themes.py" >/dev/null 2>&1 || \
+                echo "theme-switch: theme regeneration failed" >&2
+        else
             echo "theme-switch: matugen failed, falling back to bundled defaults" >&2
+        fi
     else
         echo "theme-switch: matugen or wallpaper missing, using bundled defaults" >&2
     fi

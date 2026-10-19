@@ -1,0 +1,48 @@
+# Matugen 4.x ↔ HyprZen bridge.
+#
+# Emits a complete HyprZen theme source (same schema as themes/source/*.toml)
+# from Matugen's Material You roles + base16 scheme. gen-themes.py consumes the
+# result, so the wallpaper palette reaches Hyprland, Kitty, GTK CSS and the
+# island without any of them parsing Matugen's own output format.
+[meta]
+name = "Matugen"
+slug = "matugen"
+icon = "🎨"
+dark  = true
+
+[colors]
+bg      = "{{ colors.background.default.hex }}"
+surface = "{{ colors.surface.default.hex }}"
+overlay = "{{ colors.surface_container_low.default.hex }}"
+accent  = "{{ colors.primary.default.hex }}"
+fg      = "{{ colors.on_background.default.hex }}"
+subfg   = "{{ colors.on_surface_variant.default.hex }}"
+urgent  = "{{ colors.error.default.hex }}"
+
+[geometry]
+rounding = 14
+border_size = 0
+gaps_in = 5
+gaps_out = 14
+blur_size = 5
+blur_passes = 3
+inactive_opacity = 0.93
+shadow_color = "rgba(0000008c)"
+
+[palette]
+black   = "{{ base16.base00.default.hex }}"
+red     = "{{ base16.base08.default.hex }}"
+green   = "{{ base16.base0b.default.hex }}"
+yellow  = "{{ base16.base0a.default.hex }}"
+blue    = "{{ base16.base0d.default.hex }}"
+magenta = "{{ base16.base0e.default.hex }}"
+cyan    = "{{ base16.base0c.default.hex }}"
+white   = "{{ base16.base07.default.hex }}"
+bright_black   = "{{ base16.base03.default.hex }}"
+bright_red     = "{{ base16.base08.default.hex }}"
+bright_green   = "{{ base16.base0b.default.hex }}"
+bright_yellow  = "{{ base16.base0a.default.hex }}"
+bright_blue    = "{{ base16.base0d.default.hex }}"
+bright_magenta = "{{ base16.base0e.default.hex }}"
+bright_cyan    = "{{ base16.base0c.default.hex }}"
+bright_white   = "{{ base16.base07.default.hex }}"

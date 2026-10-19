@@ -39,7 +39,7 @@ HYPR_DIR="$CONFIG_DIR/hypr"
 
 # ── Step 4: Remove old kitty dir ───────────────────────────────
 # (could be a real dir from an old setup, or a broken symlink)
-for app in kitty; do
+for app in kitty matugen; do
     target="$CONFIG_DIR/$app"
     if [ -L "$target" ]; then
         rm -f "$target"
@@ -75,6 +75,7 @@ if [ -e "$HYPR_DIR" ] && [ ! -L "$HYPR_DIR" ]; then
 fi
 link "$DOTFILES_DIR/.config/hypr"    "$CONFIG_DIR/hypr"
 link "$DOTFILES_DIR/.config/kitty"   "$CONFIG_DIR/kitty"
+link "$DOTFILES_DIR/.config/matugen" "$CONFIG_DIR/matugen"
 link "$DOTFILES_DIR/.config/wlogout" "$CONFIG_DIR/wlogout"
 link "$DOTFILES_DIR/.config/fastfetch" "$CONFIG_DIR/fastfetch"
 link "$DOTFILES_DIR/.config/wal"     "$CONFIG_DIR/wal"

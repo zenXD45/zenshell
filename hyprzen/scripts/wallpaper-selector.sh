@@ -10,6 +10,7 @@
 # =============================================================
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 CURRENT_LINK="$HOME/wallpapers/current"
 WALL="${1:-}"
 
@@ -32,26 +33,16 @@ awww img "$WALL" \
 
 # Auto-generate colors with Matugen (only if installed)
 if command -v matugen &> /dev/null; then
-    matugen image "$WALL" -m dark --source-color-index 0
-
-    # Point BOTH theme pointers at the material theme. Hyprland loads
-    # themes/current_theme.lua (hyprland.lua does require("themes.current_theme")),
-    # so writing only current_theme.conf left the wallpaper-derived colours
-    # applied to nothing at all — the compositor never changed.
-    echo 'require("themes.matugen")' > "$HOME/.config/hypr/themes/current_theme.lua"
-    echo 'source = ~/.config/hypr/themes/matugen.conf' > "$HOME/.config/hypr/themes/current_theme.conf"
-    ln -sf ~/.config/kitty/themes/matugen.conf ~/.config/kitty/themes/current.conf
-
-    # Refresh shared GUI colors if matugen rendered a css theme
-    for cand in "$HOME/.cache/matugen/colors-waybar.css" "$HOME/.config/matugen/templates/colors-waybar.css"; do
-        if [ -f "$cand" ]; then
-            ln -sfn "$cand" ~/.config/hypr/themes/current.css
-            break
-        fi
-    done
-
-    hyprctl reload 2>/dev/null || true
-    pkill -SIGUSR1 kitty 2>/dev/null || true
-
-    notify-send "󰟡 HyprZen" "Material You colors applied!" --icon=color-select 2>/dev/null || true
+    if matugen -c "$HOME/.config/matugen/config.toml" image "$WALL" --prefer saturation --source-color-index 0 >/dev/null 2>&1; then
+        python3 "$SCRIPT_DIR/gen-themes.py" >/dev/null 2>&1
+        echo 'require("themes.matugen")' > "$HOME/.config/hypr/themes/current_theme.lua"
+        echo 'source = ~/.config/hypr/themes/matugen.conf' > "$HOME/.config/hypr/themes/current_theme.conf"
+        ln -sf ~/.config/kitty/themes/matugen.conf ~/.config/kitty/themes/current.conf
+        ln -sfn "$HOME/.config/hypr/themes/matugen.css" "$HOME/.config/hypr/themes/current.css"
+        hyprctl reload 2>/dev/null || true
+        pkill -SIGUSR1 kitty 2>/dev/null || true
+        notify-send "󰟡 HyprZen" "Material You colors applied!" --icon=color-select 2>/dev/null || true
+    else
+        notify-send "󰟡 HyprZen" "Material You generation failed" --icon=dialog-error 2>/dev/null || true
+    fi
 fi
