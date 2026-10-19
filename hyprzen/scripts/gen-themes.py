@@ -204,22 +204,29 @@ def render_css(theme: dict) -> str:
 def render_kitty(theme: dict) -> str:
     c, p, m = theme["colors"], theme["palette"], theme["meta"]
 
+    # Kitty parses colours as `#rrggbb` (or rgb:/hsl: forms). Unlike Hyprlang,
+    # CSS @define-color and the Lua theme files, it does NOT accept a bare hex
+    # string — dropping the `#` here makes every generated .conf fail with
+    # "Invalid color name: '1e1e2e'".
+    def k(value: str) -> str:
+        return "#" + strip_hash(value)
+
     def pal(name: str) -> str:
-        return strip_hash(p[name])
+        return k(p[name])
 
     def bright(name: str, fallback: str) -> str:
-        return strip_hash(p.get(f"bright_{name}", fallback))
+        return k(p.get(f"bright_{name}", fallback))
 
     rows = [
         f"# {m['name']} — generated from themes/source/{m['slug']}.toml",
         "",
-        f"background            {strip_hash(c['bg'])}",
-        f"foreground            {strip_hash(c['fg'])}",
-        f"selection_background  {strip_hash(c['accent'])}",
-        f"selection_foreground  {strip_hash(c['bg'])}",
-        f"cursor                {strip_hash(c['accent'])}",
-        f"cursor_text_color     {strip_hash(c['bg'])}",
-        f"url_color             {strip_hash(c['accent'])}",
+        f"background            {k(c['bg'])}",
+        f"foreground            {k(c['fg'])}",
+        f"selection_background  {k(c['accent'])}",
+        f"selection_foreground  {k(c['bg'])}",
+        f"cursor                {k(c['accent'])}",
+        f"cursor_text_color     {k(c['bg'])}",
+        f"url_color             {k(c['accent'])}",
         "",
         f"color0   {pal('black')}",
         f"color8   {bright('black', pal('white'))}",
@@ -238,10 +245,10 @@ def render_kitty(theme: dict) -> str:
         f"color7   {pal('white')}",
         f"color15  {bright('white', pal('white'))}",
         "",
-        f"active_tab_background   {strip_hash(c['accent'])}",
-        f"active_tab_foreground   {strip_hash(c['bg'])}",
-        f"inactive_tab_background {strip_hash(c['surface'])}",
-        f"inactive_tab_foreground {strip_hash(c['fg'])}",
+        f"active_tab_background   {k(c['accent'])}",
+        f"active_tab_foreground   {k(c['bg'])}",
+        f"inactive_tab_background {k(c['surface'])}",
+        f"inactive_tab_foreground {k(c['fg'])}",
         "",
     ]
     return "\n".join(rows)

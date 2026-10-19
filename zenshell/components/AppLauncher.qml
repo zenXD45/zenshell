@@ -93,7 +93,7 @@ Item {
 
                 Text {
                     text: "\uf002"
-                    color: "#44411"
+                    color: "#55555A"
                     font.family: root.font
                     font.pixelSize: 12
                 }
