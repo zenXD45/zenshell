@@ -1,32 +1,52 @@
 #!/bin/bash
-TYPE=$1
-ACTION=$2
+# Volume/brightness control for the HyprZen media keys.
+#
+# This is the glue the keybinds call: it changes the value AND then asks ZenShell
+# to draw its OSD through the island's `osd` IPC target. The OSD is not polled —
+# shell.qml only renders OSD.qml while displayState = 2, which nothing except
+# these IPC handlers sets — so a bind that skips this script (say, a raw `wpctl`)
+# changes the value with no overlay at all.
+
+set -u
+
+TYPE="${1:-}"
+ACTION="${2:-}"
 QS_PATH="$HOME/.config/quickshell/dynamic-island"
 
-if [ "$TYPE" == "volume" ]; then
-    if [ "$ACTION" == "up" ]; then
-        wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+
-    elif [ "$ACTION" == "down" ]; then
-        wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
-    elif [ "$ACTION" == "mute" ]; then
-        wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
-    elif [ "$ACTION" == "mic-mute" ]; then
-        wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
-        TYPE="mic"
-    fi
-    
-    if [ "$TYPE" == "volume" ]; then
-        quickshell ipc -p $QS_PATH call osd showVolume
-    else
-        quickshell ipc -p $QS_PATH call osd showMic
-    fi
-    
-elif [ "$TYPE" == "brightness" ]; then
-    if [ "$ACTION" == "up" ]; then
-        brightnessctl set 5%+
-    elif [ "$ACTION" == "down" ]; then
-        brightnessctl set 5%-
-    fi
-    
-    quickshell ipc -p $QS_PATH call osd showBrightness
-fi
+usage() {
+    echo "usage: $(basename "$0") volume {up|down|mute|mic-mute}" >&2
+    echo "       $(basename "$0") brightness {up|down}" >&2
+    exit 2
+}
+
+show_osd() {
+    # Never let a missing/restarting island turn a successful volume change into
+    # a failed keypress.
+    quickshell ipc -p "$QS_PATH" call osd "$1" >/dev/null 2>&1 || true
+}
+
+case "$TYPE" in
+    volume)
+        case "$ACTION" in
+            up)       wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+ ;;
+            down)     wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- ;;
+            mute)     wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
+            mic-mute) wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+                      show_osd showMic
+                      exit 0 ;;
+            *)        usage ;;
+        esac
+        show_osd showVolume
+        ;;
+    brightness)
+        case "$ACTION" in
+            up)   brightnessctl set 5%+ ;;
+            down) brightnessctl set 5%- ;;
+            *)    usage ;;
+        esac
+        show_osd showBrightness
+        ;;
+    *)
+        usage
+        ;;
+esac

@@ -397,6 +397,7 @@ Item {
             spacing: 8
 
             Rectangle {
+id: netTile
                 Layout.fillWidth: true
                 Layout.preferredHeight: 54
                 radius: 16
@@ -404,7 +405,7 @@ Item {
                 border.color: (wifiRadio || wiredActive) ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.35) : "#14FFFFFF"
                 border.width: 1
                 property real press: 1.0
-                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: parent.press; yScale: parent.press }
+                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: netTile.press; yScale: netTile.press }
                 Behavior on press { NumberAnimation { duration: 120; easing.type: Easing.OutBack } }
 
                 RowLayout {
@@ -463,6 +464,7 @@ Item {
             }
 
             Rectangle {
+id: btTile
                 Layout.fillWidth: true
                 Layout.preferredHeight: 54
                 radius: 16
@@ -470,7 +472,7 @@ Item {
                 border.color: btPowered ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.35) : "#14FFFFFF"
                 border.width: 1
                 property real press: 1.0
-                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: parent.press; yScale: parent.press }
+                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: btTile.press; yScale: btTile.press }
                 Behavior on press { NumberAnimation { duration: 120; easing.type: Easing.OutBack } }
 
                 RowLayout {
@@ -535,6 +537,7 @@ Item {
 
             // Caffeine
             Rectangle {
+id: caffeineTile
                 Layout.fillWidth: true
                 Layout.preferredHeight: 40
                 radius: 14
@@ -542,7 +545,7 @@ Item {
                 border.color: caffeineEnabled ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.45) : "transparent"
                 border.width: 1
                 property real press: 1.0
-                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: parent.press; yScale: parent.press }
+                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: caffeineTile.press; yScale: caffeineTile.press }
                 Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
                 Behavior on color { ColorAnimation { duration: 150 } }
 
@@ -577,6 +580,7 @@ Item {
 
             // Night Light
             Rectangle {
+id: nightLightTile
                 Layout.fillWidth: true
                 Layout.preferredHeight: 40
                 radius: 14
@@ -584,7 +588,7 @@ Item {
                 border.color: nightLightEnabled ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.45) : "transparent"
                 border.width: 1
                 property real press: 1.0
-                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: parent.press; yScale: parent.press }
+                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: nightLightTile.press; yScale: nightLightTile.press }
                 Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
                 Behavior on color { ColorAnimation { duration: 150 } }
 
@@ -619,6 +623,7 @@ Item {
 
             // Do Not Disturb
             Rectangle {
+id: dndTile
                 Layout.fillWidth: true
                 Layout.preferredHeight: 40
                 radius: 14
@@ -626,7 +631,7 @@ Item {
                 border.color: root.dndEnabled ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.45) : "transparent"
                 border.width: 1
                 property real press: 1.0
-                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: parent.press; yScale: parent.press }
+                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: dndTile.press; yScale: dndTile.press }
                 Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
                 Behavior on color { ColorAnimation { duration: 150 } }
 
@@ -661,6 +666,7 @@ Item {
 
             // Mic
             Rectangle {
+id: micTile
                 Layout.fillWidth: true
                 Layout.preferredHeight: 40
                 radius: 14
@@ -668,7 +674,7 @@ Item {
                 border.color: micMuted ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.45) : "transparent"
                 border.width: 1
                 property real press: 1.0
-                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: parent.press; yScale: parent.press }
+                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: micTile.press; yScale: micTile.press }
                 Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
                 Behavior on color { ColorAnimation { duration: 150 } }
 
@@ -841,6 +847,7 @@ Item {
 
         // ───────────────── Screen record ─────────────────────────
         Rectangle {
+id: recordTile
             Layout.fillWidth: true
             Layout.preferredHeight: 34
             radius: 12
@@ -849,7 +856,7 @@ Item {
             border.color: recordingActive ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.35) : "transparent"
             border.width: recordingActive ? 1 : 0
             property real press: 1.0
-            transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: parent.press; yScale: parent.press }
+            transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: recordTile.press; yScale: recordTile.press }
             Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
 
             RowLayout {
@@ -1102,6 +1109,7 @@ Item {
             spacing: 8
 
             Rectangle {
+id: wiredTile
                 Layout.fillWidth: true
                 Layout.preferredHeight: 52
                 radius: 14
@@ -1109,7 +1117,7 @@ Item {
                 border.color: wiredActive ? themeAccent : "#10FFFFFF"
                 border.width: 1
                 property real press: 1.0
-                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: parent.press; yScale: parent.press }
+                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: wiredTile.press; yScale: wiredTile.press }
                 Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
 
                 RowLayout {
@@ -1161,6 +1169,7 @@ Item {
             }
 
             Rectangle {
+id: wifiTile
                 Layout.fillWidth: true
                 Layout.preferredHeight: 52
                 radius: 14
@@ -1168,7 +1177,7 @@ Item {
                 border.color: wifiRadio ? themeAccent : "#10FFFFFF"
                 border.width: 1
                 property real press: 1.0
-                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: parent.press; yScale: parent.press }
+                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: wifiTile.press; yScale: wifiTile.press }
                 Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
 
                 RowLayout {
@@ -1391,6 +1400,7 @@ Item {
 
         // Power toggle card
         Rectangle {
+id: powerTile
             Layout.fillWidth: true
             Layout.preferredHeight: 48
             radius: 14
@@ -1398,7 +1408,7 @@ Item {
             border.color: btPowered ? themeAccent : "#10FFFFFF"
             border.width: 1
             property real press: 1.0
-            transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: parent.press; yScale: parent.press }
+            transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: powerTile.press; yScale: powerTile.press }
             Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
 
             RowLayout {

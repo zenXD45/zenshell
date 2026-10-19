@@ -38,35 +38,23 @@ Scope {
     }
   }
   
-  // Read pinned apps from JSON (jq -c gives single-line output)
+  // Read pinned apps from JSON. FileView watches the file natively, so there is
+  // no external `inotifywait` loop to orphan when the dock restarts — the old
+  // Process-based watcher left one stray bash+inotifywait pair per restart,
+  // all reparented to PID 1.
   function loadPinned() {
-    readPinned.running = true;
+    pinnedFile.reload();
   }
-  
-  Process {
-    id: readPinned
-    command: ["jq", "-c", ".", root.pinnedJsonPath]
-    running: true
-    stdout: SplitParser {
-      onRead: data => {
-        try {
-          root.pinnedApps = JSON.parse(data);
-        } catch(e) {}
-      }
-    }
-  }
-  
-  // Watch for file changes using bash loop
-  Process {
-    id: watchPinned
-    command: ["bash", "-c", "while inotifywait -qq -e close_write,moved_to '" + root.pinnedJsonPath + "' 2>/dev/null; do jq -c '.' '" + root.pinnedJsonPath + "'; done"]
-    running: true
-    stdout: SplitParser {
-      onRead: data => {
-        try {
-          root.pinnedApps = JSON.parse(data);
-        } catch(e) {}
-      }
+
+  FileView {
+    id: pinnedFile
+    path: root.pinnedJsonPath
+    watchChanges: true
+    onFileChanged: reload()
+    onTextChanged: {
+      try {
+        root.pinnedApps = JSON.parse(text());
+      } catch (e) {}
     }
   }
   
