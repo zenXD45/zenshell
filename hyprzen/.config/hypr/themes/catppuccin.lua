@@ -25,7 +25,7 @@ border_inactive = "rgba(181825a6)"
 
 rounding = 14
 
-border_size = 2
+border_size = 0
 
 gaps_in = 5
 

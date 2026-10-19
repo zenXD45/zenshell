@@ -1,8 +1,13 @@
 # Matugen — fallback defaults.
 #
 # Same contract as dynamic.toml: this is only what Hyprland sees before matugen
-# has sampled a wallpaper. `matugen` rewrites themes/matugen.{lua,conf,css} at
-# runtime. Run `matugen -t hyprzen -m dark -i <wallpaper>` after switching to it.
+# has sampled a wallpaper. At runtime, matugen rewrites THIS file via
+# .config/matugen/templates/hyprzen.toml and then scripts/gen-themes.py fans the
+# new palette out to themes/matugen.{lua,conf,css} and the kitty theme.
+# theme-switch.sh / wallpaper-selector.sh do both steps for you.
+#
+# This file is therefore intentionally committed as the static fallback only —
+# do not commit the wallpaper-derived version it gets rewritten into.
 
 [meta]
 name = "Matugen"
@@ -21,7 +26,7 @@ urgent  = "#ffb4ab"
 
 [geometry]
 rounding = 14
-border_size = 2
+border_size = 0
 gaps_in = 5
 gaps_out = 14
 blur_size = 5

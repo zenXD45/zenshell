@@ -18,7 +18,7 @@ urgent  = "#ff5370"
 
 [geometry]
 rounding = 4
-border_size = 2
+border_size = 0
 gaps_in = 4
 gaps_out = 8
 blur_size = 4

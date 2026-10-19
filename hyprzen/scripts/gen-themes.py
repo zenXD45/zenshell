@@ -185,17 +185,17 @@ def render_css(theme: dict) -> str:
     lines = [
         f"/* {theme['meta']['name']} — generated from themes/source/{theme['meta']['slug']}.toml */",
         "",
-        f'@define-color bg_base       {strip_hash(c["bg"])};',
+        f'@define-color bg_base       #{strip_hash(c["bg"])};',
         f'@define-color bg_surface    {rgba(c["surface"], 0.88)};',
         f'@define-color bg_overlay    {rgba(c["overlay"], 0.75)};',
-        f'@define-color accent        {strip_hash(c["accent"])};',
+        f'@define-color accent        #{strip_hash(c["accent"])};',
         f'@define-color accent_soft   {rgba(c["accent"], 0.18)};',
         f'@define-color accent_glow   {rgba(c["accent"], 0.35)};',
-        f'@define-color secondary     {strip_hash(c["accent"])};',
-        f'@define-color text          {strip_hash(c["fg"])};',
-        f'@define-color subtext       {strip_hash(c["subfg"])};',
+        f'@define-color secondary     #{strip_hash(c["accent"])};',
+        f'@define-color text          #{strip_hash(c["fg"])};',
+        f'@define-color subtext       #{strip_hash(c["subfg"])};',
         f'@define-color border_color  {rgba(c["accent"], 0.20)};',
-        f'@define-color urgent        {strip_hash(c["urgent"])};',
+        f'@define-color urgent        #{strip_hash(c["urgent"])};',
         "",
     ]
     return "\n".join(lines)

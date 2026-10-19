@@ -22,7 +22,7 @@ urgent  = "#fb4934"
 
 [geometry]
 rounding = 12
-border_size = 2
+border_size = 0
 gaps_in = 5
 gaps_out = 12
 blur_size = 4
