@@ -1,6 +1,7 @@
 -- ══════════════════════════════════════════════════════════════
 -- HyprZen — Autostart (exec-once)
--- OSD is ZenShell's own (OSD.qml, driven by wpctl/brightnessctl polling).
+-- OSD is ZenShell's own (OSD.qml), triggered by the media keys through
+-- osd_control.sh -> `quickshell ipc call osd showVolume|showBrightness`.
 -- Notifications are likewise owned by the island.
 -- ══════════════════════════════════════════════════════════════
 

@@ -126,22 +126,25 @@ hl.bind(S .. " + mouse:272", hl.dsp.window.drag())
 hl.bind(S .. " + mouse:273", hl.dsp.window.resize())
 
 -- ── Media Keys ────────────────────────────────────────────────
--- These adjust volume/brightness directly. ZenShell polls `wpctl` and
--- `brightnessctl` (zenshell/shell.qml) and draws its own theme-aware OSD, so
--- there is no need for swayosd-client here — and running both meant every
--- volume key flashed two overlapping overlays, one of them unstyled because
--- swayosd-server was starting with no config.yaml.
-hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"), { locked = true, repeating = true })
-hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"), { locked = true, repeating = true })
-hl.bind("XF86AudioMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"), { locked = true })
-hl.bind("XF86AudioMicMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"), { locked = true })
+-- Volume/brightness keys go through ZenShell's osd_control.sh, which both
+-- performs the change and fires the IPC call that draws the OSD
+-- (`quickshell ipc ... call osd showVolume|showBrightness`). ZenShell does NOT
+-- poll wpctl/brightnessctl: OSD.qml is only visible while shell.qml sets
+-- displayState = 2, and the osd IPC handlers are the only things that do that.
+-- Binding raw wpctl/brightnessctl here (as this file briefly did) changed the
+-- value silently with no overlay at all. swayosd-client is still not needed —
+-- ZenShell owns the overlay, so there is nothing to double up on.
+hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/osd_control.sh volume up"), { locked = true, repeating = true })
+hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/osd_control.sh volume down"), { locked = true, repeating = true })
+hl.bind("XF86AudioMute", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/osd_control.sh volume mute"), { locked = true })
+hl.bind("XF86AudioMicMute", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/osd_control.sh volume mic-mute"), { locked = true })
 hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioNext", hl.dsp.exec_cmd("playerctl next"), { locked = true })
 hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"), { locked = true })
 
 -- ── Brightness ────────────────────────────────────────────────
-hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("brightnessctl set 5%+"), { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl set 5%-"), { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/osd_control.sh brightness up"), { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/osd_control.sh brightness down"), { locked = true, repeating = true })
 
 -- ── ZenShell Dynamic Island ───────────────────────────────────
 -- Notification/control center is SUPER+N (plain, section above).
