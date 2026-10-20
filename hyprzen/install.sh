@@ -76,6 +76,10 @@ fi
 link "$DOTFILES_DIR/.config/hypr"    "$CONFIG_DIR/hypr"
 link "$DOTFILES_DIR/.config/kitty"   "$CONFIG_DIR/kitty"
 link "$DOTFILES_DIR/.config/matugen" "$CONFIG_DIR/matugen"
+# Link only gtk.css, not the whole gtk-{3,4}.0 dirs: they also hold per-user
+# state (settings.ini, bookmarks, recently-used.xbel) that must not live in git.
+link "$DOTFILES_DIR/.config/gtk-3.0/gtk.css" "$CONFIG_DIR/gtk-3.0/gtk.css"
+link "$DOTFILES_DIR/.config/gtk-4.0/gtk.css" "$CONFIG_DIR/gtk-4.0/gtk.css"
 link "$DOTFILES_DIR/.config/wlogout" "$CONFIG_DIR/wlogout"
 link "$DOTFILES_DIR/.config/fastfetch" "$CONFIG_DIR/fastfetch"
 link "$DOTFILES_DIR/.config/wal"     "$CONFIG_DIR/wal"

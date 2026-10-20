@@ -162,35 +162,45 @@ if [ -f "$VSCODE_SETTINGS" ]; then
     jq ".\"workbench.colorTheme\" = \"$CODE_THEME\"" "$VSCODE_SETTINGS" > "${VSCODE_SETTINGS}.tmp" && mv "${VSCODE_SETTINGS}.tmp" "$VSCODE_SETTINGS"
 fi
 
-# 10. Sync GTK and Kvantum Themes
+# 10. Sync GTK theme
+# Every HyprZen theme is built on adw-gtk3 (the libadwaita GTK3 port installed
+# as `adw-gtk-theme`). The old per-theme names — Colloid, Nordic, Materia,
+# AtomOneDark, the catppuccin GTK port — were never installed by this repo, so
+# gsettings pointed at themes that did not exist and GTK silently fell back to
+# Adwaita. Accent colours come from the generated themes/current.css that
+# ~/.config/gtk-{3,4}.0/gtk.css imports, not from a separate GTK theme package.
 case "$SELECTED" in
-    "catppuccin") GTK_THEME="catppuccin-mocha-lavender-standard+default"; KV_THEME="catppuccin-mocha-lavender"; WLOGOUT_COLOR="rgba(180, 190, 254, 0.5)" ;;
-    "tokyo-night") GTK_THEME="adw-gtk3-dark"; KV_THEME="KvDark"; WLOGOUT_COLOR="rgba(122, 162, 247, 0.5)" ;;
-    "gruvbox") GTK_THEME="Colloid-Dark"; KV_THEME="KvDark"; WLOGOUT_COLOR="rgba(254, 128, 25, 0.5)" ;;
-    "nord") GTK_THEME="Nordic"; KV_THEME="KvDark"; WLOGOUT_COLOR="rgba(136, 192, 208, 0.5)" ;;
-    "osaka-jade") GTK_THEME="Colloid-Dark"; KV_THEME="KvDark"; WLOGOUT_COLOR="rgba(167, 192, 128, 0.5)" ;;
-    "aetheria") GTK_THEME="Colloid-Light"; KV_THEME="KvLight"; WLOGOUT_COLOR="rgba(114, 135, 253, 0.5)" ;;
-    "akane") GTK_THEME="adw-gtk3-dark"; KV_THEME="KvDark"; WLOGOUT_COLOR="rgba(255, 93, 98, 0.5)" ;;
-    "alabaster") GTK_THEME="Colloid-Light"; KV_THEME="KvLight"; WLOGOUT_COLOR="rgba(128, 128, 128, 0.5)" ;;
-    "lavender") GTK_THEME="catppuccin-mocha-lavender-standard+default"; KV_THEME="catppuccin-mocha-lavender"; WLOGOUT_COLOR="rgba(180, 190, 254, 0.5)" ;;
-    "eva-theme") GTK_THEME="Materia-dark"; KV_THEME="KvDark"; WLOGOUT_COLOR="rgba(158, 206, 106, 0.5)" ;;
-    "noir") GTK_THEME="adw-gtk3-dark"; KV_THEME="KvDark"; WLOGOUT_COLOR="rgba(255, 255, 255, 0.15)" ;;
-    "one-dark") GTK_THEME="AtomOneDarkTheme"; KV_THEME="KvDark"; WLOGOUT_COLOR="rgba(97, 175, 239, 0.5)" ;;
-    "rose-pine") GTK_THEME="Materia-dark"; KV_THEME="KvDark"; WLOGOUT_COLOR="rgba(196, 167, 231, 0.5)" ;;
-    *) GTK_THEME="adw-gtk3-dark"; KV_THEME="KvDark"; WLOGOUT_COLOR="rgba(255, 255, 255, 0.15)" ;;
+    "aetheria"|"alabaster")
+        GTK_THEME="adw-gtk3"
+        GTK_SCHEME="prefer-light"
+        ;;
+    *)
+        GTK_THEME="adw-gtk3-dark"
+        GTK_SCHEME="prefer-dark"
+        ;;
+esac
+
+# Wlogout hover accent (cosmetic; independent of the GTK theme).
+case "$SELECTED" in
+    "catppuccin") WLOGOUT_COLOR="rgba(180, 190, 254, 0.5)" ;;
+    "tokyo-night") WLOGOUT_COLOR="rgba(122, 162, 247, 0.5)" ;;
+    "gruvbox") WLOGOUT_COLOR="rgba(254, 128, 25, 0.5)" ;;
+    "nord") WLOGOUT_COLOR="rgba(136, 192, 208, 0.5)" ;;
+    "osaka-jade") WLOGOUT_COLOR="rgba(167, 192, 128, 0.5)" ;;
+    "aetheria") WLOGOUT_COLOR="rgba(114, 135, 253, 0.5)" ;;
+    "akane") WLOGOUT_COLOR="rgba(255, 93, 98, 0.5)" ;;
+    "alabaster") WLOGOUT_COLOR="rgba(128, 128, 128, 0.5)" ;;
+    "lavender") WLOGOUT_COLOR="rgba(180, 190, 254, 0.5)" ;;
+    "eva-theme") WLOGOUT_COLOR="rgba(158, 206, 106, 0.5)" ;;
+    "noir") WLOGOUT_COLOR="rgba(255, 255, 255, 0.15)" ;;
+    "one-dark") WLOGOUT_COLOR="rgba(97, 175, 239, 0.5)" ;;
+    "rose-pine") WLOGOUT_COLOR="rgba(196, 167, 231, 0.5)" ;;
+    *) WLOGOUT_COLOR="rgba(255, 255, 255, 0.15)" ;;
 esac
 
 if [ -n "$WAYLAND_DISPLAY" ] || [ -n "$DBUS_SESSION_BUS_ADDRESS" ]; then
-    if [ "$SELECTED" = "aetheria" ] || [ "$SELECTED" = "alabaster" ]; then
-        gsettings set org.gnome.desktop.interface color-scheme 'prefer-light' 2>/dev/null || true
-    else
-        gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
-    fi
+    gsettings set org.gnome.desktop.interface color-scheme "$GTK_SCHEME" 2>/dev/null || true
     gsettings set org.gnome.desktop.interface gtk-theme "$GTK_THEME" 2>/dev/null || true
-fi
-
-if command -v kvantummanager &> /dev/null; then
-    kvantummanager --set "$KV_THEME" 2>/dev/null || true
 fi
 
 # 11. Sync Wlogout hover color
