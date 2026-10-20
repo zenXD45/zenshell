@@ -30,9 +30,6 @@ Item {
         if (modelItem.kind === "calc") {
             copyProc.command = ["bash", "-c", "printf %s " + shellQuote(modelItem.result) + " | wl-copy -n"];
             copyProc.running = true;
-        } else if (modelItem.kind === "file") {
-            runCmd.command = ["bash", "-c", "xdg-open " + shellQuote(modelItem.path) + " > /dev/null 2>&1 &"];
-            runCmd.running = true;
         } else {
             runCmd.command = ["bash", "-c", "gtk-launch " + modelItem.exec + " > /dev/null 2>&1 || " + modelItem.exec + " > /dev/null 2>&1 &"];
             runCmd.running = true;
@@ -170,7 +167,7 @@ Item {
                     Text {
                         anchors.fill: parent
                         verticalAlignment: Text.AlignVCenter
-                        text: "Search apps, files, or calculate\u2026"
+                        text: "Search apps or calculate\u2026"
                         color: root.uiFgFaint
                         font.family: root.uiFont
                         font.pixelSize: 15
@@ -298,22 +295,30 @@ Item {
                                 id: rowIcon
                                 anchors.centerIn: parent
                                 width: 22; height: 22
-                                source: (model.icon && model.icon.startsWith("/")) ? "file://" + model.icon : (model.icon ? "image://icon/" + model.icon : "")
-                                sourceSize: Qt.size(44, 44)
+                                source: (model.icon && model.icon.startsWith("/"))
+                                    ? "file://" + encodeURI(model.icon)
+                                    : (model.icon ? "image://icon/" + model.icon : "")
+                                sourceSize: Qt.size(96, 96)
                                 asynchronous: true
                                 fillMode: Image.PreserveAspectFit
-                                visible: model.kind !== "calc" && rowIcon.status !== Image.Error && model.icon !== ""
+                                visible: model.kind !== "calc" && model.icon !== ""
+                                    && rowIcon.status !== Image.Error
                             }
 
                             Text {
                                 anchors.centerIn: parent
-                                text: model.kind === "calc" ? "\uf1ec" : (model.kind === "file" ? "\uf016" : (model.name ? model.name.charAt(0).toUpperCase() : "?"))
+                                text: model.kind === "calc"
+                                    ? "\uf1ec"
+                                    : (model.name ? model.name.charAt(0).toUpperCase() : "?")
                                 color: isSel ? accent : root.uiFgDim
                                 font.family: root.font
                                 font.pixelSize: model.kind === "app" ? 14 : 16
                                 font.weight: Font.DemiBold
-                                visible: model.kind === "calc" || model.kind === "file"
-                                    || rowIcon.status !== Image.Ready || model.icon === ""
+                                // Don't flash a letter while the asynchronous
+                                // icon is still loading; only use it when the
+                                // app really has no usable icon.
+                                visible: model.kind === "calc" || model.icon === ""
+                                    || rowIcon.status === Image.Error
                             }
                         }
 
@@ -397,7 +402,7 @@ Item {
                 }
                 Text {
                     Layout.alignment: Qt.AlignHCenter
-                    text: "Try an app name, a file, or something like 12*8"
+                    text: "Try an app name or something like 12*8"
                     color: root.uiFgFaint
                     font.family: root.uiFont
                     font.pixelSize: 11
@@ -424,7 +429,7 @@ Item {
             Item { Layout.fillWidth: true }
 
             Text {
-                text: "apps \u00b7 files \u00b7 math"
+                text: "apps \u00b7 math"
                 color: "#3DFFFFFF"
                 font.family: root.uiFont
                 font.pixelSize: 10
