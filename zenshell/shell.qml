@@ -82,18 +82,21 @@ Scope {
         }
     }
 
-    Process {
+    // The active theme is written by theme-switch.sh / wallpaper-selector.sh.
+    // FileView watches the file natively, so a switch from a keybind, the CLI
+    // or a wallpaper change updates the island accent without a shell restart.
+    // (The old one-shot `cat` only read it at startup.)
+    FileView {
         id: fetchCurrentTheme
-        command: ["cat", Quickshell.env("HOME") + "/.config/hypr/themes/current_theme.conf"]
-        running: true
-        stdout: SplitParser {
-            onRead: data => {
-                // e.g. "source = ~/.config/hypr/themes/catppuccin.conf"
-                var match = data.match(/themes\/([^\.]+)\.conf/);
-                if (match) {
-                    root.currentThemeId = match[1];
-                    root.updateThemeAccent();
-                }
+        path: Quickshell.env("HOME") + "/.config/hypr/themes/current_theme.conf"
+        watchChanges: true
+        onFileChanged: reload()
+        onTextChanged: {
+            // e.g. "source = ~/.config/hypr/themes/catppuccin.conf"
+            var match = text().match(/themes\/([^\.]+)\.conf/);
+            if (match) {
+                root.currentThemeId = match[1];
+                root.updateThemeAccent();
             }
         }
     }
