@@ -852,7 +852,7 @@ Scope {
                        root.displayState === 7 ? 180 :
                        root.displayState === 6 ? 280 :
                        root.displayState === 4 ? 540 :
-                       root.displayState === 3 ? 600 :
+                       root.displayState === 3 ? 400 :
                        root.displayState === 2 ? 200 :
                        root.displayState === 1 ? (root.isExpanded ? 400 : (root.currentLyricLine !== "" ? Math.min(540, Math.max(340, lyricMeasure.implicitWidth + 90)) : Math.min(460, Math.max(280, titleMeasure.implicitWidth + 120)))) :
                        80
@@ -869,7 +869,7 @@ Scope {
                         root.displayState === 7 ? 40 :
                         root.displayState === 6 ? 80 :
                         root.displayState === 4 ? 220 :
-                        root.displayState === 3 ? 570 :
+                        root.displayState === 3 ? appLauncher.panelHeight :
                         root.displayState === 2 ? 48 :
                         root.displayState === 1 ? (root.isExpanded ? 190 : 44) :
                         32
@@ -951,7 +951,7 @@ Scope {
                     NowPlayingCompact {}
                     NowPlayingExpanded {}
                     OSD {}
-                    AppLauncher {}
+                    AppLauncher { id: appLauncher }
                     WallpaperSelector {}
                     WeatherGlance {}
                     LiveTimer {}
