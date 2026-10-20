@@ -20,6 +20,9 @@ def human_readable_action(action):
         '~/.config/quickshell/dynamic-island/island_ctl.sh themes': 'Theme Switcher',
         '~/.config/quickshell/dynamic-island/island_ctl.sh wallpapers': 'Wallpaper Selector',
         'hyprshade toggle oled': 'Toggle OLED Shader',
+        'quickshell ipc -p ~/.config/quickshell/dynamic-island/modules/desktop-widgets call widgets toggle': 'Toggle Desktop Widgets',
+        'wlogout -b 5 -T 350 -B 350': 'Logout Menu',
+        '~/scripts/caffeine.sh': 'Toggle Caffeine',
     }
     if action in mappings:
         return mappings[action]
@@ -86,15 +89,18 @@ def human_readable_action(action):
     if "hl.dsp.exit()" in action: return "Exit Hyprland"
 
     # Fallbacks for any uncaught hl.dsp.exec_cmd
-    if action.startswith("hl.dsp.exec_cmd("):
-        act = action.replace('hl.dsp.exec_cmd("', '').replace('")', '')
-        return act
-        
     act = action.replace("hl.dsp.", "")
     act = re.sub(r'\(\{[^}]*\}\)$', '', act)
     act = re.sub(r'\(".*"\)$', '', act)
     act = re.sub(r'\(\)$', '', act)
-    return act
+
+    # Last resort: show a readable command name, never a raw shell line.
+    # This is what produced entries like
+    # "quickshell ipc -p ~/.config/... call widgets toggle".
+    first = act.split()[0] if act.split() else act
+    label = os.path.basename(first).rsplit(".", 1)[0]
+    label = label.replace("_", " ").replace("-", " ").strip()
+    return label.title() if label else "Action"
 
 def parse_keybinds():
     if not os.path.exists(CONFIG_PATH):
@@ -110,6 +116,9 @@ def parse_keybinds():
             if line.startswith("-- ──"):
                 cat = line.replace("-- ──", "").strip()
                 cat = re.sub(r'─+$', '', cat).strip()
+                # Drop parenthetical implementation notes: "Clipboard (ZenShell
+                # island)" is a heading, not a sentence.
+                cat = re.sub(r'\s*\([^)]*\)\s*', ' ', cat).strip()
                 if cat:
                     current_category = cat
                 continue
@@ -157,7 +166,16 @@ def parse_keybinds():
                     "action": action
                 })
 
-    return keybinds
+    # Drop exact duplicates (the Lua file lists a few binds twice for clarity).
+    seen = set()
+    unique = []
+    for bind in keybinds:
+        ident = (bind["category"], bind["key"], bind["action"])
+        if ident in seen:
+            continue
+        seen.add(ident)
+        unique.append(bind)
+    return unique
 
 if __name__ == "__main__":
     print(json.dumps(parse_keybinds()))

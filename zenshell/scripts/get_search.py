@@ -43,15 +43,25 @@ def load_apps():
                 icon = entry.get("Icon", "")
                 if not name or not exec_cmd:
                     continue
+                # A readable second line: GenericName is short ("Web Browser"),
+                # Comment is longer but human. Never show the exec path — that is
+                # what the launcher used to do, and "/usr/bin/nvidia-settings"
+                # under every row made the list look like a debug tool.
+                generic = entry.get("GenericName", "").strip()
+                comment = " ".join(entry.get("Comment", "").split()).rstrip(".")
+                sub = generic or comment
+                if len(sub) > 72:
+                    sub = sub[:69].rstrip() + "…"
                 apps.append({
                     "kind": "app",
                     "name": name,
                     "exec": exec_cmd.split("%")[0].strip(),
                     "icon": icon,
-                    "sub": exec_cmd.split("%")[0].strip(),
+                    "sub": sub,
                 })
             except Exception:
                 continue
+    apps.sort(key=lambda a: a["name"].lower())
     return apps
 
 
@@ -132,12 +142,17 @@ def main():
     else:
         def rank(a):
             name = a["name"].lower()
-            hay = a.get("exec", "").lower() + " " + name
+            hay = (a.get("sub", "") + " " + name + " " + a.get("exec", "")).lower()
             start = name.startswith(Q)
             prefix = hay.startswith(Q)
             return (0 if start else (1 if prefix else 2), name)
 
-        app_hits = [a for a in apps if Q in a["name"].lower() or Q in a.get("exec", "").lower()]
+        app_hits = [
+            a for a in apps
+            if Q in a["name"].lower()
+            or Q in a.get("sub", "").lower()
+            or Q in a.get("exec", "").lower()
+        ]
         app_hits.sort(key=rank)
         results = app_hits[:40] + search_files()
         calc = solve()

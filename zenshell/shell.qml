@@ -13,6 +13,23 @@ Scope {
 
     property string font: "JetBrainsMono Nerd Font"
     property real uiScale: 1.25
+
+    // ── Panel design tokens ────────────────────────────────────────
+    // One vocabulary for every overlay (launcher, control center, cheatsheet).
+    // Surfaces are translucent dark glass with the same border/radius rhythm as
+    // the desktop widgets; body text is Outfit, mono is reserved for keycaps.
+    readonly property string uiFont: "Outfit"
+    readonly property color uiFg: "#F2FFFFFF"
+    readonly property color uiFgDim: "#A6FFFFFF"
+    readonly property color uiFgFaint: "#5CFFFFFF"
+    readonly property color uiCard: "#0AFFFFFF"
+    readonly property color uiCardHover: "#14FFFFFF"
+    readonly property color uiBorder: "#16FFFFFF"
+    readonly property color uiBorderStrong: "#26FFFFFF"
+    readonly property int uiRadiusLg: 26
+    readonly property int uiRadiusMd: 16
+    readonly property int uiRadiusSm: 11
+    readonly property bool panelOpen: displayState === 3 || displayState === 13 || displayState === 23
     
     // --- State ---
     property int displayState: 0 // 0=idle, 1=now-playing, 2=volume, 11=themes, 13=control-panel
@@ -813,10 +830,10 @@ Scope {
             // Scale wrapper (now controls the animated size instead of Wayland)
             Item {
                 id: scaleWrapper
-                width: root.displayState === 23 ? 780 :
+                width: root.displayState === 23 ? 680 :
                        root.displayState === 15 ? 780 :
                        root.displayState === 14 ? 500 :
-                       root.displayState === 13 ? 560 :
+                       root.displayState === 13 ? 460 :
                        root.displayState === 12 ? 480 :
                        root.displayState === 11 ? 540 :
                        root.displayState === 10 ? 320 :
@@ -825,7 +842,7 @@ Scope {
                        root.displayState === 7 ? 180 :
                        root.displayState === 6 ? 280 :
                        root.displayState === 4 ? 540 :
-                       root.displayState === 3 ? 780 :
+                       root.displayState === 3 ? 600 :
                        root.displayState === 2 ? 200 :
                        root.displayState === 1 ? (root.isExpanded ? 360 : (root.currentLyricLine !== "" ? Math.min(540, Math.max(340, lyricMeasure.implicitWidth + 90)) : Math.min(460, Math.max(280, titleMeasure.implicitWidth + 120)))) :
                        80
@@ -833,7 +850,7 @@ Scope {
                 height: root.displayState === 23 ? 600 :
                         root.displayState === 15 ? 196 :
                         root.displayState === 14 ? 130 :
-                        root.displayState === 13 ? 440 :
+                        root.displayState === 13 ? 620 :
                         root.displayState === 12 ? 130 :
                         root.displayState === 11 ? 140 :
                         root.displayState === 10 ? 80 :
@@ -842,7 +859,7 @@ Scope {
                         root.displayState === 7 ? 40 :
                         root.displayState === 6 ? 80 :
                         root.displayState === 4 ? 150 :
-                        root.displayState === 3 ? 440 :
+                        root.displayState === 3 ? 570 :
                         root.displayState === 2 ? 48 :
                         root.displayState === 1 ? (root.isExpanded ? 190 : 44) :
                         32
@@ -880,9 +897,9 @@ Scope {
                 Rectangle {
                     id: pill
                     anchors.fill: parent
-                    radius: root.displayState === 0 ? 16 : 22
-                    color: root.islandTheme === "liquid" ? "#35000000" : "#E60D0D11"
-                    border.color: root.islandTheme === "liquid" ? "#30FFFFFF" : "#28FFFFFF"
+                    radius: root.displayState === 0 ? 16 : (root.panelOpen ? root.uiRadiusLg : 22)
+                    color: root.islandTheme === "liquid" ? "#35000000" : (root.panelOpen ? "#E00C0C10" : "#E60D0D11")
+                    border.color: root.islandTheme === "liquid" ? "#30FFFFFF" : (root.panelOpen ? "#2EFFFFFF" : "#28FFFFFF")
                     border.width: 1
                     clip: true
 
@@ -893,7 +910,7 @@ Scope {
                     Rectangle {
                         anchors.fill: parent
                         radius: parent.radius
-                        opacity: root.islandTheme === "liquid" ? 0 : (root.displayState !== 0 ? 1 : 0)
+                        opacity: root.islandTheme === "liquid" ? 0 : (root.panelOpen ? 0.72 : (root.displayState !== 0 ? 1 : 0))
                         Behavior on opacity { NumberAnimation { duration: 300 } }
                         gradient: Gradient {
                             GradientStop { position: 0.0; color: "#F0161619" }

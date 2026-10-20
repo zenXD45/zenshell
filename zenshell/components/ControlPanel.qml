@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Pipewire
@@ -52,6 +53,11 @@ Item {
     property real brightnessValue: 50
     property real volumeValue: 50
 
+    // ── In-island action feedback ──────────────────────────────────
+    property string actionTitle: ""
+    property string actionSub: ""
+    property bool actionVisible: false
+
     // ════════════════════════════════════════════════════════════════
     // │ Core process + action helpers
     // ════════════════════════════════════════════════════════════════
@@ -61,6 +67,19 @@ Item {
         execCmd.running = false
         execCmd.command = ["bash", "-c", cmd]
         execCmd.running = true
+    }
+
+    Timer {
+        id: actionTimer
+        interval: 1800
+        onTriggered: actionVisible = false
+    }
+
+    function showAction(title, sub) {
+        actionTitle = title
+        actionSub = sub || ""
+        actionVisible = true
+        actionTimer.restart()
     }
 
     // ── Network ────────────────────────────────────────────────────
@@ -193,26 +212,39 @@ Item {
 
     // ── Toggles ────────────────────────────────────────────────────
     function toggleCaffeine() {
-        caffeineEnabled = !caffeineEnabled
         if (caffeineEnabled) {
-            runShell("pkill -STOP hypridle 2>/dev/null || true")
+            // Was on (idle daemon stopped) → restore idle protection.
+            runShell("pgrep -x hypridle >/dev/null 2>&1 || (nohup hypridle >/dev/null 2>&1 &)")
+            caffeineEnabled = false
+            showAction("Caffeine off", "Normal idle and lock restored")
         } else {
-            runShell("pkill -CONT hypridle 2>/dev/null || true")
+            runShell("pkill -x hypridle >/dev/null 2>&1 || true")
+            caffeineEnabled = true
+            showAction("Caffeine on", "Idle and sleep are inhibited")
         }
+        caffeineRefresh.restart()
     }
 
     function toggleNightLight() {
         nightLightEnabled = !nightLightEnabled
-        runShell(nightLightEnabled ? "hyprsunset -t 4500 &" : "pkill hyprsunset")
+        if (nightLightEnabled) {
+            runShell("pgrep -x hyprsunset >/dev/null 2>&1 || (nohup hyprsunset -t 4500 >/dev/null 2>&1 &)")
+        } else {
+            runShell("pkill -x hyprsunset >/dev/null 2>&1 || true")
+        }
+        showAction(nightLightEnabled ? "Night Light on" : "Night Light off",
+                   nightLightEnabled ? "Warm tint at 4500K" : "Display temperature restored")
+        nightRefresh.restart()
     }
 
     function toggleMic() {
-        micMuted = !micMuted
-        runShell("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle")
+        micToggle.running = true
     }
 
     function toggleDnd() {
         root.dndEnabled = !root.dndEnabled
+        showAction(root.dndEnabled ? "Do Not Disturb on" : "Do Not Disturb off",
+                   root.dndEnabled ? "Alerts stay in the notification shade" : "Island alerts are back")
     }
 
     function toggleRecord() {
@@ -234,6 +266,7 @@ Item {
             fetchVolume.running = true
             fetchMic.running = true
             checkNight.running = true
+            checkCaffeine.running = true
             checkRecorder.running = true
             checkRecording.running = true
             tickClock()
@@ -257,6 +290,7 @@ Item {
 
     onVisibleChanged: {
         if (visible) {
+            currentView = "main"
             initTimer.restart()
         }
     }
@@ -269,6 +303,9 @@ Item {
             refreshNetwork()
             refreshBluetooth()
             checkRecording.running = true
+            checkCaffeine.running = true
+            checkNight.running = true
+            fetchMic.running = true
         }
     }
 
@@ -308,6 +345,38 @@ Item {
         stdout: SplitParser { onRead: data => { recordingActive = (data.trim() === "1") } }
     }
 
+    // hypridle absent/stopped == Caffeine is ON (no idle, dim or lock).
+    Process {
+        id: checkCaffeine
+        command: ["bash", "-c", "pgrep -x hypridle >/dev/null 2>&1 && echo 0 || echo 1"]
+        stdout: SplitParser { onRead: data => { caffeineEnabled = (data.trim() === "1") } }
+    }
+
+    // Toggle the mic and report the real resulting state, not an assumption.
+    Process {
+        id: micToggle
+        command: ["bash", "-c", "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle; wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | grep -q MUTED && echo muted || echo live"]
+        stdout: SplitParser {
+            onRead: data => {
+                micMuted = (data.trim() === "muted")
+                showAction(micMuted ? "Microphone muted" : "Microphone live",
+                           micMuted ? "Apps cannot hear you" : "Input is active")
+            }
+        }
+    }
+
+    Timer {
+        id: caffeineRefresh
+        interval: 450
+        onTriggered: checkCaffeine.running = true
+    }
+
+    Timer {
+        id: nightRefresh
+        interval: 600
+        onTriggered: checkNight.running = true
+    }
+
     // ── Key escape ─────────────────────────────────────────────────
     FocusScope {
         anchors.fill: parent
@@ -327,49 +396,58 @@ Item {
     // ════════════════════════════════════════════════════════════════
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 16
-        spacing: 8
+        anchors.margins: 18
+        spacing: 10
         visible: currentView === "main"
 
-        // ───────────────── Header ─────────────────────────────────
+        // ── Header (compact) ─────────────────────────────────────
         RowLayout {
             Layout.fillWidth: true
-            spacing: 8
+            Layout.preferredHeight: 28
+            spacing: 9
 
             Rectangle {
-                width: 26; height: 26; radius: 13
-                color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.15)
-                Text { anchors.centerIn: parent; text: "\uf013"; color: themeAccent; font.family: root.font; font.pixelSize: 12 }
+                width: 28; height: 28; radius: 9
+                color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14)
+                border.width: 1
+                border.color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.24)
+                Text {
+                    anchors.centerIn: parent
+                    text: "\uf013"
+                    color: themeAccent
+                    font.family: root.font
+                    font.pixelSize: 12
+                }
             }
 
             Text {
                 text: "Control Center"
-                color: "#FFFFFF"
-                font.family: "Outfit"
-                font.pixelSize: 14
-                font.weight: Font.Bold
+                color: root.uiFg
+                font.family: root.uiFont
+                font.pixelSize: 15
+                font.weight: Font.DemiBold
             }
 
             Item { Layout.fillWidth: true }
 
             Text {
                 text: panelClock
-                color: "#55555A"
-                font.family: "Outfit"
+                color: root.uiFgFaint
+                font.family: root.uiFont
                 font.pixelSize: 10
                 font.weight: Font.Medium
             }
 
-            // Active connection badge
             Rectangle {
-                height: 20
-                implicitWidth: badgeText.implicitWidth + 14
-                radius: 10
-                color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14)
-                border.color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.35)
+                height: 22
+                implicitWidth: badgeRow.implicitWidth + 16
+                radius: 11
+                color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.12)
                 border.width: 1
+                border.color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.28)
 
                 RowLayout {
+                    id: badgeRow
                     anchors.centerIn: parent
                     spacing: 4
                     Text {
@@ -381,8 +459,8 @@ Item {
                     Text {
                         id: badgeText
                         text: activeType === "wired" ? "Wired" : (wifiActive ? (wifiConn || "Wi-Fi") : "Offline")
-                        color: "#EEEEF0"
-                        font.family: "Outfit"
+                        color: root.uiFg
+                        font.family: root.uiFont
                         font.pixelSize: 9
                         font.weight: Font.Medium
                     }
@@ -390,23 +468,28 @@ Item {
             }
         }
 
-        // ───────────────── Connectivity cards ─────────────────────
-        // Network ▲ Bluetooth
+        // ── Connectivity (compact) ───────────────────────────────
         RowLayout {
             Layout.fillWidth: true
-            spacing: 8
+            Layout.preferredHeight: 54
+            Layout.minimumHeight: 54
+            Layout.maximumHeight: 54
+            spacing: 10
 
+            // Network
             Rectangle {
-id: netTile
+                id: netTile
                 Layout.fillWidth: true
-                Layout.preferredHeight: 54
-                radius: 16
-                color: (wifiRadio || wiredActive) ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.13) : "#0AFFFFFF"
-                border.color: (wifiRadio || wiredActive) ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.35) : "#14FFFFFF"
+                Layout.fillHeight: true
+                radius: 14
+                color: netArea.containsMouse ? "#10FFFFFF" : root.uiCard
                 border.width: 1
+                border.color: netArea.containsMouse ? root.uiBorderStrong : root.uiBorder
+                Behavior on color { ColorAnimation { duration: 130 } }
+
                 property real press: 1.0
                 transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: netTile.press; yScale: netTile.press }
-                Behavior on press { NumberAnimation { duration: 120; easing.type: Easing.OutBack } }
+                Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
 
                 RowLayout {
                     anchors.fill: parent
@@ -415,65 +498,73 @@ id: netTile
                     spacing: 9
 
                     Rectangle {
-                        width: 34; height: 34; radius: 11
-                        color: (wifiRadio || wiredActive) ? themeAccent : "#17171B"
+                        width: 30; height: 30; radius: 9
+                        color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.13)
                         Text {
                             anchors.centerIn: parent
-                            text: wiredActive ? "󰈀" : "\uf1eb"
-                            color: (wifiRadio || wiredActive) ? "#0F0F14" : "#55555A"
+                            text: activeType === "wired" ? "󰈀" : "\uf1eb"
+                            color: themeAccent
                             font.family: root.font
-                            font.pixelSize: 14
+                            font.pixelSize: 13
                         }
                     }
 
                     ColumnLayout {
                         Layout.fillWidth: true
-                        spacing: 1
+                        spacing: 0
+
                         Text {
                             text: "Network"
-                            color: "#FFFFFF"
-                            font.family: "Outfit"
-                            font.pixelSize: 11
-                            font.weight: Font.Bold
+                            color: root.uiFg
+                            font.family: root.uiFont
+                            font.pixelSize: 12
+                            font.weight: Font.Medium
                         }
                         Text {
-                            text: wiredActive ? (wiredConn || "Ethernet") : (wifiRadio ? (wifiConn || "Disconnected") : "Radio off")
-                            color: "#88888E"
-                            font.family: "Outfit"
-                            font.pixelSize: 9
-                            elide: Text.ElideRight
                             Layout.fillWidth: true
+                            text: activeType === "wired"
+                                ? (wiredConn || "Wired")
+                                : (wifiActive ? (wifiConn || "Wi-Fi") : "Disconnected")
+                            color: root.uiFgFaint
+                            font.family: root.uiFont
+                            font.pixelSize: 10
+                            elide: Text.ElideRight
                         }
                     }
 
-                    Rectangle {
-                        width: 26; height: 26; radius: 8
-                        color: "#08FFFFFF"
-                        Text { anchors.centerIn: parent; text: "\uf054"; color: "#8A8A90"; font.family: root.font; font.pixelSize: 9 }
+                    Text {
+                        text: "\uf054"
+                        color: root.uiFgFaint
+                        font.family: root.font
+                        font.pixelSize: 8
                     }
                 }
 
                 MouseArea {
+                    id: netArea
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onPressed: parent.press = 0.97
+                    onPressed: parent.press = 0.98
                     onReleased: parent.press = 1.0
                     onClicked: { currentView = "network"; refreshNetwork() }
                 }
             }
 
+            // Bluetooth
             Rectangle {
-id: btTile
+                id: btTile
                 Layout.fillWidth: true
-                Layout.preferredHeight: 54
-                radius: 16
-                color: btPowered ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.13) : "#0AFFFFFF"
-                border.color: btPowered ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.35) : "#14FFFFFF"
+                Layout.fillHeight: true
+                radius: 14
+                color: btArea.containsMouse ? "#10FFFFFF" : root.uiCard
                 border.width: 1
+                border.color: btArea.containsMouse ? root.uiBorderStrong : root.uiBorder
+                Behavior on color { ColorAnimation { duration: 130 } }
+
                 property real press: 1.0
                 transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: btTile.press; yScale: btTile.press }
-                Behavior on press { NumberAnimation { duration: 120; easing.type: Easing.OutBack } }
+                Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
 
                 RowLayout {
                     anchors.fill: parent
@@ -482,88 +573,100 @@ id: btTile
                     spacing: 9
 
                     Rectangle {
-                        width: 34; height: 34; radius: 11
-                        color: btPowered ? themeAccent : "#17171B"
+                        width: 30; height: 30; radius: 9
+                        color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.13)
                         Text {
                             anchors.centerIn: parent
                             text: "\uf293"
-                            color: btPowered ? "#0F0F14" : "#55555A"
+                            color: themeAccent
                             font.family: root.font
-                            font.pixelSize: 14
+                            font.pixelSize: 13
                         }
                     }
 
                     ColumnLayout {
                         Layout.fillWidth: true
-                        spacing: 1
+                        spacing: 0
+
                         Text {
                             text: "Bluetooth"
-                            color: "#FFFFFF"
-                            font.family: "Outfit"
-                            font.pixelSize: 11
-                            font.weight: Font.Bold
+                            color: root.uiFg
+                            font.family: root.uiFont
+                            font.pixelSize: 12
+                            font.weight: Font.Medium
                         }
                         Text {
                             text: btPowered ? "On" : "Off"
-                            color: btPowered ? "#88888E" : "#55555A"
-                            font.family: "Outfit"
-                            font.pixelSize: 9
-                            Layout.fillWidth: true
+                            color: root.uiFgFaint
+                            font.family: root.uiFont
+                            font.pixelSize: 10
                         }
                     }
 
-                    Rectangle {
-                        width: 26; height: 26; radius: 8
-                        color: "#08FFFFFF"
-                        Text { anchors.centerIn: parent; text: "\uf054"; color: "#8A8A90"; font.family: root.font; font.pixelSize: 9 }
+                    Text {
+                        text: "\uf054"
+                        color: root.uiFgFaint
+                        font.family: root.font
+                        font.pixelSize: 8
                     }
                 }
 
                 MouseArea {
+                    id: btArea
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onPressed: parent.press = 0.97
+                    onPressed: parent.press = 0.98
                     onReleased: parent.press = 1.0
                     onClicked: { currentView = "bt"; refreshBluetooth() }
                 }
             }
         }
 
-        // ───────────────── Quick toggles ─────────────────────────
+        // ── Quick toggles (compact) ──────────────────────────────
         RowLayout {
             Layout.fillWidth: true
+            Layout.preferredHeight: 44
+            Layout.minimumHeight: 44
+            Layout.maximumHeight: 44
             spacing: 8
 
             // Caffeine
             Rectangle {
-id: caffeineTile
+                id: caffeineTile
                 Layout.fillWidth: true
-                Layout.preferredHeight: 40
-                radius: 14
-                color: caffeineEnabled ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.18) : (caffArea.containsMouse ? "#10FFFFFF" : "#0AFFFFFF")
-                border.color: caffeineEnabled ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.45) : "transparent"
+                Layout.fillHeight: true
+                radius: 12
+                color: caffeineEnabled
+                    ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.16)
+                    : (caffArea.containsMouse ? "#10FFFFFF" : root.uiCard)
                 border.width: 1
+                border.color: caffeineEnabled
+                    ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.38)
+                    : root.uiBorder
+                Behavior on color { ColorAnimation { duration: 140 } }
+
                 property real press: 1.0
                 transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: caffeineTile.press; yScale: caffeineTile.press }
                 Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
-                Behavior on color { ColorAnimation { duration: 150 } }
 
-                RowLayout {
+                ColumnLayout {
                     anchors.centerIn: parent
-                    spacing: 5
+                    spacing: 1
                     Text {
+                        Layout.alignment: Qt.AlignHCenter
                         text: "\uf0f4"
-                        color: caffeineEnabled ? themeAccent : "#55555A"
+                        color: caffeineEnabled ? themeAccent : root.uiFgFaint
                         font.family: root.font
                         font.pixelSize: 13
                     }
                     Text {
+                        Layout.alignment: Qt.AlignHCenter
                         text: "Caffeine"
-                        color: caffeineEnabled ? "#FFFFFF" : "#77777C"
-                        font.family: "Outfit"
-                        font.pixelSize: 10
-                        font.weight: caffeineEnabled ? Font.Bold : Font.Medium
+                        color: caffeineEnabled ? root.uiFg : root.uiFgDim
+                        font.family: root.uiFont
+                        font.pixelSize: 9
+                        font.weight: caffeineEnabled ? Font.DemiBold : Font.Medium
                     }
                 }
 
@@ -580,33 +683,40 @@ id: caffeineTile
 
             // Night Light
             Rectangle {
-id: nightLightTile
+                id: nightLightTile
                 Layout.fillWidth: true
-                Layout.preferredHeight: 40
-                radius: 14
-                color: nightLightEnabled ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.18) : (nightArea.containsMouse ? "#10FFFFFF" : "#0AFFFFFF")
-                border.color: nightLightEnabled ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.45) : "transparent"
+                Layout.fillHeight: true
+                radius: 12
+                color: nightLightEnabled
+                    ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.16)
+                    : (nightArea.containsMouse ? "#10FFFFFF" : root.uiCard)
                 border.width: 1
+                border.color: nightLightEnabled
+                    ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.38)
+                    : root.uiBorder
+                Behavior on color { ColorAnimation { duration: 140 } }
+
                 property real press: 1.0
                 transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: nightLightTile.press; yScale: nightLightTile.press }
                 Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
-                Behavior on color { ColorAnimation { duration: 150 } }
 
-                RowLayout {
+                ColumnLayout {
                     anchors.centerIn: parent
-                    spacing: 5
+                    spacing: 1
                     Text {
+                        Layout.alignment: Qt.AlignHCenter
                         text: "\uf186"
-                        color: nightLightEnabled ? themeAccent : "#55555A"
+                        color: nightLightEnabled ? themeAccent : root.uiFgFaint
                         font.family: root.font
                         font.pixelSize: 13
                     }
                     Text {
+                        Layout.alignment: Qt.AlignHCenter
                         text: "Night Light"
-                        color: nightLightEnabled ? "#FFFFFF" : "#77777C"
-                        font.family: "Outfit"
-                        font.pixelSize: 10
-                        font.weight: nightLightEnabled ? Font.Bold : Font.Medium
+                        color: nightLightEnabled ? root.uiFg : root.uiFgDim
+                        font.family: root.uiFont
+                        font.pixelSize: 9
+                        font.weight: nightLightEnabled ? Font.DemiBold : Font.Medium
                     }
                 }
 
@@ -623,33 +733,40 @@ id: nightLightTile
 
             // Do Not Disturb
             Rectangle {
-id: dndTile
+                id: dndTile
                 Layout.fillWidth: true
-                Layout.preferredHeight: 40
-                radius: 14
-                color: root.dndEnabled ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.18) : (dndArea.containsMouse ? "#10FFFFFF" : "#0AFFFFFF")
-                border.color: root.dndEnabled ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.45) : "transparent"
+                Layout.fillHeight: true
+                radius: 12
+                color: root.dndEnabled
+                    ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.16)
+                    : (dndArea.containsMouse ? "#10FFFFFF" : root.uiCard)
                 border.width: 1
+                border.color: root.dndEnabled
+                    ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.38)
+                    : root.uiBorder
+                Behavior on color { ColorAnimation { duration: 140 } }
+
                 property real press: 1.0
                 transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: dndTile.press; yScale: dndTile.press }
                 Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
-                Behavior on color { ColorAnimation { duration: 150 } }
 
-                RowLayout {
+                ColumnLayout {
                     anchors.centerIn: parent
-                    spacing: 5
+                    spacing: 1
                     Text {
+                        Layout.alignment: Qt.AlignHCenter
                         text: "\uf0f3"
-                        color: root.dndEnabled ? themeAccent : "#55555A"
+                        color: root.dndEnabled ? themeAccent : root.uiFgFaint
                         font.family: root.font
                         font.pixelSize: 13
                     }
                     Text {
+                        Layout.alignment: Qt.AlignHCenter
                         text: "Do Not Disturb"
-                        color: root.dndEnabled ? "#FFFFFF" : "#77777C"
-                        font.family: "Outfit"
-                        font.pixelSize: 10
-                        font.weight: root.dndEnabled ? Font.Bold : Font.Medium
+                        color: root.dndEnabled ? root.uiFg : root.uiFgDim
+                        font.family: root.uiFont
+                        font.pixelSize: 9
+                        font.weight: root.dndEnabled ? Font.DemiBold : Font.Medium
                     }
                 }
 
@@ -666,33 +783,40 @@ id: dndTile
 
             // Mic
             Rectangle {
-id: micTile
+                id: micTile
                 Layout.fillWidth: true
-                Layout.preferredHeight: 40
-                radius: 14
-                color: micMuted ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.18) : (micArea.containsMouse ? "#10FFFFFF" : "#0AFFFFFF")
-                border.color: micMuted ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.45) : "transparent"
+                Layout.fillHeight: true
+                radius: 12
+                color: micMuted
+                    ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.16)
+                    : (micArea.containsMouse ? "#10FFFFFF" : root.uiCard)
                 border.width: 1
+                border.color: micMuted
+                    ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.38)
+                    : root.uiBorder
+                Behavior on color { ColorAnimation { duration: 140 } }
+
                 property real press: 1.0
                 transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: micTile.press; yScale: micTile.press }
                 Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
-                Behavior on color { ColorAnimation { duration: 150 } }
 
-                RowLayout {
+                ColumnLayout {
                     anchors.centerIn: parent
-                    spacing: 5
+                    spacing: 1
                     Text {
+                        Layout.alignment: Qt.AlignHCenter
                         text: micMuted ? "\uf131" : "\uf130"
-                        color: micMuted ? themeAccent : "#55555A"
+                        color: micMuted ? themeAccent : root.uiFgFaint
                         font.family: root.font
                         font.pixelSize: 13
                     }
                     Text {
+                        Layout.alignment: Qt.AlignHCenter
                         text: micMuted ? "Muted" : "Mic"
-                        color: micMuted ? "#FFFFFF" : "#77777C"
-                        font.family: "Outfit"
-                        font.pixelSize: 10
-                        font.weight: micMuted ? Font.Bold : Font.Medium
+                        color: micMuted ? root.uiFg : root.uiFgDim
+                        font.family: root.uiFont
+                        font.pixelSize: 9
+                        font.weight: micMuted ? Font.DemiBold : Font.Medium
                     }
                 }
 
@@ -708,183 +832,195 @@ id: micTile
             }
         }
 
-        // ───────────────── Sliders (brightness + volume) ─────────
-        // Brightness
+        // ── Sliders (compact) ────────────────────────────────────
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: 32
-            radius: 12
-            color: "#0AFFFFFF"
+            Layout.preferredHeight: 76
+            radius: 14
+            color: root.uiCard
+            border.width: 1
+            border.color: root.uiBorder
 
-            RowLayout {
+            ColumnLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 10
-                anchors.rightMargin: 10
+                anchors.margins: 10
                 spacing: 8
 
-                Text { text: "\uf185"; color: themeAccent; font.family: root.font; font.pixelSize: 12 }
-
-                Item {
+                // Brightness
+                RowLayout {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 20
+                    Layout.fillHeight: true
+                    spacing: 9
 
-                    Rectangle {
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        height: 6; radius: 3.5; color: "#14FFFFFF"
+                    Text {
+                        text: "\uf185"
+                        color: root.uiFgDim
+                        font.family: root.font
+                        font.pixelSize: 12
+                        Layout.preferredWidth: 14
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width
+                            height: 4; radius: 2
+                            color: "#1AFFFFFF"
+                        }
+
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            height: 4; radius: 2
+                            width: (parent.width - 12) * (brightnessValue / 100)
+                            color: themeAccent
+                        }
+
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            x: Math.max(0, Math.min(parent.width - width, (parent.width - 12) * (brightnessValue / 100)))
+                            width: brightDrag.pressed ? 14 : 12
+                            height: width; radius: width / 2
+                            color: "#FFFFFF"
+                            Behavior on width { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
+                        }
+
+                        MouseArea {
+                            id: brightDrag
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            property bool dragging: false
+                            onPressed: (mouse) => { dragging = true; setBrightness((mouse.x / parent.width) * 100) }
+                            onReleased: dragging = false
+                            onPositionChanged: (mouse) => { if (dragging) setBrightness((mouse.x / parent.width) * 100) }
+                        }
                     }
 
                     Rectangle {
-                        height: 6; radius: 3.5
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.left: parent.left
-                        width: (parent.width - 16) * (brightnessValue / 100)
-                        color: themeAccent
-                    }
-
-                    Rectangle {
-                        id: brightThumb
-                        anchors.verticalCenter: parent.verticalCenter
-                        x: Math.max(0, Math.min(parent.width - width, (parent.width - 16) * (brightnessValue / 100)))
-                        width: brightDrag.pressed ? 15 : 11
-                        height: width; radius: width / 2
-                        color: "#FFFFFF"
-                        Behavior on width { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
-                    }
-
-                    MouseArea {
-                        id: brightDrag
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        property bool dragging: false
-                        onPressed: (mouse) => { dragging = true; setBrightness((mouse.x / parent.width) * 100) }
-                        onReleased: dragging = false
-                        onPositionChanged: (mouse) => { if (dragging) setBrightness((mouse.x / parent.width) * 100) }
+                        width: 36; height: 20; radius: 6
+                        color: "#10FFFFFF"
+                        border.width: 1
+                        border.color: "#18FFFFFF"
+                        Text {
+                            anchors.centerIn: parent
+                            text: Math.round(brightnessValue) + "%"
+                            color: root.uiFgDim
+                            font.family: root.uiFont
+                            font.pixelSize: 9
+                            font.weight: Font.Medium
+                        }
                     }
                 }
 
-                Text {
-                    text: Math.round(brightnessValue) + "%"
-                    color: "#77777C"
-                    font.family: "Outfit"
-                    font.pixelSize: 10
-                    Layout.preferredWidth: 30
-                    horizontalAlignment: Text.AlignRight
+                // Volume
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    spacing: 9
+
+                    Text {
+                        text: "\uf028"
+                        color: root.uiFgDim
+                        font.family: root.font
+                        font.pixelSize: 12
+                        Layout.preferredWidth: 14
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width
+                            height: 4; radius: 2
+                            color: "#1AFFFFFF"
+                        }
+
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            height: 4; radius: 2
+                            width: (parent.width - 12) * (volumeValue / 100)
+                            color: themeAccent
+                        }
+
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            x: Math.max(0, Math.min(parent.width - width, (parent.width - 12) * (volumeValue / 100)))
+                            width: volDrag.pressed ? 14 : 12
+                            height: width; radius: width / 2
+                            color: "#FFFFFF"
+                            Behavior on width { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
+                        }
+
+                        MouseArea {
+                            id: volDrag
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            property bool dragging: false
+                            onPressed: (mouse) => { dragging = true; setVolume((mouse.x / parent.width) * 100) }
+                            onReleased: dragging = false
+                            onPositionChanged: (mouse) => { if (dragging) setVolume((mouse.x / parent.width) * 100) }
+                        }
+                    }
+
+                    Rectangle {
+                        width: 36; height: 20; radius: 6
+                        color: "#10FFFFFF"
+                        border.width: 1
+                        border.color: "#18FFFFFF"
+                        Text {
+                            anchors.centerIn: parent
+                            text: Math.round(volumeValue) + "%"
+                            color: root.uiFgDim
+                            font.family: root.uiFont
+                            font.pixelSize: 9
+                            font.weight: Font.Medium
+                        }
+                    }
                 }
             }
         }
 
-        // Volume
+        // ── Screen record (only while a recorder is available) ───
         Rectangle {
+            id: recordTile
             Layout.fillWidth: true
             Layout.preferredHeight: 32
-            radius: 12
-            color: "#0AFFFFFF"
-
-            RowLayout {
-                anchors.fill: parent
-                anchors.leftMargin: 10
-                anchors.rightMargin: 10
-                spacing: 8
-
-                Text {
-                    text: volumeValue === 0 ? "\uf6a9" : "\uf028"
-                    color: themeAccent
-                    font.family: root.font
-                    font.pixelSize: 12
-                }
-
-                Item {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 20
-
-                    Rectangle {
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        height: 6; radius: 3.5; color: "#14FFFFFF"
-                    }
-
-                    Rectangle {
-                        height: 6; radius: 3.5
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.left: parent.left
-                        width: (parent.width - 16) * (volumeValue / 100)
-                        color: themeAccent
-                    }
-
-                    Rectangle {
-                        anchors.verticalCenter: parent.verticalCenter
-                        x: Math.max(0, Math.min(parent.width - width, (parent.width - 16) * (volumeValue / 100)))
-                        width: volDrag.pressed ? 15 : 11
-                        height: width; radius: width / 2
-                        color: "#FFFFFF"
-                        Behavior on width { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
-                    }
-
-                    MouseArea {
-                        id: volDrag
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        property bool dragging: false
-                        onPressed: (mouse) => { dragging = true; setVolume((mouse.x / parent.width) * 100) }
-                        onReleased: dragging = false
-                        onPositionChanged: (mouse) => { if (dragging) setVolume((mouse.x / parent.width) * 100) }
-                    }
-                }
-
-                Text {
-                    text: Math.round(volumeValue) + "%"
-                    color: "#77777C"
-                    font.family: "Outfit"
-                    font.pixelSize: 10
-                    Layout.preferredWidth: 30
-                    horizontalAlignment: Text.AlignRight
-                }
-            }
-        }
-
-        // ───────────────── Screen record ─────────────────────────
-        Rectangle {
-id: recordTile
-            Layout.fillWidth: true
-            Layout.preferredHeight: 34
-            radius: 12
+            radius: 11
             visible: recorderMode !== "none"
-            color: recArea.containsMouse ? "#10FFFFFF" : "#0AFFFFFF"
-            border.color: recordingActive ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.35) : "transparent"
-            border.width: recordingActive ? 1 : 0
+            color: recArea.containsMouse ? "#10FFFFFF" : root.uiCard
+            border.width: 1
+            border.color: recordingActive
+                ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.35)
+                : root.uiBorder
             property real press: 1.0
             transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: recordTile.press; yScale: recordTile.press }
             Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 10
+                anchors.leftMargin: 12
                 anchors.rightMargin: 10
                 spacing: 8
 
                 Text {
                     text: recordingActive ? "\uf111" : "\uf03d"
-                    color: recordingActive ? "#EF4444" : "#77777C"
+                    color: recordingActive ? "#EF4444" : root.uiFgFaint
                     font.family: root.font
                     font.pixelSize: 11
                 }
                 Text {
                     text: recordingActive ? "Recording in progress" : "Screen Record"
-                    color: recordingActive ? "#FFFFFF" : "#A0A0A6"
-                    font.family: "Outfit"
+                    color: recordingActive ? root.uiFg : root.uiFgDim
+                    font.family: root.uiFont
                     font.pixelSize: 10
-                    font.weight: recordingActive ? Font.Bold : Font.Medium
+                    font.weight: recordingActive ? Font.DemiBold : Font.Medium
                     Layout.fillWidth: true
-                }
-
-                Text {
-                    text: recorderMode === "ui" ? "gsr-ui" : "gpu-screen-recorder"
-                    color: "#44444A"
-                    font.family: "Outfit"
-                    font.pixelSize: 9
                 }
             }
 
@@ -893,149 +1029,242 @@ id: recordTile
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onPressed: parent.press = 0.97
+                onPressed: parent.press = 0.98
                 onReleased: parent.press = 1.0
                 onClicked: toggleRecord()
             }
         }
 
-        // ───────────────── Notifications ─────────────────────────
-        ColumnLayout {
+        // ── Notification shade (the main event) ──────────────────
+        Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            spacing: 6
+            radius: root.uiRadiusMd
+            color: "#07FFFFFF"
+            border.width: 1
+            border.color: "#12FFFFFF"
 
-            RowLayout {
-                Layout.fillWidth: true
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 12
+                spacing: 8
 
-                Text { text: "\uf0f3"; color: themeAccent; font.family: root.font; font.pixelSize: 11 }
-                Text { text: "Notifications"; color: "#FFFFFF"; font.family: "Outfit"; font.pixelSize: 12; font.weight: Font.Bold }
-                Item { Layout.fillWidth: true }
-
-                Text {
-                    text: root.notificationList.length > 0 ? root.notificationList.length : ""
-                    color: themeAccent
-                    font.family: "Outfit"
-                    font.pixelSize: 10
-                    font.weight: Font.SemiBold
-                }
-
-                Rectangle {
-                    visible: root.notificationList.length > 0
-                    width: 22; height: 22; radius: 7
-                    color: clearArea.containsMouse ? "#22EF4444" : "transparent"
-                    Text { anchors.centerIn: parent; text: "\uf00d"; color: clearArea.containsMouse ? "#EF4444" : "#55555A"; font.family: root.font; font.pixelSize: 9 }
-                    MouseArea {
-                        id: clearArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.clearAllNotifications()
-                    }
-                }
-            }
-
-            Item {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-
-                // Empty state
-                ColumnLayout {
-                    anchors.centerIn: parent
-                    spacing: 4
-                    visible: root.notificationList.length === 0
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 20
+                    spacing: 6
 
                     Text {
-                        Layout.alignment: Qt.AlignHCenter
                         text: "\uf0f3"
-                        color: "#1EFFFFFF"
+                        color: themeAccent
                         font.family: root.font
-                        font.pixelSize: 20
+                        font.pixelSize: 11
                     }
                     Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: "Nothing yet"
-                        color: "#33333A"
-                        font.family: "Outfit"
+                        text: "Notifications"
+                        color: root.uiFg
+                        font.family: root.uiFont
+                        font.pixelSize: 12
+                        font.weight: Font.DemiBold
+                    }
+
+                    Rectangle {
+                        visible: root.notificationList.length > 0
+                        height: 16
+                        implicitWidth: countText.implicitWidth + 10
+                        radius: 8
+                        color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14)
+                        Text {
+                            id: countText
+                            anchors.centerIn: parent
+                            text: root.notificationList.length
+                            color: themeAccent
+                            font.family: root.uiFont
+                            font.pixelSize: 9
+                            font.weight: Font.DemiBold
+                        }
+                    }
+
+                    Item { Layout.fillWidth: true }
+
+                    Text {
+                        visible: root.notificationList.length > 0
+                        text: "Clear all"
+                        color: clearArea.containsMouse ? "#FF8A8A" : root.uiFgFaint
+                        font.family: root.uiFont
                         font.pixelSize: 10
+                        font.weight: Font.Medium
+                        Behavior on color { ColorAnimation { duration: 120 } }
+
+                        MouseArea {
+                            id: clearArea
+                            anchors.fill: parent
+                            anchors.margins: -4
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.clearAllNotifications()
+                        }
                     }
                 }
 
-                ListView {
-                    anchors.fill: parent
-                    visible: root.notificationList.length > 0
-                    model: root.notificationList.length
-                    spacing: 5
-                    clip: true
-                    boundsBehavior: Flickable.StopAtBounds
+                Item {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
 
-                    delegate: Rectangle {
-                        width: ListView.view.width
-                        height: 46
-                        radius: 12
-                        color: "#0AFFFFFF"
-                        border.color: "#0EFFFFFF"
-                        border.width: 1
+                    // Empty state
+                    ColumnLayout {
+                        anchors.centerIn: parent
+                        spacing: 4
+                        visible: root.notificationList.length === 0
 
-                        property var notif: root.notificationList[index] || {}
+                        Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: "\uf0f3"
+                            color: "#20FFFFFF"
+                            font.family: root.font
+                            font.pixelSize: 18
+                        }
+                        Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: "You\u2019re all caught up"
+                            color: root.uiFgDim
+                            font.family: root.uiFont
+                            font.pixelSize: 12
+                            font.weight: Font.Medium
+                        }
+                        Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: "New notifications will appear here"
+                            color: root.uiFgFaint
+                            font.family: root.uiFont
+                            font.pixelSize: 10
+                        }
+                    }
 
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 10
-                            anchors.rightMargin: 8
-                            spacing: 10
+                    // The shade list: always fills the space it is given and
+                    // scrolls once the history is longer than the viewport.
+                    ListView {
+                        id: notifList
+                        anchors.fill: parent
+                        anchors.rightMargin: 8
+                        visible: root.notificationList.length > 0
+                        model: root.notificationList.length
+                        spacing: 6
+                        clip: true
+                        boundsBehavior: Flickable.StopAtBounds
 
-                            Rectangle {
-                                width: 28; height: 28; radius: 9
-                                color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14)
-                                Text { anchors.centerIn: parent; text: "\uf1d7"; color: themeAccent; font.family: root.font; font.pixelSize: 12 }
+                        ScrollBar.vertical: ScrollBar {
+                            // AsNeeded can leave a full-height thumb when the list
+                            // happens to fit; drive visibility from the actual geometry.
+                            policy: notifList.contentHeight > notifList.height + 1
+                                    ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+                            contentItem: Rectangle {
+                                implicitWidth: 3
+                                radius: 1.5
+                                color: "#40FFFFFF"
                             }
+                        }
 
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 1
-                                Text {
-                                    text: notif.app || "Notification"
-                                    color: themeAccent
-                                    font.family: "Outfit"
-                                    font.pixelSize: 8
-                                    font.weight: Font.Bold
-                                }
-                                Text {
-                                    text: notif.summary || ""
-                                    color: "#F0F0F2"
-                                    font.family: "Outfit"
-                                    font.pixelSize: 10
-                                    font.weight: Font.SemiBold
-                                    elide: Text.ElideRight
-                                    Layout.fillWidth: true
-                                }
-                                Text {
-                                    text: notif.body || ""
-                                    color: "#77777C"
-                                    font.family: "Outfit"
-                                    font.pixelSize: 9
-                                    elide: Text.ElideRight
-                                    Layout.fillWidth: true
-                                }
-                            }
+                        delegate: Rectangle {
+                            width: ListView.view.width
+                            height: 68
+                            radius: 12
+                            color: notifHover.hovered ? "#12FFFFFF" : "#0AFFFFFF"
+                            border.width: 1
+                            border.color: notifHover.hovered ? "#20FFFFFF" : "#12FFFFFF"
 
-                            Rectangle {
-                                width: 20; height: 20; radius: 6
-                                color: dismissArea.containsMouse ? "#22EF4444" : "transparent"
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "\uf00d"
-                                    color: dismissArea.containsMouse ? "#EF4444" : "#4A4A50"
-                                    font.family: root.font
-                                    font.pixelSize: 8
+                            property var notif: root.notificationList[index] || {}
+
+                            HoverHandler { id: notifHover }
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 8
+                                anchors.topMargin: 8
+                                anchors.bottomMargin: 8
+                                spacing: 10
+
+                                Rectangle {
+                                    width: 30; height: 30; radius: 9
+                                    Layout.alignment: Qt.AlignTop
+                                    color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.12)
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "\uf1d7"
+                                        color: themeAccent
+                                        font.family: root.font
+                                        font.pixelSize: 12
+                                    }
                                 }
-                                MouseArea {
-                                    id: dismissArea
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.clearNotification(notif.id)
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 0
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 6
+
+                                        Text {
+                                            Layout.fillWidth: true
+                                            text: notif.app || "Notification"
+                                            color: themeAccent
+                                            font.family: root.uiFont
+                                            font.pixelSize: 9
+                                            font.weight: Font.DemiBold
+                                            elide: Text.ElideRight
+                                        }
+                                        Text {
+                                            text: notif.time ? Qt.formatTime(notif.time, "HH:mm") : ""
+                                            color: root.uiFgFaint
+                                            font.family: root.uiFont
+                                            font.pixelSize: 9
+                                        }
+                                    }
+
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: notif.summary || ""
+                                        color: root.uiFg
+                                        font.family: root.uiFont
+                                        font.pixelSize: 12
+                                        font.weight: Font.DemiBold
+                                        elide: Text.ElideRight
+                                        maximumLineCount: 1
+                                    }
+
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: notif.body || ""
+                                        color: root.uiFgDim
+                                        font.family: root.uiFont
+                                        font.pixelSize: 10
+                                        wrapMode: Text.Wrap
+                                        maximumLineCount: 2
+                                        elide: Text.ElideRight
+                                    }
+                                }
+
+                                Rectangle {
+                                    width: 22; height: 22; radius: 7
+                                    Layout.alignment: Qt.AlignTop
+                                    color: dismissArea.containsMouse ? "#22EF4444" : "transparent"
+                                    Behavior on color { ColorAnimation { duration: 120 } }
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "\uf00d"
+                                        color: dismissArea.containsMouse ? "#EF4444" : root.uiFgFaint
+                                        font.family: root.font
+                                        font.pixelSize: 8
+                                    }
+                                    MouseArea {
+                                        id: dismissArea
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.clearNotification(notif.id)
+                                    }
                                 }
                             }
                         }
@@ -1044,6 +1273,7 @@ id: recordTile
             }
         }
     }
+
 
     // ════════════════════════════════════════════════════════════════
     // │ NETWORK & WI-FI SUB-VIEW
@@ -1562,5 +1792,77 @@ id: powerTile
             font.family: "Outfit"
             font.pixelSize: 9
         }
+    }
+
+    // ── In-island action confirmation ──────────────────────────
+    // Stays inside the open control center (unlike the notification
+    // toast, which would replace the panel), so multiple toggles can be
+    // flipped without reopening the shade.
+    Rectangle {
+        id: actionToast
+        z: 100
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 18
+        width: actionRow.implicitWidth + 26
+        height: 36
+        radius: 12
+        color: "#F20B0B0F"
+        border.width: 1
+        border.color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.45)
+        opacity: controlPanel.actionVisible ? 1 : 0
+        visible: opacity > 0
+        Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+
+        RowLayout {
+            id: actionRow
+            anchors.centerIn: parent
+            spacing: 8
+
+            Rectangle {
+                width: 20; height: 20; radius: 7
+                color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.16)
+                Text {
+                    anchors.centerIn: parent
+                    text: "\uf00c"
+                    color: themeAccent
+                    font.family: root.font
+                    font.pixelSize: 9
+                }
+            }
+
+            ColumnLayout {
+                spacing: 0
+
+                Text {
+                    text: controlPanel.actionTitle
+                    color: root.uiFg
+                    font.family: root.uiFont
+                    font.pixelSize: 11
+                    font.weight: Font.DemiBold
+                }
+                Text {
+                    visible: text.length > 0
+                    text: controlPanel.actionSub
+                    color: root.uiFgFaint
+                    font.family: root.uiFont
+                    font.pixelSize: 9
+                }
+            }
+        }
+    }
+
+    // Small IPC surface so scripts/keybinds can use the same toggles.
+    IpcHandler {
+        target: "control"
+
+        function toggleCaffeine() { controlPanel.toggleCaffeine() }
+        function toggleNightLight() { controlPanel.toggleNightLight() }
+        function toggleDnd() { controlPanel.toggleDnd() }
+        function toggleMic() { controlPanel.toggleMic() }
+        function clearNotifications() { root.clearAllNotifications() }
+        function showNetwork() { controlPanel.currentView = "network"; controlPanel.refreshNetwork() }
+        function showBluetooth() { controlPanel.currentView = "bt"; controlPanel.refreshBluetooth() }
+        function showMain() { controlPanel.currentView = "main" }
     }
 }

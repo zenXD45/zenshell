@@ -44,15 +44,15 @@ fi
 case "$ACTIVE_THEME" in
     matugen)
         if ! command -v matugen &> /dev/null; then
-            notify-send "󰟡 HyprZen" "matugen is not installed — theme unchanged" --icon=dialog-error 2>/dev/null || true
+            notify-send -a "HyprZen" "Theme unchanged" "matugen is not installed." --icon=dialog-error 2>/dev/null || true
         elif matugen -c "$HOME/.config/matugen/config.toml" image "$WALL" --prefer saturation --source-color-index 0 >/dev/null 2>&1; then
             python3 "$SCRIPT_DIR/gen-themes.py" >/dev/null 2>&1
             ln -sfn "$HOME/.config/hypr/themes/matugen.css" "$HOME/.config/hypr/themes/current.css"
             hyprctl reload 2>/dev/null || true
             pkill -SIGUSR1 kitty 2>/dev/null || true
-            notify-send "󰟡 HyprZen" "Material You colors applied!" --icon=color-select 2>/dev/null || true
+            notify-send -a "HyprZen" "Material You colors applied" "Shell, GTK, kitty and Hyprland updated." --icon=color-select 2>/dev/null || true
         else
-            notify-send "󰟡 HyprZen" "Material You generation failed" --icon=dialog-error 2>/dev/null || true
+            notify-send -a "HyprZen" "Theme generation failed" "Matugen could not build a palette." --icon=dialog-error 2>/dev/null || true
         fi
         ;;
     dynamic)

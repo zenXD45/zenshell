@@ -300,6 +300,14 @@ hl.layer_rule({
     ignore_alpha = 0.2,
 })
 
+-- Quickshell island + overlay panels: blur only behind the pill body.
+-- ignore_alpha keeps the transparent full-screen layer from blurring.
+hl.layer_rule({
+    match = { namespace = "^(qs-island)$" },
+    blur = true,
+    ignore_alpha = 0.15,
+})
+
 -- ── Quickshell Wallpaper Picker ───────────────────────────────
 
 -- ── Quickshell Wallpaper Picker ───────────────────────────────
