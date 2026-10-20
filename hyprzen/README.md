@@ -72,14 +72,12 @@ Standalone, on **Arch Linux** or an Arch derivative (CachyOS, EndeavourOS,
 Manjaro, Garuda):
 
 ```bash
-./setup.sh    # packages, AUR deps, fonts
-./install.sh  # symlink .config/* into ~/.config, link ~/scripts, copy wallpapers
+./setup.sh    # compatibility shim → ../install.sh (packages, fonts, symlinks, ZenShell)
 ```
 
 Then `hyprctl reload`, or `SUPER + CTRL + R`.
 
-`setup.sh` and `install.sh` are both idempotent — re-running them skips what's
-already in place.
+The installer is idempotent — re-running it skips what's already in place.
 
 ## Keybinds
 
@@ -160,7 +158,7 @@ hyprzen/
 │   └── caffeine.sh
 ├── wallpapers/          # per-theme wallpaper folders
 ├── install.sh           # symlink configs into ~/.config
-└── setup.sh             # packages, AUR deps, fonts
+└── setup.sh             # compatibility shim → ../install.sh
 ```
 
 ## Notes

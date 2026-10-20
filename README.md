@@ -82,7 +82,7 @@ Then log into the `Hyprland` session (or `hyprctl reload`). ZenShell autostarts 
 What `install.sh` does:
 
 1. Installs official packages — Hyprland, kitty, pipewire, `firefox`, `thunar`, `vscodium`, the toolchain and more. **No waybar, no rofi, no swaync**; the island and dock are the UI.
-2. Installs an AUR helper (`paru`, falling back to `yay`) and the AUR packages: `quickshell-git`, `matugen`, `hyprswitch`, `satty`, `hyprshot`, `waypaper`, `wlogout`, `pywal`, `adw-gtk3`, `bibata-cursor-theme`. **Failures warn, they don't abort.**
+2. Installs an AUR helper (`paru`, falling back to `yay`) and the AUR-only packages: `hyprswitch`, `bibata-cursor-theme`, `pywal`. Everything else the theme pipeline needs — `quickshell`, `matugen`, `wlogout`, `satty`, `hyprshot`, `waypaper`, `adw-gtk-theme`, `awww` — is in the official repos. **Failures warn, they don't abort.**
 3. Downloads and caches **GeistMono Nerd Font** + **Outfit**.
 4. Adds and enables the **scroll-overview** `hyprpm` plugin.
 5. Detects NVIDIA and installs `nvidia-dkms` / `nvidia-utils`.
@@ -95,12 +95,11 @@ What `install.sh` does:
 
 ### Manual
 
-If you'd rather run the pieces yourself, keep this order — ZenShell calls HyprZen's `theme-switch.sh`:
+If you'd rather run things yourself, the top-level installer is the only entry point — `hyprzen/setup.sh` is now a compatibility shim that runs it:
 
 ```bash
-cd hyprzen  && ./setup.sh   # deps + symlinks
-cd zenshell && ./install.sh # Quickshell suite
-# then: hyprctl reload   (or SUPER+CTRL+R)
+./install.sh            # packages, symlinks, ZenShell, default theme
+# then: hyprctl reload  (or SUPER+CTRL+R)
 ```
 
 ## ⌨️ Keybinds

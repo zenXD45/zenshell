@@ -93,7 +93,16 @@ OFFICIAL_PKGS=(
     # ZenShell Qt runtime (Qt5Compat.GraphicalEffects used by the island/dock)
     qt6-5compat
     # Wallpaper / theme pipeline (pywal itself moved to the AUR — see AUR_PKGS)
-    awww imagemagick
+    awww imagemagick matugen
+    # Wallpaper / screenshot helpers bound in the keybinds
+    waypaper satty hyprshot
+    # ZenShell's compositor runtime. This used to be `quickshell-git` in the AUR
+    # because Noctalia's fork (noctalia-qs) had replaced upstream; upstream
+    # quickshell is in extra now, so a fresh install neither builds from the AUR
+    # nor drags Noctalia back in.
+    quickshell
+    # Lock/logout UI
+    wlogout
     # Terminal apps
     btop fastfetch cava thunar neovim
     # Desktop apps bound in modules/keybinds.lua (SUPER+B / SUPER+E / SUPER+C).
@@ -101,15 +110,17 @@ OFFICIAL_PKGS=(
     firefox vscodium
     # Shell tools (used by the zsh aliases / fzf-tab)
     eza bat fzf
-    # Toolchain (needed by AUR builds: matugen, quickshell)
+    # Toolchain (only needed for the few AUR builds — hyprswitch, pywal)
     base-devel git cmake cpio pkgconf gcc make unzip wget curl jq npm ripgrep fd rust
     # Networks
     impala
     # Fonts / GTK theming
-    # adw-gtk3 dropped from the official repos in 2026 — it lives in the AUR now.
-    # It is what actually renders themes/*.css, so without it every GTK app is
-    # unthemed and the wlogout CSS is dead weight.
-    ttf-jetbrains-mono-nerd noto-fonts-emoji papirus-icon-theme
+    # adw-gtk-theme is the libadwaita GTK3 port your settings.ini/gsettings
+    # already name as `adw-gtk3`/`adw-gtk3-dark`. It is what actually renders
+    # themes/*.css for GTK apps, so without it every GTK app is unthemed and the
+    # wlogout CSS is dead weight. It lives in extra since the 2026 move — the
+    # AUR entry this installer used to carry (`adw-gtk3`) no longer exists.
+    adw-gtk-theme ttf-jetbrains-mono-nerd noto-fonts-emoji papirus-icon-theme
     # Python (monitors / control scripts)
     python python-dbus python-gobject
     # Shell
@@ -135,23 +146,18 @@ ok "Using AUR helper: $AUR_HELPER"
 
 # ── AUR packages (tolerant) ─────────────────────────────────────────
 step "AUR packages"
-# quickshell-git REQUIRED (conflicts with the older/stable 'quickshell').
-# Everything else: helper + --needed skips whatever is already satisfied.
+# Only what genuinely is still AUR-only. quickshell, matugen, wlogout, satty,
+# hyprshot and waypaper all moved to the official repos (see OFFICIAL_PKGS), so
+# a fresh install no longer needs an AUR build for the shell itself — and in
+# particular no longer pulls in noctalia-qs. The helper + --needed skips
+# whatever is already satisfied.
 AUR_PKGS=(
-    quickshell-git
     hyprswitch
-    matugen
-    satty
-    hyprshot
-    waypaper
-
     bibata-cursor-theme
-    # These used to be referenced only from hyprzen/setup.sh, which the top-level
-    # installer never ran — leaving wlogout/pywal/adw-gtk3 uninstalled while
-    # keybinds, dynamic-colors.sh and every themes/*.css still expected them.
-    wlogout
+    # pywal feeds dynamic-colors.sh (the "dynamic" theme) and was previously
+    # installed by hyprzen/setup.sh, which the top-level installer never ran —
+    # leaving keybinds and dynamic-colors.sh expecting a missing command.
     pywal
-    adw-gtk3
 )
 FAILED_AUR=()
 for pkg in "${AUR_PKGS[@]}"; do
@@ -397,7 +403,10 @@ check "hyprlock config"                    sh -c '[ -f "$HOME/.config/hypr/hyprl
 check "theme sources"                      sh -c '[ -n "$(ls "$HOME/.config/hypr/themes/source/"*.toml 2>/dev/null)" ]'
 check "Outfit font (ZenShell UI)"          sh -c 'fc-list 2>/dev/null | grep -qi Outfit'
 check "nerd font (icons)"                  sh -c 'fc-list 2>/dev/null | grep -qi nerd'
-check "adw-gtk3 (GTK theming)"             sh -c 'gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null | grep -q adw-gtk3'
+# Re-enabled: this check was commented out because adw-gtk3 could never install
+# (the AUR name it used was gone). It installs from extra as adw-gtk-theme now,
+# so the check tests for the theme directory the dotfiles actually reference.
+check "adw-gtk3 theme (GTK theming)"       sh -c '[ -d /usr/share/themes/adw-gtk3-dark ]'
 check "wlogout (SUPER+X)"                  sh -c 'command -v wlogout'
 check "pywal (dynamic theme)"              sh -c 'command -v wal'
 check "matugen (wallpaper theme)"          sh -c 'command -v matugen'
