@@ -4,3 +4,10 @@ __pycache__/
 # zsh completion dumps (generated at runtime)
 hyprzen/.config/zsh/.zcompdump*
 hyprzen/.config/zsh/zcompdump*
+
+# Per-user runtime theme state. theme-switch.sh / wallpaper-selector.sh rewrite
+# these, and git checkout must never revert which theme someone is using.
+hyprzen/.config/hypr/themes/current_theme.conf
+hyprzen/.config/hypr/themes/current_theme.lua
+hyprzen/.config/hypr/themes/current.css
+hyprzen/.config/kitty/themes/current.conf
