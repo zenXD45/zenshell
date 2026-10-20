@@ -4,7 +4,6 @@ import QtQuick.Layouts
 import Quickshell.Io
 import Quickshell.Services.Mpris
 import Quickshell.Services.Pipewire
-import Qt5Compat.GraphicalEffects
 import Quickshell.Wayland
 import "components"
 
@@ -123,8 +122,14 @@ Scope {
     property bool isExpanded: false
     property bool isHovered: false
     property bool islandVisible: true
-    property bool mediaPopupVisible: false
     property var lastNotification: null
+
+    // The now-playing pill is a transient state; never reopen it pre-expanded.
+    onDisplayStateChanged: {
+        if (root.displayState !== 1) {
+            root.isExpanded = false
+        }
+    }
 
     property var allApps: []
     property var allWallpapers: []
@@ -522,6 +527,10 @@ Scope {
                 root.updateState();
             }
         }
+        function toggleMusicExpanded() {
+            if (root.displayState !== 1) root.displayState = 1;
+            root.isExpanded = !root.isExpanded;
+        }
     }
 
     // --- Format Time ---
@@ -844,7 +853,7 @@ Scope {
                        root.displayState === 4 ? 540 :
                        root.displayState === 3 ? 600 :
                        root.displayState === 2 ? 200 :
-                       root.displayState === 1 ? (root.isExpanded ? 360 : (root.currentLyricLine !== "" ? Math.min(540, Math.max(340, lyricMeasure.implicitWidth + 90)) : Math.min(460, Math.max(280, titleMeasure.implicitWidth + 120)))) :
+                       root.displayState === 1 ? (root.isExpanded ? 400 : (root.currentLyricLine !== "" ? Math.min(540, Math.max(340, lyricMeasure.implicitWidth + 90)) : Math.min(460, Math.max(280, titleMeasure.implicitWidth + 120)))) :
                        80
 
                 height: root.displayState === 23 ? 600 :
@@ -963,13 +972,11 @@ Scope {
 
                     onContainsMouseChanged: {
                         root.isHovered = containsMouse;
-                        // root.isExpanded = (containsMouse && root.displayState === 1 && !root.mediaPopupVisible);
                     }
 
                     onClicked: {
                         if (root.displayState === 1) {
-                            root.mediaPopupVisible = !root.mediaPopupVisible;
-                            if (root.mediaPopupVisible) root.isExpanded = false;
+                            root.isExpanded = !root.isExpanded;
                         } else if (root.displayState === 0) {
                             root.displayState = 6;
                             weatherCloseTimer.restart();
@@ -983,209 +990,4 @@ Scope {
         }
     }
 
-    // =========================================================================
-    // MEDIA POPUP WINDOW
-    // =========================================================================
-    Variants {
-        model: Quickshell.screens
-
-        PanelWindow {
-            id: popupWindow
-            required property var modelData
-            screen: modelData
-
-            anchors { top: true }
-            margins { top: 72 * root.uiScale } // Below the dynamic island
-            exclusiveZone: 0
-            color: "transparent"
-            visible: root.mediaPopupVisible
-
-            implicitWidth: 400 * root.uiScale
-            implicitHeight: 185 * root.uiScale
-
-            Item {
-                width: 400
-                height: 185
-                anchors.top: parent.top
-                anchors.horizontalCenter: parent.horizontalCenter
-                
-                scale: root.mediaPopupVisible ? root.uiScale : (0.92 * root.uiScale)
-                opacity: root.mediaPopupVisible ? 1 : 0
-                transformOrigin: Item.Top
-                Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }
-                Behavior on scale { NumberAnimation { duration: 350; easing.type: Easing.OutBack } }
-
-                // Shadow
-                RectangularGlow {
-                    anchors.fill: popupCard
-                    glowRadius: 32
-                    spread: 0.1
-                    color: Qt.rgba(0,0,0, 0.5)
-                    cornerRadius: popupCard.radius + glowRadius
-                }
-
-                Rectangle {
-                    id: popupCard
-                    anchors.fill: parent
-                    radius: 24
-                    color: "#F00A0A0D"
-                    border.color: "#33FFFFFF"
-                    border.width: 1
-                    clip: true
-
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.margins: 20
-                        spacing: 20
-
-                        // ==================== Vinyl Disc ====================
-                        Item {
-                            Layout.preferredWidth: 145
-                            Layout.preferredHeight: 145
-                            Layout.alignment: Qt.AlignVCenter
-
-                            // Spinning rotation
-                            NumberAnimation on rotation {
-                                from: 0; to: 360; duration: 8000
-                                loops: Animation.Infinite
-                                running: root.isPlaying && root.mediaPopupVisible
-                            }
-
-                            // Base record body
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: width / 2
-                                color: "#111111"
-                                border.color: "#222222"
-                                border.width: 1
-                            }
-
-                            // Grooves
-                            Repeater {
-                                model: 12
-                                Rectangle {
-                                    anchors.centerIn: parent
-                                    width: parent.width * (0.15 + (index * 0.055))
-                                    height: width
-                                    radius: width / 2
-                                    color: "transparent"
-                                    border.color: "#1AFFFFFF"
-                                    border.width: 1
-                                }
-                            }
-
-                            // Album Art Label
-                            Rectangle {
-                                id: artMask
-                                anchors.centerIn: parent
-                                width: parent.width * 0.4
-                                height: width
-                                radius: width / 2
-                                visible: false
-                            }
-
-                            Image {
-                                id: popupArtImg
-                                anchors.fill: artMask
-                                source: root.artUrl
-                                fillMode: Image.PreserveAspectCrop
-                                visible: false
-                            }
-
-                            OpacityMask {
-                                anchors.fill: artMask
-                                source: popupArtImg
-                                maskSource: artMask
-                            }
-
-                            // Center Spindle Hole
-                            Rectangle {
-                                anchors.centerIn: parent
-                                width: 8; height: 8
-                                radius: 4
-                                color: "#000000"
-                            }
-                        }
-
-                        // ==================== Info & Controls ====================
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            Layout.alignment: Qt.AlignVCenter
-                            spacing: 12
-
-                            ColumnLayout {
-                                spacing: 4
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: root.trackTitle || "Nothing Playing"
-                                    color: "#FFFFFF"
-                                    font.family: "Outfit"
-                                    font.pixelSize: 18
-                                    font.bold: true
-                                    elide: Text.ElideRight
-                                    wrapMode: Text.NoWrap
-                                }
-
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: root.trackArtist || "Unknown"
-                                    color: "#99FFFFFF"
-                                    font.family: "Outfit"
-                                    font.pixelSize: 14
-                                    elide: Text.ElideRight
-                                }
-                            }
-
-                            // Controls Row
-                            RowLayout {
-                                Layout.fillWidth: true
-                                Layout.topMargin: 8
-                                spacing: 16
-
-                                Rectangle {
-                                    id: pPrevBtn
-                                    width: 38; height: 38; radius: 19
-                                    color: pPrevArea.containsMouse ? "#22FFFFFF" : "transparent"
-                                    property real btnScale: 1.0
-                                    transform: Scale { origin.x: 19; origin.y: 19; xScale: pPrevBtn.btnScale; yScale: pPrevBtn.btnScale }
-                                    Behavior on btnScale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
-                                    Text { anchors.centerIn: parent; text: "\uf04a"; color: "#FFFFFF"; font.family: root.font; font.pixelSize: 18 }
-                                    MouseArea {
-                                        id: pPrevArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                        onPressed: pPrevBtn.btnScale = 0.88; onReleased: pPrevBtn.btnScale = 1.0; onClicked: root.prevTrack()
-                                    }
-                                }
-                                Rectangle {
-                                    id: pPlayBtn
-                                    width: 48; height: 48; radius: 24
-                                    color: "#FFFFFF"
-                                    property real btnScale: 1.0
-                                    transform: Scale { origin.x: 24; origin.y: 24; xScale: pPlayBtn.btnScale; yScale: pPlayBtn.btnScale }
-                                    Behavior on btnScale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
-                                    Text { anchors.centerIn: parent; text: root.isPlaying ? "\uf04c" : "\uf04b"; color: "#0D0D11"; font.family: root.font; font.pixelSize: 20 }
-                                    MouseArea {
-                                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                        onPressed: pPlayBtn.btnScale = 0.88; onReleased: pPlayBtn.btnScale = 1.0; onClicked: root.playPause()
-                                    }
-                                }
-                                Rectangle {
-                                    id: pNextBtn
-                                    width: 38; height: 38; radius: 19
-                                    color: pNextArea.containsMouse ? "#22FFFFFF" : "transparent"
-                                    property real btnScale: 1.0
-                                    transform: Scale { origin.x: 19; origin.y: 19; xScale: pNextBtn.btnScale; yScale: pNextBtn.btnScale }
-                                    Behavior on btnScale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
-                                    Text { anchors.centerIn: parent; text: "\uf04e"; color: "#FFFFFF"; font.family: root.font; font.pixelSize: 18 }
-                                    MouseArea {
-                                        id: pNextArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                        onPressed: pNextBtn.btnScale = 0.88; onReleased: pNextBtn.btnScale = 1.0; onClicked: root.nextTrack()
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
