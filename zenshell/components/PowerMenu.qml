@@ -48,124 +48,142 @@ Item {
         }
     }
 
-    Text {
-        anchors.top: parent.top
-        anchors.topMargin: 8
-        anchors.horizontalCenter: parent.horizontalCenter
-        text: "Power Menu"
-        color: "#EEEEF0"
-        font.family: "Outfit"
-        font.pixelSize: 11
-        font.weight: Font.DemiBold
-    }
+    ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: 16
+        spacing: 12
 
-    Row {
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 10
-        anchors.horizontalCenter: parent.horizontalCenter
-        spacing: 14
+        MenuHeader {
+            title: "Power Menu"
+            icon: "\uf011"
+            hint: "esc to close"
+        }
 
-        Repeater {
-            model: [
-                { icon: "\uf023", label: "Lock",     r: 0.376, g: 0.647, b: 0.980, key: "L" },
-                { icon: "\uf186", label: "Suspend",  r: 0.655, g: 0.545, b: 0.980, key: "U" },
-                { icon: "\uf2f5", label: "Logout",   r: 0.984, g: 0.749, b: 0.141, key: "E" },
-                { icon: "\uf01e", label: "Reboot",   r: 0.204, g: 0.827, b: 0.600, key: "R" },
-                { icon: "\uf011", label: "Shutdown", r: 0.973, g: 0.333, b: 0.333, key: "S" }
-            ]
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            spacing: 12
 
-            Item {
-                width: 76
-                height: 96
+            Repeater {
+                model: [
+                    { icon: "\uf023", label: "Lock",     key: "L", accent: "#5B9CF8" },
+                    { icon: "\uf186", label: "Suspend",  key: "U", accent: "#A78BFA" },
+                    { icon: "\uf2f5", label: "Logout",   key: "E", accent: "#F5C451" },
+                    { icon: "\uf01e", label: "Reboot",   key: "R", accent: "#4ADE80" },
+                    { icon: "\uf011", label: "Shutdown", key: "S", accent: "#F87171" }
+                ]
 
-                property bool isSel: index === selectedIndex
-                property bool isHov: btnArea.containsMouse
-                property color accentColor: root.currentThemeAccent || "#838996"
+                Item {
+                    id: actionCard
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.minimumWidth: 64
 
-                // Card
-                Rectangle {
-                    id: card
-                    anchors.fill: parent
-                    radius: 20
-                    color: "transparent"
+                    property bool isSel: index === selectedIndex
+                    property bool isHov: btnArea.containsMouse
+                    property color itemAccent: modelData.accent
 
-                    property real s: 1.0
-                    transform: Scale { origin.x: card.width/2; origin.y: card.height/2; xScale: card.s; yScale: card.s }
-                    Behavior on s { NumberAnimation { duration: 220; easing.type: Easing.OutBack } }
-
-                    // Glass background
                     Rectangle {
+                        id: card
                         anchors.fill: parent
-                        radius: 20
-                        color: Qt.rgba(modelData.r, modelData.g, modelData.b, isSel ? 0.12 : (isHov ? 0.06 : 0.0))
-                        Behavior on color { ColorAnimation { duration: 250 } }
-                    }
+                        radius: 16
+                        color: actionCard.isSel
+                            ? Qt.rgba(actionCard.itemAccent.r, actionCard.itemAccent.g, actionCard.itemAccent.b, 0.11)
+                            : (actionCard.isHov ? "#0AFFFFFF" : "#05FFFFFF")
+                        border.width: actionCard.isSel ? 1.2 : 1
+                        border.color: actionCard.isSel
+                            ? Qt.rgba(actionCard.itemAccent.r, actionCard.itemAccent.g, actionCard.itemAccent.b, 0.42)
+                            : (actionCard.isHov ? "#1CFFFFFF" : "#0EFFFFFF")
 
-                    ColumnLayout {
-                        anchors.centerIn: parent
-                        spacing: 10
+                        Behavior on color { ColorAnimation { duration: 150 } }
+                        Behavior on border.color { ColorAnimation { duration: 150 } }
 
-                        // Glowing icon
-                        Item {
-                            Layout.preferredWidth: 36
-                            Layout.preferredHeight: 36
-                            Layout.alignment: Qt.AlignHCenter
+                        property real press: 1.0
+                        transform: Scale {
+                            origin.x: card.width / 2
+                            origin.y: card.height / 2
+                            xScale: card.press
+                            yScale: card.press
+                        }
+                        Behavior on press { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
 
-                            // Glow behind icon
-                            Rectangle {
-                                anchors.centerIn: parent
-                                width: isSel ? 32 : 0
-                                height: width
-                                radius: width / 2
-                                color: Qt.rgba(modelData.r, modelData.g, modelData.b, 0.3)
-                                opacity: isSel ? 1 : 0
-                                Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }
-                                Behavior on opacity { NumberAnimation { duration: 300 } }
+                        ColumnLayout {
+                            anchors.centerIn: parent
+                            spacing: 8
+
+                            Item {
+                                Layout.preferredWidth: 36
+                                Layout.preferredHeight: 36
+                                Layout.alignment: Qt.AlignHCenter
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: modelData.icon
+                                    color: actionCard.isSel
+                                        ? actionCard.itemAccent
+                                        : Qt.rgba(actionCard.itemAccent.r, actionCard.itemAccent.g, actionCard.itemAccent.b, actionCard.isHov ? 0.85 : 0.55)
+                                    font.family: root.font
+                                    font.pixelSize: 20
+                                    Behavior on color { ColorAnimation { duration: 150 } }
+                                }
                             }
 
                             Text {
-                                anchors.centerIn: parent
-                                text: modelData.icon
-                                color: isSel ? accentColor : (isHov ? "#CCCCCC" : "#666666")
-                                font.family: root.font
-                                font.pixelSize: 20
-                                Behavior on color { ColorAnimation { duration: 250 } }
+                                Layout.alignment: Qt.AlignHCenter
+                                text: modelData.label
+                                color: actionCard.isSel || actionCard.isHov ? root.uiFg : root.uiFgDim
+                                font.family: root.uiFont
+                                font.pixelSize: 12
+                                font.weight: actionCard.isSel ? Font.DemiBold : Font.Medium
+                                Behavior on color { ColorAnimation { duration: 150 } }
                             }
                         }
 
-                        // Label
-                        Text {
-                            Layout.alignment: Qt.AlignHCenter
-                            text: modelData.label
-                            color: isSel ? "#EEEEF0" : (isHov ? "#AAAAAA" : "#555558")
-                            font.family: "Outfit"
-                            font.pixelSize: 11
-                            font.weight: isSel ? Font.DemiBold : Font.Medium
-                            Behavior on color { ColorAnimation { duration: 250 } }
+                        // Keyboard shortcut hint, kept quiet until the card is engaged.
+                        Rectangle {
+                            anchors.top: parent.top
+                            anchors.right: parent.right
+                            anchors.margins: 7
+                            width: 15
+                            height: 15
+                            radius: 4
+                            color: actionCard.isSel ? Qt.rgba(actionCard.itemAccent.r, actionCard.itemAccent.g, actionCard.itemAccent.b, 0.08) : "#06FFFFFF"
+                            border.width: 1
+                            border.color: actionCard.isSel
+                                ? Qt.rgba(actionCard.itemAccent.r, actionCard.itemAccent.g, actionCard.itemAccent.b, 0.28)
+                                : "#10FFFFFF"
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: modelData.key
+                                color: actionCard.isSel ? actionCard.itemAccent : "#70FFFFFF"
+                                font.family: root.font
+                                font.pixelSize: 8
+                                font.weight: Font.Medium
+                            }
                         }
-                    }
 
-                    // Bottom accent line
-                    Rectangle {
-                        anchors.bottom: parent.bottom
-                        anchors.bottomMargin: 6
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        width: isSel ? 24 : 0
-                        height: 2.5
-                        radius: 1.25
-                        color: accentColor
-                        Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }
-                    }
+                        Rectangle {
+                            anchors.bottom: parent.bottom
+                            anchors.bottomMargin: 6
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            width: actionCard.isSel ? 20 : 0
+                            height: 2
+                            radius: 1
+                            color: actionCard.itemAccent
+                            Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutQuart } }
+                        }
 
-                    MouseArea {
-                        id: btnArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onPressed: card.s = 0.88
-                        onReleased: card.s = 1.0
-                        onClicked: executeAction(index)
-                        onEntered: selectedIndex = index
+                        MouseArea {
+                            id: btnArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onPressed: card.press = 0.94
+                            onReleased: card.press = 1.0
+                            onClicked: executeAction(index)
+                            onEntered: selectedIndex = index
+                        }
                     }
                 }
             }

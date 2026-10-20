@@ -29,6 +29,7 @@ Scope {
     readonly property int uiRadiusMd: 16
     readonly property int uiRadiusSm: 11
     readonly property bool panelOpen: displayState === 3 || displayState === 13 || displayState === 23
+    readonly property bool compactMenu: displayState === 4 || displayState === 11 || displayState === 12 || displayState === 14 || displayState === 15
     
     // --- State ---
     property int displayState: 0 // 0=idle, 1=now-playing, 2=volume, 11=themes, 13=control-panel
@@ -858,16 +859,16 @@ Scope {
 
                 height: root.displayState === 23 ? 600 :
                         root.displayState === 15 ? 196 :
-                        root.displayState === 14 ? 130 :
+                        root.displayState === 14 ? 168 :
                         root.displayState === 13 ? 620 :
-                        root.displayState === 12 ? 130 :
-                        root.displayState === 11 ? 140 :
+                        root.displayState === 12 ? 168 :
+                        root.displayState === 11 ? 200 :
                         root.displayState === 10 ? 80 :
                         root.displayState === 9 ? 48 :
                         root.displayState === 8 ? 48 :
                         root.displayState === 7 ? 40 :
                         root.displayState === 6 ? 80 :
-                        root.displayState === 4 ? 150 :
+                        root.displayState === 4 ? 220 :
                         root.displayState === 3 ? 570 :
                         root.displayState === 2 ? 48 :
                         root.displayState === 1 ? (root.isExpanded ? 190 : 44) :
@@ -888,27 +889,29 @@ Scope {
                     id: lyricMeasure
                     visible: false
                     text: root.currentLyricLine
-                    font.family: "Outfit"
-                    font.pixelSize: 13
-                    font.weight: Font.Medium
+                    font.family: root.uiFont
+                    font.pixelSize: 14
+                    font.weight: Font.DemiBold
+                    font.letterSpacing: 0.2
                 }
-                
+
                 Text {
                     id: titleMeasure
                     visible: false
                     text: root.trackTitle || "Nothing Playing"
-                    font.family: "Outfit"
+                    font.family: root.uiFont
                     font.pixelSize: 14
-                    font.bold: true
+                    font.weight: Font.DemiBold
+                    font.letterSpacing: 0.2
                 }
 
                 // ==================== Pill ====================
                 Rectangle {
                     id: pill
                     anchors.fill: parent
-                    radius: root.displayState === 0 ? 16 : (root.panelOpen ? root.uiRadiusLg : 22)
-                    color: root.islandTheme === "liquid" ? "#35000000" : (root.panelOpen ? "#E00C0C10" : "#E60D0D11")
-                    border.color: root.islandTheme === "liquid" ? "#30FFFFFF" : (root.panelOpen ? "#2EFFFFFF" : "#28FFFFFF")
+                    radius: root.displayState === 0 ? 16 : ((root.panelOpen || root.compactMenu) ? root.uiRadiusLg : 22)
+                    color: root.islandTheme === "liquid" ? "#35000000" : ((root.panelOpen || root.compactMenu) ? "#E00C0C10" : "#E60D0D11")
+                    border.color: root.islandTheme === "liquid" ? "#30FFFFFF" : ((root.panelOpen || root.compactMenu) ? "#2EFFFFFF" : (root.isHovered && root.displayState === 1 ? "#38FFFFFF" : "#28FFFFFF"))
                     border.width: 1
                     clip: true
 
@@ -919,7 +922,7 @@ Scope {
                     Rectangle {
                         anchors.fill: parent
                         radius: parent.radius
-                        opacity: root.islandTheme === "liquid" ? 0 : (root.panelOpen ? 0.72 : (root.displayState !== 0 ? 1 : 0))
+                        opacity: root.islandTheme === "liquid" ? 0 : ((root.panelOpen || root.compactMenu) ? 0.72 : (root.displayState !== 0 ? 1 : 0))
                         Behavior on opacity { NumberAnimation { duration: 300 } }
                         gradient: Gradient {
                             GradientStop { position: 0.0; color: "#F0161619" }
