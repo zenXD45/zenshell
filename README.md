@@ -10,7 +10,7 @@
 ![Quickshell](https://img.shields.io/badge/shell-Quickshell-1abc9c?logo=quickshell&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
-15 themes · 2 components · one installer
+15 themes · 2 shell profiles · one installer
 
 [Install](#installation) · [Keybinds](#keybinds) · [Structure](#structure)
 
@@ -23,7 +23,7 @@
 One monorepo, two layers — and [ZenShell](zenshell/README.md) is the one you
 actually see.
 
-- **[ZenShell](zenshell/README.md)** — the glassmorphic suite on [Quickshell](https://quickshell.outfoxxed.me). Dynamic Island, dock, spotlight, control centre, theme and wallpaper pickers. It replaces **rofi, waybar, swaync *and* eww** in one process.
+- **[ZenShell](zenshell/README.md)** — the glassmorphic suite on [Quickshell](https://quickshell.outfoxxed.me). Dynamic Island, dock, the Profile 02 command bar, spotlight, control centre, theme and wallpaper pickers. It replaces **rofi, waybar, swaync *and* eww** in one process.
 - **[HyprZen](hyprzen/README.md)** — the substrate underneath. Keybinds, window rules, animation, **15 generated themes** and a wallpaper-driven colour pipeline. Ships no bar, no launcher, no notification daemon.
 
 The split is the whole point: HyprZen owns *behaviour and colour*, ZenShell owns *interface*. Neither can shadow the other, so there is nothing to disable or reconcile.
@@ -51,6 +51,7 @@ The split is the whole point: HyprZen owns *behaviour and colour*, ZenShell owns
 | | |
 | :--- | :--- |
 | **15 themes, one source of truth** | Colours live in `themes/source/*.toml`; `gen-themes.py` emits Lua, Hyprlang, CSS, Kitty and a JSON manifest. No hand-edited palette can drift. |
+| **Two shell profiles** | Profile 01 is the dynamic island, dock and desktop widgets. Profile 02 is a floating or edge-mounted command bar with toggleable widgets. Both share media, weather, notifications and the launcher; switching is instant. |
 | **Dynamic colour** | `dynamic` and `matugen` themes derive the whole palette from your wallpaper via pywal / Matugen. |
 | **Theme-aware geometry** | Gaps, borders, rounding, blur and shadow opacity are read from the theme, not hardcoded. |
 | **No dead keybinds** | `scripts/check_keybinds.py` parses `keybinds.lua` and fails CI if a bound binary isn't installed by `install.sh`. |
@@ -81,7 +82,7 @@ Then log into the `Hyprland` session (or `hyprctl reload`). ZenShell autostarts 
 
 What `install.sh` does:
 
-1. Installs official packages — Hyprland, kitty, pipewire, `firefox`, `thunar`, `vscodium`, the toolchain and more. **No waybar, no rofi, no swaync**; the island and dock are the UI.
+1. Installs official packages — Hyprland, kitty, pipewire, `firefox`, `thunar`, `vscodium`, the toolchain and more. **No waybar, no rofi, no swaync**; the island, dock and optional command bar are the UI.
 2. Installs an AUR helper (`paru`, falling back to `yay`) and the AUR-only packages: `hyprswitch`, `bibata-cursor-theme`, `pywal`. Everything else the theme pipeline needs — `quickshell`, `matugen`, `wlogout`, `satty`, `hyprshot`, `waypaper`, `adw-gtk-theme`, `awww` — is in the official repos. **Failures warn, they don't abort.**
 3. Downloads and caches **GeistMono Nerd Font** + **Outfit**.
 4. Adds and enables the **scroll-overview** `hyprpm` plugin.
@@ -119,6 +120,9 @@ Everything lives in `hyprzen/.config/hypr/modules/keybinds.lua`. ZenShell claims
 | Wallpaper picker | `SUPER + W` |
 | Power profiles | `SUPER + Shift + P` |
 | Desktop widgets (clock + weather) | `SUPER + D` |
+
+Profile 02 has no default keybind. Open Control Center (`SUPER + N`) and click
+the `PROFILE 01/02` chip, or click `P2` in the bar.
 
 ### Apps
 | Action | Shortcut |
@@ -173,7 +177,7 @@ CI runs on every push and PR: `bash -n` over the shell scripts, `luac -p` over t
 
 ## Notes
 
-- **ZenShell is the only UI.** rofi, waybar, swaync and eww were removed rather than left dormant — the island owns the launcher, clipboard, cheatsheet, pickers and notifications; the dock replaces the bar.
+- **ZenShell is the only UI.** rofi, waybar, swaync and eww were removed rather than left dormant — the island owns the launcher, clipboard, cheatsheet, pickers and notifications; the dock and the optional Profile 02 command bar replace the bar.
 - **Absolute paths are gone.** Both projects used to hardcode `~/Desktop/hyprzen/...` and a specific username. They now resolve via `~/scripts`, `~/wallpapers` and `$HOME` / `Qt.homePath()`.
 - **Themes are generated, never hand-edited.** Edit `hyprzen/.config/hypr/themes/source/*.toml` and re-run the generator; CI fails if you forget.
 

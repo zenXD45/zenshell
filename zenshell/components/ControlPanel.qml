@@ -438,6 +438,64 @@ Item {
                 font.weight: Font.Medium
             }
 
+            // Shell profile switcher. The 01/02 glyph reads as a miniature
+            // island over a dock (01) or a single command rail (02).
+            Rectangle {
+                height: 22
+                implicitWidth: profileChipRow.implicitWidth + 16
+                radius: 11
+                color: profileChipMouse.containsMouse ? "#14FFFFFF" : "#0AFFFFFF"
+                border.width: 1
+                border.color: profileChipMouse.containsMouse ? "#24FFFFFF" : "#14FFFFFF"
+                Behavior on color { ColorAnimation { duration: 140 } }
+                Behavior on border.color { ColorAnimation { duration: 140 } }
+
+                RowLayout {
+                    id: profileChipRow
+                    anchors.centerIn: parent
+                    spacing: 5
+
+                    Item {
+                        width: 12
+                        height: 10
+                        Rectangle {
+                            width: 8
+                            height: 3
+                            radius: 1.5
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.top: parent.top
+                            color: themeAccent
+                        }
+                        Rectangle {
+                            width: 12
+                            height: 2
+                            radius: 1
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.bottom: parent.bottom
+                            color: root.uiFg
+                            opacity: 0.5
+                        }
+                    }
+
+                    Text {
+                        text: "PROFILE " + root.activeProfileLabel
+                        color: root.uiFgDim
+                        font.family: root.uiFont
+                        font.pixelSize: 8
+                        font.weight: Font.DemiBold
+                        font.letterSpacing: 0.7
+                    }
+                }
+
+                MouseArea {
+                    id: profileChipMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.displayState = 16
+                }
+            }
+
             Rectangle {
                 height: 22
                 implicitWidth: badgeRow.implicitWidth + 16

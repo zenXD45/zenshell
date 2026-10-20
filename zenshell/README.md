@@ -4,8 +4,8 @@
 
 **The entire interface of [HyprZen](../README.md), in one Quickshell process.**
 
-Dynamic Island, dock, spotlight, control centre, theme & wallpaper pickers,
-clipboard, and notifications.
+Dynamic Island, dock, an optional command bar, spotlight, control centre,
+theme & wallpaper pickers, clipboard, and notifications.
 
 <p>
   <img src="https://img.shields.io/badge/desktop-Hyprland-blue?style=flat-square&logo=hyprland" alt="Hyprland" />
@@ -55,6 +55,9 @@ that seam is the easiest place to extend it.
   volume/brightness OSD. Theme-aware: the accent comes from the active theme
   rather than a hardcoded colour.
 - **Glassmorphic dock** — bottom taskbar with active-window indicators.
+- **Profile 02 command bar** — a floating or edge-mounted rail with workspaces,
+  window title, now playing, clock, weather, system status and tray. Layout,
+  position and individual widgets are live-configurable from its gear button.
 - **Spotlight search** — centre-screen fuzzy app finder (`SUPER + SHIFT + M`).
 - **Desktop widgets** — wallpaper-integrated clock, weather and system stats
   (`SUPER + D`).
@@ -64,6 +67,30 @@ that seam is the easiest place to extend it.
   `keybinds.lua`, so it can't go stale.
 - **Theme & wallpaper pickers** — read from the generated theme manifest, so all
   15 themes appear without touching a line of QML.
+
+## Profiles
+
+ZenShell has two shell profiles. Both share the same Quickshell process, theme,
+media state, weather, launcher and notification stack, so switching is immediate.
+
+| Profile | Surface |
+| :--- | :--- |
+| **01 · Island** | Dynamic island, dock and desktop widgets. |
+| **02 · Bar** | Floating or edge-mounted command rail with toggleable widgets. The dock and desktop widgets hide while this profile is active. |
+
+Switch from the control center's `PROFILE 01/02` chip, from the `P2` button in
+the bar, or directly:
+
+```bash
+~/.config/quickshell/dynamic-island/island_ctl.sh profiles      # open the switcher
+~/.config/quickshell/dynamic-island/island_ctl.sh bar           # go to Profile 02
+~/.config/quickshell/dynamic-island/island_ctl.sh island        # go to Profile 01
+~/.config/quickshell/dynamic-island/island_ctl.sh bar-settings  # open bar layout settings
+```
+
+The bar's gear button opens **Floating / Edge**, **Top / Bottom**, and widget
+toggles. Changes apply live and are stored in `shell_settings.json`; the dock and
+desktop-widget processes watch that file, so no process restarts are needed.
 
 ## Installation
 
@@ -149,7 +176,8 @@ zenshell/
     ├── get_wallpapers.py    # scans ~/wallpapers and ~/Pictures/Wallpapers
     ├── get_clipboard.py     # cliphist wrapper
     ├── get_lyrics.py        # now-playing lyrics
-    ├── get_search.py        # spotlight web search
+    ├── get_search.py        # app search, icons and calculator
+    ├── set_setting.py       # atomic profile/bar setting writes
     ├── network_ctl.py       # NetworkManager
     ├── bluetooth_ctl.py     # bluez
     └── themes.json          # generated manifest (do not hand-edit)
@@ -162,6 +190,7 @@ zenshell/
   sources under `hyprzen/.config/hypr/themes/source/`, never this file.
 - **Settings are seeded, not owned.** The installer copies `shell_settings.json`
   into `~/.config/quickshell/` only if it's absent, so your runtime changes
-  survive reinstalls.
+  survive reinstalls. Profile and bar changes are written back atomically by
+  `scripts/set_setting.py` and watched live by the shell, dock and widgets.
 - **Paths are relative.** Everything resolves through `$HOME` /
   `Qt.homePath()`, so the repo runs wherever it's cloned.

@@ -11,6 +11,22 @@ Scope {
     // ... State ...
     property string font: "JetBrainsMono Nerd Font"
     property bool widgetsVisible: true
+    property string shellProfile: "island"
+
+    FileView {
+        id: shellSettings
+        path: Quickshell.env("HOME") + "/.config/quickshell/shell_settings.json"
+        watchChanges: true
+        onFileChanged: reload()
+        onTextChanged: {
+            try {
+                var settings = JSON.parse(text());
+                if (settings.profile === "island" || settings.profile === "bar") {
+                    root.shellProfile = settings.profile;
+                }
+            } catch (e) {}
+        }
+    }
     
     // Clock State
     property string currentTime: "00:00"
@@ -79,7 +95,7 @@ Scope {
             screen: modelData
 
             color: "transparent"
-            visible: true
+            visible: root.shellProfile !== "bar"
             
             WlrLayershell.layer: WlrLayer.Bottom
             WlrLayershell.namespace: "qs-widgets"

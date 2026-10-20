@@ -28,30 +28,139 @@ Scope {
     readonly property int uiRadiusLg: 26
     readonly property int uiRadiusMd: 16
     readonly property int uiRadiusSm: 11
-    readonly property bool panelOpen: displayState === 3 || displayState === 13 || displayState === 23
+    readonly property bool panelOpen: displayState === 3 || displayState === 13 || displayState === 16 || displayState === 17 || displayState === 23
     readonly property bool compactMenu: displayState === 4 || displayState === 11 || displayState === 12 || displayState === 14 || displayState === 15
     
     // --- State ---
-    property int displayState: 0 // 0=idle, 1=now-playing, 2=volume, 11=themes, 13=control-panel
+    // 0 idle · 1 now-playing · 2 volume · 3 launcher · 4 wallpapers · 6 weather
+    // 8 battery · 9 bluetooth · 10 notifications · 11 themes · 12 power
+    // 13 control center · 14 power profile · 15 clipboard · 16 profiles
+    // 17 bar settings · 23 keybind cheatsheet
+    property int displayState: 0
     property string islandTheme: "dark"
-    
+
+    // ── Shell profiles ────────────────────────────────────────────
+    // Profile 01 is the island + dock + desktop widgets. Profile 02 is a
+    // command bar. Both live in this Quickshell process, so switching only
+    // changes visibility and geometry — no restart, no lost notifications.
+    property string activeProfile: "island"
+    property string barStyle: "floating"
+    property string barPosition: "top"
+    property var barWidgets: ["workspaces", "window", "media", "clock", "weather", "system"]
+    readonly property var barWidgetIds: ["workspaces", "window", "media", "clock", "weather", "system"]
+    readonly property int barHeight: barStyle === "floating" ? 44 : 38
+    readonly property int barGap: barStyle === "floating" ? 10 : 0
+    readonly property int barReservedHeight: barHeight + (barStyle === "floating" ? barGap * 2 : 0)
+    readonly property bool barActive: activeProfile === "bar"
+    readonly property bool islandOverlay: [2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 23].indexOf(displayState) !== -1
+    readonly property string activeProfileLabel: activeProfile === "bar" ? "02" : "01"
+
+    FileView {
+        id: settingsFile
+        path: Quickshell.env("HOME") + "/.config/quickshell/shell_settings.json"
+        watchChanges: true
+        onFileChanged: reload()
+        onTextChanged: root.loadSettings(text())
+    }
+
+    function loadSettings(raw) {
+        try {
+            var settings = JSON.parse(raw);
+            if (settings.island_theme === "dark" || settings.island_theme === "liquid") root.islandTheme = settings.island_theme;
+            if (settings.profile === "island" || settings.profile === "bar") root.activeProfile = settings.profile;
+            if (settings.bar_style === "floating" || settings.bar_style === "edge") root.barStyle = settings.bar_style;
+            if (settings.bar_position === "top" || settings.bar_position === "bottom") root.barPosition = settings.bar_position;
+            if (Array.isArray(settings.bar_widgets)) {
+                var valid = [];
+                for (var i = 0; i < settings.bar_widgets.length; i++) {
+                    var widgetId = settings.bar_widgets[i];
+                    if (root.barWidgetIds.indexOf(widgetId) !== -1 && valid.indexOf(widgetId) === -1) {
+                        valid.push(widgetId);
+                    }
+                }
+                root.barWidgets = valid;
+            }
+        } catch(e) {}
+    }
+
     Process {
-      command: ["cat", Quickshell.env("HOME") + "/.config/quickshell/shell_settings.json"]
-      running: true
-      stdout: SplitParser {
-        onRead: (data) => {
-          try {
-            var settings = JSON.parse(data);
-            if (settings.island_theme) root.islandTheme = settings.island_theme;
-          } catch (e) {}
-        }
-      }
+        id: saveSettingProcess
+        command: []
+    }
+
+    function saveSetting(key, value) {
+        saveSettingProcess.running = false;
+        saveSettingProcess.command = [
+            "python3",
+            Quickshell.shellDir + "/scripts/set_setting.py",
+            key,
+            JSON.stringify(value)
+        ];
+        saveSettingProcess.running = true;
+    }
+
+    function setProfile(profile) {
+        if (profile !== "island" && profile !== "bar") return;
+        root.activeProfile = profile;
+        root.saveSetting("profile", profile);
+        root.displayState = 0;
+        if (profile === "island") root.updateState();
+    }
+
+    function setBarStyle(style) {
+        if (style !== "floating" && style !== "edge") return;
+        root.barStyle = style;
+        root.saveSetting("bar_style", style);
+    }
+
+    function setBarPosition(position) {
+        if (position !== "top" && position !== "bottom") return;
+        root.barPosition = position;
+        root.saveSetting("bar_position", position);
+    }
+
+    function hasBarWidget(widgetId) {
+        return root.barWidgets.indexOf(widgetId) !== -1;
+    }
+
+    function toggleBarWidget(widgetId) {
+        if (root.barWidgetIds.indexOf(widgetId) === -1) return;
+        var next = root.barWidgets.slice();
+        var index = next.indexOf(widgetId);
+        if (index === -1) next.push(widgetId);
+        else next.splice(index, 1);
+        root.barWidgets = next;
+        root.saveSetting("bar_widgets", next);
     }
 
     IpcHandler {
       target: "qs-island"
       function updateTheme(themeName: string): void {
         root.islandTheme = themeName;
+      }
+    }
+
+    IpcHandler {
+      target: "profile"
+      function menu(): void {
+        root.displayState = root.displayState === 16 ? 0 : 16;
+        if (root.displayState === 0) root.updateState();
+      }
+      function settings(): void {
+        root.displayState = root.displayState === 17 ? 0 : 17;
+        if (root.displayState === 0) root.updateState();
+      }
+      function switchTo(profile: string): void {
+        root.setProfile(profile);
+      }
+      function toggle(): void {
+        root.setProfile(root.activeProfile === "bar" ? "island" : "bar");
+      }
+      function setStyle(style: string): void {
+        root.setBarStyle(style);
+      }
+      function setPosition(position: string): void {
+        root.setBarPosition(position);
       }
     }
 
@@ -455,7 +564,7 @@ Scope {
 
     // --- State Logic ---
     function updateState() {
-        if (displayState === 3 || displayState === 4 || displayState === 2 || displayState === 8 || displayState === 9 || displayState === 10 || displayState === 11 || displayState === 12 || displayState === 13 || displayState === 14 || displayState === 15 || displayState === 23) return;
+        if (displayState === 3 || displayState === 4 || displayState === 2 || displayState === 8 || displayState === 9 || displayState === 10 || displayState === 11 || displayState === 12 || displayState === 13 || displayState === 14 || displayState === 15 || displayState === 16 || displayState === 17 || displayState === 23) return;
         if (isPlaying) displayState = 1;
         else displayState = 0;
     }
@@ -780,12 +889,18 @@ Scope {
             required property var modelData
             screen: modelData
             anchors { top: true; left: true; right: true }
+            visible: root.activeProfile !== "bar"
             color: "transparent"
             exclusiveZone: 40 * root.uiScale
             implicitHeight: 40 * root.uiScale
             mask: Region {} // Empty region means clicks pass through to desktop
         }
     }
+
+    // =========================================================================
+    // PROFILE 02 — COMMAND BAR
+    // =========================================================================
+    ProfileBar {}
 
     // =========================================================================
     // DYNAMIC ISLAND OVERLAY (Full screen renderer)
@@ -798,17 +913,17 @@ Scope {
             required property var modelData
             screen: modelData
 
-            visible: root.islandVisible
+            visible: root.islandVisible && (root.activeProfile !== "bar" || root.islandOverlay)
 
             WlrLayershell.namespace: "qs-island"
-            WlrLayershell.keyboardFocus: (root.displayState === 3 || root.displayState === 4 || root.displayState === 11 || root.displayState === 12 || root.displayState === 14 || root.displayState === 15 || root.displayState === 23) ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+            WlrLayershell.keyboardFocus: (root.displayState === 3 || root.displayState === 4 || root.displayState === 11 || root.displayState === 12 || root.displayState === 14 || root.displayState === 15 || root.displayState === 16 || root.displayState === 17 || root.displayState === 23) ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
             WlrLayershell.layer: WlrLayer.Top
             exclusionMode: ExclusionMode.Ignore
 
             anchors { top: true; left: true; right: true; bottom: true }
             color: "transparent"
             
-            mask: (root.displayState === 3 || root.displayState === 4 || root.displayState === 6 || root.displayState === 11 || root.displayState === 12 || root.displayState === 13 || root.displayState === 14 || root.displayState === 15 || root.displayState === 23) ? fullScreenRegion : pillRegion
+            mask: (root.displayState === 3 || root.displayState === 4 || root.displayState === 6 || root.displayState === 11 || root.displayState === 12 || root.displayState === 13 || root.displayState === 14 || root.displayState === 15 || root.displayState === 16 || root.displayState === 17 || root.displayState === 23) ? fullScreenRegion : pillRegion
 
             Region {
                 id: fullScreenRegion
@@ -829,7 +944,7 @@ Scope {
             // Click outside full-screen overlay (closes launcher / wallpaper selector)
             MouseArea {
                 anchors.fill: parent
-                enabled: root.displayState === 3 || root.displayState === 4 || root.displayState === 6 || root.displayState === 11 || root.displayState === 12 || root.displayState === 13 || root.displayState === 14 || root.displayState === 15 || root.displayState === 23
+                enabled: root.displayState === 3 || root.displayState === 4 || root.displayState === 6 || root.displayState === 11 || root.displayState === 12 || root.displayState === 13 || root.displayState === 14 || root.displayState === 15 || root.displayState === 16 || root.displayState === 17 || root.displayState === 23
                 onClicked: {
                     root.displayState = 0;
                     root.updateState();
@@ -841,6 +956,8 @@ Scope {
             Item {
                 id: scaleWrapper
                 width: root.displayState === 23 ? 680 :
+                       root.displayState === 17 ? 520 :
+                       root.displayState === 16 ? 460 :
                        root.displayState === 15 ? 780 :
                        root.displayState === 14 ? 500 :
                        root.displayState === 13 ? 460 :
@@ -858,6 +975,8 @@ Scope {
                        80
 
                 height: root.displayState === 23 ? 600 :
+                        root.displayState === 17 ? 360 :
+                        root.displayState === 16 ? 264 :
                         root.displayState === 15 ? 196 :
                         root.displayState === 14 ? 168 :
                         root.displayState === 13 ? 620 :
@@ -875,7 +994,7 @@ Scope {
                         32
                 
                 anchors.top: parent.top
-                anchors.topMargin: 4 * root.uiScale
+                anchors.topMargin: 4 * root.uiScale + (root.activeProfile === "bar" && root.barPosition === "top" ? root.barReservedHeight + 6 : 0)
                 anchors.horizontalCenter: parent.horizontalCenter
                 
                 scale: root.uiScale
@@ -964,6 +1083,8 @@ Scope {
                     PowerProfileMenu {}
                     ClipboardManager {}
                     KeybindCheatsheet {}
+                    ProfileSwitcher {}
+                    BarSettings {}
 
                 // Global hover area for the island
                 MouseArea {

@@ -14,17 +14,24 @@ Scope {
   property string pinnedJsonPath: Quickshell.shellDir + "/pinned_apps.json"
   property string dockTheme: "liquid"
   property bool isAutoHide: true
-  
-  Process {
-    command: ["cat", Quickshell.env("HOME") + "/.config/quickshell/shell_settings.json"]
-    running: true
-    stdout: SplitParser {
-      onRead: (data) => {
-        try {
-          var settings = JSON.parse(data);
-          if (settings.dock_theme) root.dockTheme = settings.dock_theme;
-        } catch (e) {}
-      }
+  property string shellProfile: "island"
+
+  // One FileView owns both the visual theme and the global profile. Watching
+  // the file means the dock disappears the instant Profile 02 is selected from
+  // the island or the bar — no process restart and no IPC race.
+  FileView {
+    id: shellSettings
+    path: Quickshell.env("HOME") + "/.config/quickshell/shell_settings.json"
+    watchChanges: true
+    onFileChanged: reload()
+    onTextChanged: {
+      try {
+        var settings = JSON.parse(text());
+        if (settings.dock_theme) root.dockTheme = settings.dock_theme;
+        if (settings.profile === "island" || settings.profile === "bar") {
+          root.shellProfile = settings.profile;
+        }
+      } catch (e) {}
     }
   }
 
@@ -235,6 +242,7 @@ Scope {
       id: panel
       required property var modelData
       screen: modelData
+      visible: root.shellProfile !== "bar"
       
       anchors { bottom: true }
       

@@ -1,5 +1,16 @@
 {
   "island_theme": "dark",
   "dock_theme": "liquid",
-  "dock_auto_hide": true
+  "dock_auto_hide": true,
+  "profile": "island",
+  "bar_style": "floating",
+  "bar_position": "top",
+  "bar_widgets": [
+    "workspaces",
+    "window",
+    "media",
+    "clock",
+    "weather",
+    "system"
+  ]
 }
