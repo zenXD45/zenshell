@@ -10,54 +10,20 @@ RowLayout {
 
     Behavior on opacity { NumberAnimation { duration: (root.displayState === 1 && !root.isExpanded) ? 240 : 160; easing.type: Easing.OutCubic } }
 
-    Rectangle {
-        Layout.preferredWidth: 28
-        Layout.preferredHeight: 28
-        radius: 8
-        color: "#25FFFFFF"
-        clip: true
-        visible: !root.lyricsMode || root.currentLyricLine === ""
-
-        Image {
-            anchors.fill: parent
-            source: root.artUrl
-            fillMode: Image.PreserveAspectCrop
-            visible: status === Image.Ready
-        }
-
-        Text {
-            anchors.centerIn: parent
-            text: "\uf001"
-            color: "#66FFFFFF"
-            font.family: root.font
-            font.pixelSize: 18
-            visible: root.artUrl === ""
-        }
-    }
-
-    Column {
+    // Before lyrics arrive (or when lyrics mode is off) keep the same
+    // single-line, centered rhythm as the lyric itself. The old two-line
+    // artwork + title + artist stack felt cramped inside a 44px pill.
+    Text {
         Layout.fillWidth: true
-        spacing: 2
-        clip: true
+        Layout.alignment: Qt.AlignVCenter
+        text: root.trackTitle || "Nothing Playing"
+        color: "#FFFFFF"
+        font.family: root.uiFont
+        font.pixelSize: 14
+        font.bold: true
+        elide: Text.ElideRight
+        horizontalAlignment: Text.AlignHCenter
         visible: !root.lyricsMode || root.currentLyricLine === ""
-        
-        Text {
-            width: parent.width
-            text: root.trackTitle || "Nothing Playing"
-            color: "#FFFFFF"
-            font.family: "Outfit"
-            font.pixelSize: 14
-            font.bold: true
-            elide: Text.ElideRight
-        }
-        Text {
-            width: parent.width
-            text: root.trackArtist || "Unknown"
-            color: "#99FFFFFF"
-            font.family: "Outfit"
-            font.pixelSize: 11
-            elide: Text.ElideRight
-        }
     }
 
     Text {
@@ -65,14 +31,13 @@ RowLayout {
         Layout.alignment: Qt.AlignVCenter
         text: root.currentLyricLine
         color: "#FFFFFF"
-        font.family: "Outfit"
+        font.family: root.uiFont
         font.pixelSize: 14
         font.bold: true
         elide: Text.ElideRight
         horizontalAlignment: Text.AlignHCenter
         visible: root.lyricsMode && root.currentLyricLine !== ""
     }
-
 
     Row {
         spacing: 2
