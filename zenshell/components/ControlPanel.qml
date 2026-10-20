@@ -1360,7 +1360,7 @@ Item {
                 }
             }
 
-            Text { text: "Network & Wi-Fi"; color: "#FFFFFF"; font.family: "Outfit"; font.pixelSize: 14; font.weight: Font.Bold }
+            Text { text: "Network & Wi-Fi"; color: "#FFFFFF"; font.family: root.uiFont; font.pixelSize: 14; font.weight: Font.Bold }
 
             Item { Layout.fillWidth: true }
 
@@ -1427,14 +1427,14 @@ id: wiredTile
                         Text {
                             text: "Ethernet"
                             color: "#FFFFFF"
-                            font.family: "Outfit"
+                            font.family: root.uiFont
                             font.pixelSize: 11
                             font.weight: Font.Bold
                         }
                         Text {
                             text: wiredActive ? (wiredConn || "Connected") : "Tap to connect"
                             color: wiredActive ? "#88888E" : "#55555A"
-                            font.family: "Outfit"
+                            font.family: root.uiFont
                             font.pixelSize: 9
                         }
                     }
@@ -1487,14 +1487,14 @@ id: wifiTile
                         Text {
                             text: "Wi-Fi"
                             color: "#FFFFFF"
-                            font.family: "Outfit"
+                            font.family: root.uiFont
                             font.pixelSize: 11
                             font.weight: Font.Bold
                         }
                         Text {
                             text: wifiRadio ? "Radio on" : "Radio off"
                             color: wifiRadio ? "#88888E" : "#55555A"
-                            font.family: "Outfit"
+                            font.family: root.uiFont
                             font.pixelSize: 9
                         }
                     }
@@ -1530,7 +1530,7 @@ id: wifiTile
             Text {
                 text: "AVAILABLE NETWORKS"
                 color: "#4A4A50"
-                font.family: "Outfit"
+                font.family: root.uiFont
                 font.pixelSize: 9
                 font.weight: Font.Bold
             }
@@ -1538,7 +1538,7 @@ id: wifiTile
             Text {
                 text: ipAddress || ""
                 color: "#55555A"
-                font.family: "Outfit"
+                font.family: root.uiFont
                 font.pixelSize: 9
             }
         }
@@ -1578,7 +1578,7 @@ id: wifiTile
                     Text {
                         text: itemNet.ssid || "Hidden Network"
                         color: itemNet.in_use ? "#FFFFFF" : "#D8D8DC"
-                        font.family: "Outfit"
+                        font.family: root.uiFont
                         font.pixelSize: 11
                         font.weight: itemNet.in_use ? Font.DemiBold : Font.Normal
                         elide: Text.ElideRight
@@ -1595,7 +1595,7 @@ id: wifiTile
                     Text {
                         text: isConnecting ? "Connecting…" : (itemNet.security ? "" : "Open")
                         color: isConnecting ? themeAccent : "#44444A"
-                        font.family: "Outfit"
+                        font.family: root.uiFont
                         font.pixelSize: 9
                     }
 
@@ -1624,7 +1624,7 @@ id: wifiTile
             Layout.bottomMargin: 2
             text: wifiLoading ? "Scanning…" : (wifiNetworks.length === 0 ? "No networks found" : wifiNetworks.length + " networks")
             color: "#4A4A50"
-            font.family: "Outfit"
+            font.family: root.uiFont
             font.pixelSize: 9
         }
     }
@@ -1655,7 +1655,7 @@ id: wifiTile
                 }
             }
 
-            Text { text: "Bluetooth Devices"; color: "#FFFFFF"; font.family: "Outfit"; font.pixelSize: 14; font.weight: Font.Bold }
+            Text { text: "Bluetooth Devices"; color: "#FFFFFF"; font.family: root.uiFont; font.pixelSize: 14; font.weight: Font.Bold }
 
             Item { Layout.fillWidth: true }
 
@@ -1717,14 +1717,14 @@ id: powerTile
                     Text {
                         text: "Bluetooth Adapter"
                         color: "#FFFFFF"
-                        font.family: "Outfit"
+                        font.family: root.uiFont
                         font.pixelSize: 11
                         font.weight: Font.Bold
                     }
                     Text {
                         text: btPowered ? "On" : "Off"
                         color: btPowered ? "#88888E" : "#55555A"
-                        font.family: "Outfit"
+                        font.family: root.uiFont
                         font.pixelSize: 9
                     }
                 }
@@ -1756,7 +1756,7 @@ id: powerTile
         Text {
             text: "DEVICES"
             color: "#4A4A50"
-            font.family: "Outfit"
+            font.family: root.uiFont
             font.pixelSize: 9
             font.weight: Font.Bold
         }
@@ -1799,7 +1799,7 @@ id: powerTile
                         Text {
                             text: itemBt.name || "Bluetooth Device"
                             color: itemBt.connected ? "#FFFFFF" : "#D8D8DC"
-                            font.family: "Outfit"
+                            font.family: root.uiFont
                             font.pixelSize: 11
                             font.weight: itemBt.connected ? Font.DemiBold : Font.Normal
                             elide: Text.ElideRight
@@ -1808,7 +1808,7 @@ id: powerTile
                         Text {
                             text: itemBt.paired ? "Paired" : "Not paired"
                             color: "#55555A"
-                            font.family: "Outfit"
+                            font.family: root.uiFont
                             font.pixelSize: 9
                         }
                     }
@@ -1825,7 +1825,7 @@ id: powerTile
                             anchors.centerIn: parent
                             text: isConnecting ? "Working…" : (itemBt.connected ? "Disconnect" : "Connect")
                             color: itemBt.connected ? "#FFFFFF" : "#B0B0B6"
-                            font.family: "Outfit"
+                            font.family: root.uiFont
                             font.pixelSize: 9
                             font.weight: itemBt.connected ? Font.Bold : Font.Medium
                         }
@@ -1847,7 +1847,7 @@ id: powerTile
             Layout.bottomMargin: 2
             text: btLoading ? "Scanning…" : (btPowered ? (btDevices.length + " devices") : "Bluetooth is off")
             color: "#4A4A50"
-            font.family: "Outfit"
+            font.family: root.uiFont
             font.pixelSize: 9
         }
     }

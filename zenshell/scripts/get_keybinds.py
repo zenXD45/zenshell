@@ -15,6 +15,7 @@ def human_readable_action(action):
         '~/.config/quickshell/dynamic-island/island_ctl.sh clipboard': 'Clipboard Manager',
         '~/.config/quickshell/dynamic-island/island_ctl.sh power': 'Power Menu',
         '~/.config/quickshell/dynamic-island/island_ctl.sh control': 'Control Center / Notifications',
+        '~/.config/quickshell/dynamic-island/island_ctl.sh profiles': 'Open Profile Switcher',
         'hyprlock': 'Lock Screen',
         '~/.config/quickshell/dynamic-island/island_ctl.sh powerprofile': 'Power Profiles',
         '~/.config/quickshell/dynamic-island/island_ctl.sh themes': 'Theme Switcher',

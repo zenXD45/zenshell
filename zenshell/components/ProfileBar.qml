@@ -17,7 +17,7 @@ Scope {
 
     // Live clock, updated only while the bar exists.
     property string clockTime: Qt.formatTime(new Date(), "HH:mm")
-    property string clockDate: Qt.formatDate(new Date(), "ddd dd MMM").toUpperCase()
+    property string clockDate: Qt.formatDate(new Date(), "ddd dd MMM")
 
     Timer {
         interval: 1000
@@ -27,7 +27,7 @@ Scope {
         onTriggered: {
             var now = new Date();
             barScope.clockTime = Qt.formatTime(now, "HH:mm");
-            barScope.clockDate = Qt.formatDate(now, "ddd dd MMM").toUpperCase();
+            barScope.clockDate = Qt.formatDate(now, "ddd dd MMM");
         }
     }
 
@@ -45,6 +45,11 @@ Scope {
         battery.state === UPowerDeviceState.PendingCharge ||
         battery.state === UPowerDeviceState.FullyCharged
     )
+    // Quickshell exposes UPower percentages as 0..1, while the island and
+    // prompt helpers use 0..100. Normalize once so both surfaces agree.
+    readonly property real batteryLevel: battery
+        ? (battery.percentage <= 1 ? battery.percentage * 100 : battery.percentage)
+        : 0
 
     readonly property var sink: Pipewire.defaultAudioSink
     readonly property bool sinkReady: sink && sink.audio
@@ -64,7 +69,7 @@ Scope {
 
     function batteryGlyph() {
         if (barScope.batteryCharging) return "\uf0e7";
-        var level = barScope.battery ? barScope.battery.percentage : 0;
+        var level = barScope.batteryLevel;
         if (level > 90) return "\uf240";
         if (level > 65) return "\uf241";
         if (level > 40) return "\uf242";
@@ -221,7 +226,7 @@ Scope {
                                         anchors.centerIn: parent
                                         text: modelData.name !== "" ? modelData.name : modelData.id
                                         color: modelData.focused ? barScope.accent : (workspaceMouse.containsMouse ? root.uiFg : root.uiFgDim)
-                                        font.family: root.font
+                                        font.family: root.uiFont
                                         font.pixelSize: 9
                                         font.weight: Font.DemiBold
                                     }
@@ -256,7 +261,7 @@ Scope {
                             text: barScope.windowTitle
                             color: root.uiFgDim
                             font.family: root.uiFont
-                            font.pixelSize: 10
+                            font.pixelSize: 11
                             font.weight: Font.Medium
                             elide: Text.ElideRight
                         }
@@ -323,7 +328,7 @@ Scope {
                                         text: root.trackArtist || "Unknown artist"
                                         color: root.uiFgFaint
                                         font.family: root.uiFont
-                                        font.pixelSize: 8
+                                        font.pixelSize: 9
                                         font.weight: Font.Medium
                                         elide: Text.ElideRight
                                     }
@@ -357,9 +362,9 @@ Scope {
                                 text: barScope.clockTime
                                 color: root.uiFg
                                 font.family: root.uiFont
-                                font.pixelSize: 13
+                                font.pixelSize: 14
                                 font.weight: Font.DemiBold
-                                font.letterSpacing: 0.2
+                                font.letterSpacing: 0.1
                             }
 
                             Text {
@@ -367,9 +372,9 @@ Scope {
                                 text: barScope.clockDate
                                 color: root.uiFgFaint
                                 font.family: root.uiFont
-                                font.pixelSize: 8
-                                font.weight: Font.DemiBold
-                                font.letterSpacing: 0.8
+                                font.pixelSize: 9
+                                font.weight: Font.Medium
+                                font.letterSpacing: 0.15
                             }
                         }
                     }
@@ -396,8 +401,12 @@ Scope {
 
                                 Text {
                                     anchors.verticalCenter: parent.verticalCenter
+                                    width: 14
+                                    horizontalAlignment: Text.AlignHCenter
                                     text: root.weatherIcon
-                                    font.pixelSize: 11
+                                    color: root.uiFgDim
+                                    font.family: root.font
+                                    font.pixelSize: 12
                                 }
 
                                 Text {
@@ -405,7 +414,7 @@ Scope {
                                     text: root.weatherTemp
                                     color: root.uiFgDim
                                     font.family: root.uiFont
-                                    font.pixelSize: 9
+                                    font.pixelSize: 10
                                     font.weight: Font.DemiBold
                                 }
                             }
@@ -415,7 +424,10 @@ Scope {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: root.displayState = 6
+                                onClicked: {
+                                    root.displayState = 6;
+                                    weatherCloseTimer.restart();
+                                }
                             }
                         }
 
@@ -465,10 +477,10 @@ Scope {
 
                                 Text {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    text: barScope.battery ? Math.round(barScope.battery.percentage) + "%" : ""
+                                    text: barScope.battery ? Math.round(barScope.batteryLevel) + "%" : ""
                                     color: root.uiFgFaint
                                     font.family: root.uiFont
-                                    font.pixelSize: 8
+                                    font.pixelSize: 9
                                     font.weight: Font.Medium
                                 }
                             }
@@ -540,65 +552,6 @@ Scope {
                             glyph: "\uf1de"
                             label: "Control center"
                             onClicked: root.displayState = 13
-                        }
-
-                        Rectangle {
-                            width: 52
-                            height: 26
-                            radius: 8
-                            color: profileMouse.containsMouse
-                                ? Qt.rgba(barScope.accent.r, barScope.accent.g, barScope.accent.b, 0.18)
-                                : Qt.rgba(barScope.accent.r, barScope.accent.g, barScope.accent.b, 0.08)
-                            border.width: 1
-                            border.color: Qt.rgba(barScope.accent.r, barScope.accent.g, barScope.accent.b, 0.24)
-                            Behavior on color { ColorAnimation { duration: 140 } }
-
-                            Row {
-                                anchors.centerIn: parent
-                                spacing: 5
-
-                                Item {
-                                    width: 11
-                                    height: 9
-                                    anchors.verticalCenter: parent.verticalCenter
-
-                                    Rectangle {
-                                        width: 6
-                                        height: 2
-                                        radius: 1
-                                        anchors.top: parent.top
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        color: barScope.accent
-                                    }
-
-                                    Rectangle {
-                                        width: 11
-                                        height: 2
-                                        radius: 1
-                                        anchors.bottom: parent.bottom
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        color: root.uiFg
-                                        opacity: 0.45
-                                    }
-                                }
-
-                                Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: root.activeProfile === "bar" ? "P2" : "P1"
-                                    color: barScope.accent
-                                    font.family: root.font
-                                    font.pixelSize: 9
-                                    font.weight: Font.Bold
-                                }
-                            }
-
-                            MouseArea {
-                                id: profileMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.displayState = 16
-                            }
                         }
 
                         BarIconButton {

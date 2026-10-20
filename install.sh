@@ -120,7 +120,7 @@ OFFICIAL_PKGS=(
     # themes/*.css for GTK apps, so without it every GTK app is unthemed and the
     # wlogout CSS is dead weight. It lives in extra since the 2026 move — the
     # AUR entry this installer used to carry (`adw-gtk3`) no longer exists.
-    adw-gtk-theme ttf-jetbrains-mono-nerd noto-fonts-emoji papirus-icon-theme
+    adw-gtk-theme cantarell-fonts ttf-jetbrains-mono-nerd noto-fonts-emoji papirus-icon-theme
     # Python (monitors / control scripts)
     python python-dbus python-gobject
     # Shell
@@ -181,7 +181,7 @@ else
 fi
 
 # ── Fonts ───────────────────────────────────────────────────────────
-step "Fonts (GeistMono Nerd + Outfit)"
+step "Fonts (GeistMono Nerd + Cantarell)"
 
 # GeistMono Nerd Font — terminal + icon glyphs.
 FONT_DIR="$HOME/.local/share/fonts/GeistMonoNerdFont"
@@ -198,36 +198,13 @@ else
     ok "Font cached."
 fi
 
-# Outfit — the UI font. ZenShell's QML hardcodes `font.family: "Outfit"` in ~89
-# places; without this installed every string in the island, dock and control
-# panel silently falls back to a generic sans, which is the single most obvious
-# sign that the shell was not installed correctly.
-#
-# There is no Outfit package in the Arch repos (checked: `pacman -Ss outfit` is
-# empty), so it is fetched straight from the upstream Google Fonts repository.
-# This is the variable-weight build; the upstream repo publishes no static
-# instances, and Qt6/fontconfig instance the weight axis fine.
-if fc-list 2> /dev/null | grep -qi 'Outfit'; then
-    ok "Outfit already installed."
+# Cantarell — the humanist UI font. It ships as `cantarell-fonts` in the Arch
+# repos and is installed with the official package set above. Keep this check
+# explicit so a partial install does not silently substitute a generic sans.
+if fc-list 2> /dev/null | grep -qi 'Cantarell'; then
+    ok "Cantarell UI font available."
 else
-    log "Installing Outfit (ZenShell UI font)..."
-    OUTFIT_DIR="$HOME/.local/share/fonts/Outfit"
-    mkdir -p "$OUTFIT_DIR"
-    if curl -fL --retry 2 --connect-timeout 15 \
-        -o "$OUTFIT_DIR/Outfit.ttf" \
-        "https://raw.githubusercontent.com/google/fonts/main/ofl/outfit/Outfit%5Bwght%5D.ttf" \
-        && [ -s "$OUTFIT_DIR/Outfit.ttf" ]; then
-        fc-cache -f &> /dev/null || true
-        if fc-list 2> /dev/null | grep -qi 'Outfit'; then
-            ok "Outfit installed."
-        else
-            warn "Outfit downloaded but fontconfig did not pick it up."
-        fi
-    else
-        rm -f "$OUTFIT_DIR/Outfit.ttf"
-        warn "Could not download Outfit — ZenShell text will use a fallback font."
-        warn "  Fix: place any Outfit .ttf in $OUTFIT_DIR and run 'fc-cache -f'."
-    fi
+    warn "Cantarell is missing — run: sudo pacman -S cantarell-fonts"
 fi
 
 # ── Hyprland plugin ─────────────────────────────────────────────────
@@ -401,7 +378,7 @@ check "wallpapers [$HOME/wallpapers]"      sh -c '[ -d "$HOME/wallpapers" ] && [
 check "hypridle config"                    sh -c '[ -f "$HOME/.config/hypr/hypridle.conf" ]'
 check "hyprlock config"                    sh -c '[ -f "$HOME/.config/hypr/hyprlock.conf" ]'
 check "theme sources"                      sh -c '[ -n "$(ls "$HOME/.config/hypr/themes/source/"*.toml 2>/dev/null)" ]'
-check "Outfit font (ZenShell UI)"          sh -c 'fc-list 2>/dev/null | grep -qi Outfit'
+check "Cantarell font (ZenShell UI)"      sh -c 'fc-list 2>/dev/null | grep -qi Cantarell'
 check "nerd font (icons)"                  sh -c 'fc-list 2>/dev/null | grep -qi nerd'
 # Re-enabled: this check was commented out because adw-gtk3 could never install
 # (the AUR name it used was gone). It installs from extra as adw-gtk-theme now,
@@ -438,6 +415,7 @@ cat <<'EOF'
            Cheatsheet      Super+,
            Power menu      Super+Escape
            Power profiles  Super+Shift+P
+           Shell profiles  Super+Alt+P
            Spotlight       Super+Shift+M
       5. zen shell autostart is wired into exec.lua (start_all.sh).
 

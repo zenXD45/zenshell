@@ -32,7 +32,7 @@ RowLayout {
         Text {
             text: root.notifyAppName
             color: "#A0A0A5"
-            font.family: "Outfit"
+            font.family: root.uiFont
             font.pixelSize: 11
             font.weight: Font.Medium
             elide: Text.ElideRight
@@ -42,7 +42,7 @@ RowLayout {
         Text {
             text: root.notifySummary
             color: "#FFFFFF"
-            font.family: "Outfit"
+            font.family: root.uiFont
             font.pixelSize: 14
             font.weight: Font.Bold
             elide: Text.ElideRight
@@ -52,7 +52,7 @@ RowLayout {
         Text {
             text: root.notifyBody
             color: "#C0C0C5"
-            font.family: "Outfit"
+            font.family: root.uiFont
             font.pixelSize: 12
             font.weight: Font.Normal
             elide: Text.ElideRight

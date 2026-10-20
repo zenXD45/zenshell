@@ -14,27 +14,33 @@ Item {
 
         Text {
             text: root.weatherIcon
-            font.pixelSize: 32
+            color: root.uiFg
+            font.family: root.font
+            font.pixelSize: 30
+            Layout.preferredWidth: 40
+            horizontalAlignment: Text.AlignHCenter
             Layout.alignment: Qt.AlignVCenter
         }
 
         ColumnLayout {
             Layout.alignment: Qt.AlignVCenter
             spacing: 2
-            
+
             Text {
                 text: root.weatherTemp
-                color: "#FFFFFF"
-                font.family: "Outfit"
+                color: root.uiFg
+                font.family: root.uiFont
                 font.pixelSize: 22
                 font.weight: Font.Bold
             }
             Text {
                 text: root.weatherDesc
-                color: "#A0A0A0"
-                font.family: "Outfit"
+                color: root.uiFgDim
+                font.family: root.uiFont
                 font.pixelSize: 13
                 font.weight: Font.Medium
+                Layout.maximumWidth: 180
+                elide: Text.ElideRight
             }
         }
     }

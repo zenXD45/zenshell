@@ -1,6 +1,6 @@
 #!/bin/bash
 if [ -z "$1" ]; then
-    echo "Usage: $0 <launcher|wallpapers|themes|power|control|profiles|bar-settings|bar|island>"
+    echo "Usage: $0 <launcher|wallpapers|themes|power|control|weather|profiles|bar-settings|bar|island>"
     exit 1
 fi
 
@@ -22,6 +22,8 @@ elif [ "$1" == "clipboard" ]; then
     quickshell ipc -p "$CONFIG_PATH" call island showClipboard
 elif [ "$1" == "cheatsheet" ]; then
     quickshell ipc -p "$CONFIG_PATH" call island showCheatsheet
+elif [ "$1" == "weather" ]; then
+    quickshell ipc -p "$CONFIG_PATH" call island showWeather
 elif [ "$1" == "profiles" ] || [ "$1" == "profile-switch" ]; then
     quickshell ipc -p "$CONFIG_PATH" call profile menu
 elif [ "$1" == "bar-settings" ]; then

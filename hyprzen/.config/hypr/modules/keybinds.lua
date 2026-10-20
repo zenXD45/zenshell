@@ -26,6 +26,9 @@ hl.bind(S .. " + SPACE", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/is
 hl.bind(S .. " + comma", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/island_ctl.sh cheatsheet"))
 hl.bind(SA .. " + TAB", hl.dsp.exec_cmd("hyprswitch gui --mod-key alt_l --key tab --close mod-key-release --reverse-key=mod=shift --sort-recent --ignore-workspaces"))
 
+-- ── Shell profiles ────────────────────────────────────────────
+hl.bind(SA .. " + P", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/island_ctl.sh profiles"))
+
 -- ── Clipboard (ZenShell island) ───────────────────────────────
 hl.bind(S .. " + V", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/island_ctl.sh clipboard"))
 

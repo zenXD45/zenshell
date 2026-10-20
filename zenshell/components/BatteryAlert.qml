@@ -66,7 +66,7 @@ Item {
         Text {
             text: root.batteryPercent + "%"
             color: root.batteryCharging ? "#34C759" : (root.batteryPercent <= 20 ? "#FF3B30" : "#FFFFFF")
-            font.family: "Outfit"
+            font.family: root.uiFont
             font.pixelSize: 15
             font.weight: Font.Bold
             Layout.alignment: Qt.AlignVCenter
@@ -75,7 +75,7 @@ Item {
         Text {
             text: root.batteryCharging ? "Charging" : (root.batteryPercent <= 20 ? "Low Battery" : "Battery")
             color: "#A0A0A0"
-            font.family: "Outfit"
+            font.family: root.uiFont
             font.pixelSize: 13
             font.weight: Font.Medium
             Layout.alignment: Qt.AlignVCenter

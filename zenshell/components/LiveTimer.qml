@@ -19,7 +19,7 @@ RowLayout {
     Text {
         text: root.timerString
         color: "#FF9F0A" // iOS Orange for timer
-        font.family: "Outfit"
+        font.family: root.uiFont
         font.pixelSize: 18
         font.weight: Font.Bold
         font.features: { "tnum": 1 } // Tabular numbers

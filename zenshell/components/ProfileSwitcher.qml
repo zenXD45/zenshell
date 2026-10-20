@@ -43,7 +43,7 @@ Item {
             MenuHeader {
                 title: "Shell profiles"
                 icon: "\uf0c9"
-                hint: "click a surface"
+                hint: "press 1 or 2"
                 meta: "2 modes"
             }
 
@@ -89,12 +89,12 @@ Item {
                 }
 
                 Text {
-                    text: "P1 · P2"
+                    text: "1 / 2"
                     color: root.uiFgFaint
                     font.family: root.font
                     font.pixelSize: 8
                     font.weight: Font.Medium
-                    font.letterSpacing: 0.6
+                    font.letterSpacing: 0.4
                 }
 
                 Rectangle {

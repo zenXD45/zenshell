@@ -10,6 +10,7 @@ Scope {
 
     // ... State ...
     property string font: "JetBrainsMono Nerd Font"
+    readonly property string uiFont: "Cantarell"
     property bool widgetsVisible: true
     property string shellProfile: "island"
 
@@ -151,7 +152,7 @@ Scope {
                             
                             Text {
                                 text: root.currentTime
-                                font.family: "Outfit"
+                                font.family: root.uiFont
                                 font.pixelSize: 84
                                 font.weight: Font.Black
                                 font.letterSpacing: -2
@@ -160,7 +161,7 @@ Scope {
                             }
                             Text {
                                 text: root.currentDate
-                                font.family: "Outfit"
+                                font.family: root.uiFont
                                 font.pixelSize: 20
                                 font.weight: Font.Bold
                                 font.letterSpacing: 1
@@ -171,7 +172,7 @@ Scope {
                             Item { height: 12; width: 1 } // Spacer
                             Text {
                                 text: root.currentGreeting
-                                font.family: "Outfit"
+                                font.family: root.uiFont
                                 font.pixelSize: 15
                                 color: "white"
                                 opacity: 0.5
@@ -253,14 +254,14 @@ Scope {
 
                                 Text {
                                     text: root.weatherTemp
-                                    font.family: "Outfit"
+                                    font.family: root.uiFont
                                     font.pixelSize: 46
                                     font.weight: Font.Bold
                                     color: "white"
                                 }
                                 Text {
                                     text: root.weatherDesc
-                                    font.family: "Outfit"
+                                    font.family: root.uiFont
                                     font.pixelSize: 15
                                     color: "white"
                                     opacity: 0.7
@@ -275,7 +276,7 @@ Scope {
                                     spacing: 12
                                     Text {
                                         text: root.weatherHigh
-                                        font.family: "Outfit"
+                                        font.family: root.uiFont
                                         font.pixelSize: 14
                                         color: "white"
                                         font.weight: Font.Bold
@@ -283,7 +284,7 @@ Scope {
                                     }
                                     Text {
                                         text: root.weatherLow
-                                        font.family: "Outfit"
+                                        font.family: root.uiFont
                                         font.pixelSize: 14
                                         color: "white"
                                         opacity: 0.5

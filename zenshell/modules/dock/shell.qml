@@ -15,6 +15,7 @@ Scope {
   property string dockTheme: "liquid"
   property bool isAutoHide: true
   property string shellProfile: "island"
+  readonly property string uiFont: "Cantarell"
 
   // One FileView owns both the visual theme and the global profile. Watching
   // the file means the dock disappears the instant Profile 02 is selected from
@@ -198,7 +199,7 @@ Scope {
           text: modelData.id.charAt(0).toUpperCase()
           color: "#FFFFFF"
           font.pixelSize: 18
-          font.family: "Outfit"
+          font.family: root.uiFont
           font.weight: Font.Bold
           visible: appIcon.status !== Image.Ready
         }

@@ -78,8 +78,8 @@ media state, weather, launcher and notification stack, so switching is immediate
 | **01 · Island** | Dynamic island, dock and desktop widgets. |
 | **02 · Bar** | Floating or edge-mounted command rail with toggleable widgets. The dock and desktop widgets hide while this profile is active. |
 
-Switch from the control center's `PROFILE 01/02` chip, from the `P2` button in
-the bar, or directly:
+Switch with `SUPER + Alt + P`, from the control center's `PROFILE 01/02` chip,
+or directly:
 
 ```bash
 ~/.config/quickshell/dynamic-island/island_ctl.sh profiles      # open the switcher

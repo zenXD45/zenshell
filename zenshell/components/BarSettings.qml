@@ -47,12 +47,12 @@ Item {
             }
 
             Text {
-                text: "LAYOUT"
+                text: "Layout"
                 color: root.uiFgFaint
                 font.family: root.uiFont
-                font.pixelSize: 8
+                font.pixelSize: 9
                 font.weight: Font.DemiBold
-                font.letterSpacing: 1.1
+                font.letterSpacing: 0.2
             }
 
             RowLayout {
@@ -138,12 +138,12 @@ Item {
             }
 
             Text {
-                text: "POSITION"
+                text: "Position"
                 color: root.uiFgFaint
                 font.family: root.uiFont
-                font.pixelSize: 8
+                font.pixelSize: 9
                 font.weight: Font.DemiBold
-                font.letterSpacing: 1.1
+                font.letterSpacing: 0.2
             }
 
             RowLayout {
@@ -210,12 +210,12 @@ Item {
                 spacing: 6
 
                 Text {
-                    text: "WIDGETS"
+                    text: "Widgets"
                     color: root.uiFgFaint
                     font.family: root.uiFont
-                    font.pixelSize: 8
+                    font.pixelSize: 9
                     font.weight: Font.DemiBold
-                    font.letterSpacing: 1.1
+                    font.letterSpacing: 0.2
                 }
 
                 Item { Layout.fillWidth: true }
@@ -313,7 +313,7 @@ Item {
 
                 Text {
                     Layout.fillWidth: true
-                    text: "Launcher, control center and profile controls stay fixed."
+                    text: "Launcher, control center and the settings button stay fixed."
                     color: root.uiFgFaint
                     font.family: root.uiFont
                     font.pixelSize: 8

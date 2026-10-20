@@ -31,7 +31,7 @@ RowLayout {
     Text {
         text: root.currentTime
         color: "#FFFFFF"
-        font.family: "Outfit"
+        font.family: root.uiFont
         font.pixelSize: 13
         font.bold: true
         Layout.alignment: Qt.AlignVCenter

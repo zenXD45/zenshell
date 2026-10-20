@@ -16,8 +16,8 @@ Scope {
     // ── Panel design tokens ────────────────────────────────────────
     // One vocabulary for every overlay (launcher, control center, cheatsheet).
     // Surfaces are translucent dark glass with the same border/radius rhythm as
-    // the desktop widgets; body text is Outfit, mono is reserved for keycaps.
-    readonly property string uiFont: "Outfit"
+    // the desktop widgets; body text is Cantarell, mono is reserved for glyphs.
+    readonly property string uiFont: "Cantarell"
     readonly property color uiFg: "#F2FFFFFF"
     readonly property color uiFgDim: "#A6FFFFFF"
     readonly property color uiFgFaint: "#5CFFFFFF"
@@ -300,18 +300,37 @@ Scope {
 
     property string weatherTemp: "--°C"
     property string weatherDesc: "Loading..."
-    property string weatherIcon: "☁️"
+    property string weatherIcon: "\ue312"
+
+    // Keep weather as a monochrome Nerd Font glyph. wttr.in's emoji icon varies
+    // by condition, platform and Qt fallback font, which is what made the
+    // weather glance jitter in both surfaces.
+    function weatherGlyph(description) {
+        var d = String(description || "").toLowerCase();
+        if (d.indexOf("thunder") !== -1 || d.indexOf("storm") !== -1) return "\ue315";
+        if (d.indexOf("snow") !== -1 || d.indexOf("sleet") !== -1 || d.indexOf("ice") !== -1) return "\ue31b";
+        if (d.indexOf("rain") !== -1 || d.indexOf("drizzle") !== -1 || d.indexOf("shower") !== -1) return "\ue316";
+        if (d.indexOf("fog") !== -1 || d.indexOf("mist") !== -1 || d.indexOf("haze") !== -1) return "\ue320";
+        if (d.indexOf("partly") !== -1) return "\ue302";
+        if (d.indexOf("cloud") !== -1 || d.indexOf("overcast") !== -1) return "\ue312";
+        if (d.indexOf("sun") !== -1 || d.indexOf("clear") !== -1) return "\ue30d";
+        return "\ue312";
+    }
 
     Process {
         id: weatherProcess
-        command: ["curl", "-s", "wttr.in/?format=%t|%C|%c"]
+        command: ["curl", "-sSf", "--max-time", "12", "https://wttr.in/?format=%t|%C"]
         stdout: SplitParser {
             onRead: data => {
                 var parts = data.trim().split("|");
-                if (parts.length >= 3) {
-                    root.weatherTemp = parts[0].replace("+", "").trim();
-                    root.weatherDesc = parts[1].trim();
-                    root.weatherIcon = parts[2].trim();
+                if (parts.length >= 2) {
+                    var temp = parts[0].replace("+", "").trim();
+                    var desc = parts[1].trim();
+                    if (temp !== "") root.weatherTemp = temp;
+                    if (desc !== "") {
+                        root.weatherDesc = desc;
+                        root.weatherIcon = root.weatherGlyph(desc);
+                    }
                 }
             }
         }
@@ -609,6 +628,14 @@ Scope {
             root.lastToggleTime = now;
             root.displayState = root.displayState === 13 ? 0 : 13;
             if (root.displayState === 0) root.updateState();
+        }
+        function showWeather() {
+            var now = Date.now();
+            if (now - root.lastToggleTime < 350) return;
+            root.lastToggleTime = now;
+            root.displayState = root.displayState === 6 ? 0 : 6;
+            if (root.displayState === 6) weatherCloseTimer.restart();
+            else root.updateState();
         }
         function showPowerProfile() {
             var now = Date.now();

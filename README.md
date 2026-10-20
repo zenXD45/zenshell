@@ -56,7 +56,7 @@ The split is the whole point: HyprZen owns *behaviour and colour*, ZenShell owns
 | **Theme-aware geometry** | Gaps, borders, rounding, blur and shadow opacity are read from the theme, not hardcoded. |
 | **No dead keybinds** | `scripts/check_keybinds.py` parses `keybinds.lua` and fails CI if a bound binary isn't installed by `install.sh`. |
 | **Media keys built in** | Volume, mic, brightness and playback go straight to `wpctl` / `brightnessctl` — no OSD daemon required. |
-| **Fonts handled** | GeistMono Nerd for the terminal, [Outfit](https://fonts.google.com/specimen/Outfit) for the UI. Installed and cached by the installer. |
+| **Fonts handled** | GeistMono Nerd for terminal/icon glyphs, humanist [Cantarell](https://gitlab.gnome.org/GNOME/cantarell-fonts) for the UI. Installed by the installer. |
 | **Portable** | Every path resolves through `$HOME` / `Qt.homePath()`. Clone it anywhere; no edits needed. |
 
 ## Structure
@@ -84,7 +84,7 @@ What `install.sh` does:
 
 1. Installs official packages — Hyprland, kitty, pipewire, `firefox`, `thunar`, `vscodium`, the toolchain and more. **No waybar, no rofi, no swaync**; the island, dock and optional command bar are the UI.
 2. Installs an AUR helper (`paru`, falling back to `yay`) and the AUR-only packages: `hyprswitch`, `bibata-cursor-theme`, `pywal`. Everything else the theme pipeline needs — `quickshell`, `matugen`, `wlogout`, `satty`, `hyprshot`, `waypaper`, `adw-gtk-theme`, `awww` — is in the official repos. **Failures warn, they don't abort.**
-3. Downloads and caches **GeistMono Nerd Font** + **Outfit**.
+3. Installs **Cantarell** for UI text and downloads/caches **GeistMono Nerd Font** for terminal and icon glyphs.
 4. Adds and enables the **scroll-overview** `hyprpm` plugin.
 5. Detects NVIDIA and installs `nvidia-dkms` / `nvidia-utils`.
 6. Configures **zsh**: Oh My Zsh + Powerlevel10k, plus `eza` / `bat` / `fzf` aliases, and offers `chsh`.
@@ -120,9 +120,10 @@ Everything lives in `hyprzen/.config/hypr/modules/keybinds.lua`. ZenShell claims
 | Wallpaper picker | `SUPER + W` |
 | Power profiles | `SUPER + Shift + P` |
 | Desktop widgets (clock + weather) | `SUPER + D` |
+| Shell profile switcher | `SUPER + Alt + P` |
 
-Profile 02 has no default keybind. Open Control Center (`SUPER + N`) and click
-the `PROFILE 01/02` chip, or click `P2` in the bar.
+The control center's `PROFILE 01/02` chip is a secondary way to open the same
+switcher. The bar's gear button opens its layout and widget settings.
 
 ### Apps
 | Action | Shortcut |
