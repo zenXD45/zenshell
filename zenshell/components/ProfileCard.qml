@@ -24,12 +24,12 @@ Item {
         anchors.fill: parent
         radius: root.uiRadiusMd
         color: card.active
-            ? Qt.rgba(root.currentThemeAccent.r, root.currentThemeAccent.g, root.currentThemeAccent.b, 0.09)
-            : (pointer.containsMouse ? "#0EFFFFFF" : "#07FFFFFF")
+            ? Qt.rgba(root.themeAccent.r, root.themeAccent.g, root.themeAccent.b, 0.09)
+            : (pointer.containsMouse ? root.ink(0.055) : root.ink(0.027))
         border.width: 1
         border.color: card.active
-            ? Qt.rgba(root.currentThemeAccent.r, root.currentThemeAccent.g, root.currentThemeAccent.b, 0.42)
-            : (pointer.containsMouse ? "#24FFFFFF" : "#12FFFFFF")
+            ? Qt.rgba(root.themeAccent.r, root.themeAccent.g, root.themeAccent.b, 0.42)
+            : (pointer.containsMouse ? root.ink(0.141) : root.ink(0.071))
         Behavior on color { ColorAnimation { duration: 160 } }
         Behavior on border.color { ColorAnimation { duration: 160 } }
     }
@@ -44,7 +44,7 @@ Item {
         radius: 12
         color: "#06000000"
         border.width: 1
-        border.color: "#10FFFFFF"
+        border.color: root.ink(0.063)
         clip: true
 
         Rectangle {
@@ -80,9 +80,9 @@ Item {
                 radius: 8
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: 17
-                color: "#E60B0B0E"
+                color: root.glass(0.9)
                 border.width: 1
-                border.color: "#2CFFFFFF"
+                border.color: root.ink(0.173)
 
                 Rectangle {
                     width: 3
@@ -99,7 +99,7 @@ Item {
                     height: 2
                     radius: 1
                     anchors.centerIn: parent
-                    color: "#78FFFFFF"
+                    color: root.ink(0.471)
                 }
             }
 
@@ -112,7 +112,7 @@ Item {
                 anchors.bottomMargin: 10
                 color: "#3A000000"
                 border.width: 1
-                border.color: "#24FFFFFF"
+                border.color: root.ink(0.141)
 
                 Row {
                     anchors.centerIn: parent
@@ -125,7 +125,7 @@ Item {
                             width: 10
                             height: 10
                             radius: 3
-                            color: index === 0 ? root.currentThemeAccent : "#38FFFFFF"
+                            color: index === 0 ? root.currentThemeAccent : root.ink(0.22)
                             opacity: index === 0 ? 0.9 : 1
                         }
                     }
@@ -146,11 +146,11 @@ Item {
                 y: 22
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
-                    GradientStop { position: 0.0; color: "#F0161619" }
-                    GradientStop { position: 1.0; color: "#F009090C" }
+                    GradientStop { position: 0.0; color: root.glass(0.94) }
+                    GradientStop { position: 1.0; color: root.glass(0.94) }
                 }
                 border.width: 1
-                border.color: "#2CFFFFFF"
+                border.color: root.ink(0.173)
 
                 Row {
                     anchors.fill: parent
@@ -172,7 +172,7 @@ Item {
                         height: 2
                         radius: 1
                         anchors.verticalCenter: parent.verticalCenter
-                        color: "#58FFFFFF"
+                        color: root.ink(0.345)
                     }
 
                     Item { width: 18; height: 1 }
@@ -182,7 +182,7 @@ Item {
                         height: 2
                         radius: 1
                         anchors.verticalCenter: parent.verticalCenter
-                        color: "#78FFFFFF"
+                        color: root.ink(0.471)
                     }
 
                     Rectangle {
@@ -190,7 +190,7 @@ Item {
                         height: 2
                         radius: 1
                         anchors.verticalCenter: parent.verticalCenter
-                        color: "#38FFFFFF"
+                        color: root.ink(0.22)
                     }
                 }
             }
@@ -208,7 +208,7 @@ Item {
                         width: modelData
                         height: 5
                         radius: 2.5
-                        color: index === 0 ? root.currentThemeAccent : "#22FFFFFF"
+                        color: index === 0 ? root.currentThemeAccent : root.ink(0.133)
                         opacity: index === 0 ? 0.55 : 1
                     }
                 }
@@ -223,9 +223,9 @@ Item {
             height: 17
             implicitWidth: activeText.implicitWidth + 12
             radius: 8.5
-            color: "#CC0B0B0F"
+            color: root.glass(0.8)
             border.width: 1
-            border.color: Qt.rgba(root.currentThemeAccent.r, root.currentThemeAccent.g, root.currentThemeAccent.b, 0.38)
+            border.color: Qt.rgba(root.themeAccent.r, root.themeAccent.g, root.themeAccent.b, 0.38)
 
             Text {
                 id: activeText

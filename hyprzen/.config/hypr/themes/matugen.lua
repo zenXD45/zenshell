@@ -5,23 +5,23 @@
 -- Matugen
 ---@module "hl"
 
-bg = "131318"
+bg = "191113"
 
-surface = "1f1f25"
+surface = "191113"
 
-overlay = "47464f"
+overlay = "22191b"
 
-accent = "c2c1ff"
+accent = "ffb1c0"
 
-text = "e4e1e9"
+text = "efdee0"
 
-subtext = "c8c5d0"
+subtext = "d6c2c4"
 
 urgent = "ffb4ab"
 
-border_active = "rgba(c2c1ffff)"
+border_active = "rgba(ffb1c0ff)"
 
-border_inactive = "rgba(1f1f25a6)"
+border_inactive = "rgba(191113a6)"
 
 rounding = 14
 

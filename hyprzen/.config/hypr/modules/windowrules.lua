@@ -230,13 +230,17 @@ hl.window_rule({
     },
     float = false,
 })
-
+-- Force main Steam client to tile, but EXCLUDE empty-title popup surfaces
 hl.window_rule({
     match = {
         class = "^(steam)$",
+        title = "^(Steam)$",
     },
     float = false,
 })
+
+-- Handle Steam menus, context popups, and tooltips
+
 
 hl.window_rule({
     match = {
@@ -263,7 +267,6 @@ hl.window_rule({
     center = true,
     size = "940 720",
 })
-
 -- ── Idle Inhibit ─────────────────────────────────────────────
 hl.window_rule({
     match = {
@@ -301,11 +304,28 @@ hl.layer_rule({
 })
 
 -- Quickshell island + overlay panels: blur only behind the pill body.
--- ignore_alpha keeps the transparent full-screen layer from blurring.
+-- The threshold sits above the drop shadow's alpha, so the soft shadow falls
+-- on sharp wallpaper instead of dragging a blurred halo around the island.
 hl.layer_rule({
     match = { namespace = "^(qs-island)$" },
     blur = true,
-    ignore_alpha = 0.15,
+    ignore_alpha = 0.4,
+})
+
+-- Same treatment for the liquid dock: its tint is opaque enough to blur,
+-- while the softer shadow stays below the threshold.
+hl.layer_rule({
+    match = { namespace = "^(qs-dock)$" },
+    blur = true,
+    ignore_alpha = 0.4,
+})
+
+-- Desktop widgets share the island's smoked glass: blur the card fills and
+-- let their softer drop shadows land on the sharp wallpaper.
+hl.layer_rule({
+    match = { namespace = "^(qs-widgets)$" },
+    blur = true,
+    ignore_alpha = 0.4,
 })
 
 -- ── Quickshell Wallpaper Picker ───────────────────────────────

@@ -3,11 +3,47 @@ import QtQuick.Layouts
 import Quickshell.Services.Pipewire
 
 RowLayout {
+    id: idleClockRoot
     anchors.centerIn: parent
     spacing: 6
-    opacity: root.displayState === 0 ? 1 : 0
+    property bool idleReady: false
+    property real reveal: (root.displayState === 0 && idleReady) ? 1 : 0
+    opacity: reveal
     visible: opacity > 0
-    Behavior on opacity { NumberAnimation { duration: root.displayState === 0 ? 240 : 160; easing.type: Easing.OutCubic } }
+    transform: Translate { y: (1 - idleClockRoot.reveal) * 3 }
+
+    // Let a closing panel finish before the clock fades back in. Without this
+    // delay the time ghosts through the shrinking surface for a few frames.
+    Timer {
+        id: idleDelay
+        interval: 160
+        onTriggered: idleClockRoot.idleReady = root.displayState === 0
+    }
+
+    Connections {
+        target: root
+        function onDisplayStateChanged() {
+            if (root.displayState === 0) {
+                idleDelay.restart();
+            } else {
+                idleDelay.stop();
+                idleClockRoot.idleReady = false;
+            }
+        }
+    }
+
+    Component.onCompleted: {
+        if (root.displayState === 0) idleDelay.start();
+    }
+
+    Behavior on reveal {
+        NumberAnimation {
+            // Constant and quick: the clock must never ghost through an
+            // opening panel. The 160ms re-entry delay supplies the softness.
+            duration: 90
+            easing.type: Easing.OutCubic
+        }
+    }
     
     // Mic Indicator (Red Dot)
     Rectangle {
@@ -30,7 +66,7 @@ RowLayout {
 
     Text {
         text: root.currentTime
-        color: "#FFFFFF"
+        color: root.themeFg
         font.family: root.uiFont
         font.pixelSize: 13
         font.bold: true

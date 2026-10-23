@@ -21,7 +21,7 @@
   "gruvbox-material": { "branch": "master", "commit": "11d779b26a9ab2b3db8c22c6ac9fb6e8ed4fea79" },
   "gruvbox.nvim": { "branch": "main", "commit": "154eb5ff5b96d0641307113fa385eaf0d36d9796" },
   "kanagawa.nvim": { "branch": "master", "commit": "bb85e4bfc8d89b0e62c8fa53ccdd13d12e2f77b3" },
-  "lazy.nvim": { "branch": "main", "commit": "306a05526ada86a7b30af95c5cc81ffba93fef97" },
+  "lazy.nvim": { "branch": "main", "commit": "85c7ff3711b730b4030d03144f6db6375044ae82" },
   "lualine.nvim": { "branch": "master", "commit": "131a558e13f9f28b15cd235557150ccb23f89286" },
   "markview.nvim": { "branch": "main", "commit": "a55e91f25994617a477d4a0e0b326f9dfa648f80" },
   "mason-lspconfig.nvim": { "branch": "main", "commit": "7b01e2974a47d489bb92f47a41e4c0088ea8f86e" },

@@ -4,15 +4,23 @@ import Quickshell
 import Qt5Compat.GraphicalEffects
 
 Item {
+    id: clipboardRoot
     anchors.fill: parent
-    opacity: root.displayState === 15 ? 1 : 0
+    property real reveal: root.displayState === 15 ? 1 : 0
+    opacity: reveal
     visible: opacity > 0
     clip: true
-    Behavior on opacity {
-        NumberAnimation { duration: root.displayState === 15 ? 240 : 160; easing.type: Easing.OutCubic }
+    scale: 0.992 + reveal * 0.008
+    transform: Translate { y: (1 - clipboardRoot.reveal) * 8 }
+
+    Behavior on reveal {
+        NumberAnimation {
+            duration: root.displayState === 15 ? root.motionPanel : root.motionExit
+            easing.type: root.displayState === 15 ? Easing.OutExpo : Easing.OutCubic
+        }
     }
 
-    property color accent: root.currentThemeAccent || "#838996"
+    property color accent: root.currentThemeAccent || root.themeAccent
 
     ColumnLayout {
         anchors.fill: parent
@@ -60,11 +68,11 @@ Item {
                 width: 320
                 height: 32
                 radius: 16
-                color: "#0AFFFFFF"
+                color: root.ink(0.039)
                 border.width: 1
                 border.color: clipSearchInput.activeFocus
                     ? Qt.rgba(accent.r, accent.g, accent.b, 0.45)
-                    : "#16FFFFFF"
+                    : root.ink(0.086)
                 Behavior on border.color { ColorAnimation { duration: 150 } }
 
                 RowLayout {
@@ -75,7 +83,7 @@ Item {
 
                     Text {
                         text: "\uf002"
-                        color: clipSearchInput.activeFocus ? accent : "#80FFFFFF"
+                        color: clipSearchInput.activeFocus ? accent : root.ink(0.502)
                         font.family: root.font
                         font.pixelSize: 11
                         Behavior on color { ColorAnimation { duration: 150 } }
@@ -127,7 +135,7 @@ Item {
                             anchors.fill: parent
                             verticalAlignment: Text.AlignVCenter
                             text: "Search clipboard"
-                            color: "#80FFFFFF"
+                            color: root.ink(0.502)
                             font.family: root.uiFont
                             font.pixelSize: 12
                             visible: !clipSearchInput.text
@@ -159,7 +167,7 @@ Item {
             Text {
                 Layout.alignment: Qt.AlignVCenter
                 text: "esc"
-                color: "#80FFFFFF"
+                color: root.ink(0.502)
                 font.family: root.uiFont
                 font.pixelSize: 9
                 font.weight: Font.Medium
@@ -186,12 +194,14 @@ Item {
                     width: 142
                     height: clipListView.height - 8
                     radius: 14
+                    opacity: Math.max(0, Math.min(1, (clipboardRoot.reveal - 0.05 - Math.min(index, 5) * 0.04) / 0.68))
+                    transform: Translate { y: (1 - clipCard.opacity) * 8 }
                     color: clipListView.currentIndex === index
                         ? Qt.rgba(accent.r, accent.g, accent.b, 0.10)
-                        : (clipListView.hoveredItemId === model.id ? "#0AFFFFFF" : "#05FFFFFF")
+                        : (clipListView.hoveredItemId === model.id ? root.ink(0.039) : root.ink(0.02))
                     border.color: clipListView.currentIndex === index
                         ? Qt.rgba(accent.r, accent.g, accent.b, 0.45)
-                        : (clipListView.hoveredItemId === model.id ? "#1CFFFFFF" : "#0EFFFFFF")
+                        : (clipListView.hoveredItemId === model.id ? root.ink(0.11) : root.ink(0.055))
                     border.width: 1
                     Behavior on color { ColorAnimation { duration: 150 } }
                     Behavior on border.color { ColorAnimation { duration: 150 } }
@@ -214,13 +224,13 @@ Item {
                                 radius: 18
                                 color: clipCard.isSel
                                     ? Qt.rgba(accent.r, accent.g, accent.b, 0.14)
-                                    : "#12FFFFFF"
+                                    : root.ink(0.071)
                                 visible: model.type !== "image"
 
                                 Text {
                                     anchors.centerIn: parent
                                     text: "\uf0c5"
-                                    color: clipCard.isSel ? accent : "#B0FFFFFF"
+                                    color: clipCard.isSel ? accent : root.ink(0.69)
                                     font.family: root.font
                                     font.pixelSize: 16
                                 }
@@ -298,7 +308,7 @@ Item {
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: "\uf0c5"
-                    color: "#70FFFFFF"
+                    color: root.ink(0.439)
                     font.family: root.font
                     font.pixelSize: 22
                 }

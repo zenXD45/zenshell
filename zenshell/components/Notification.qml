@@ -2,19 +2,28 @@ import QtQuick
 import QtQuick.Layouts
 
 RowLayout {
+    id: notificationRoot
     anchors.fill: parent
     anchors.margins: 12
     spacing: 12
-    opacity: root.displayState === 10 ? 1 : 0
+    property real reveal: root.displayState === 10 ? 1 : 0
+    opacity: reveal
     visible: opacity > 0
     clip: true
-    Behavior on opacity { NumberAnimation { duration: root.displayState === 10 ? 240 : 160; easing.type: Easing.OutCubic } }
+    transform: Translate { y: (1 - notificationRoot.reveal) * 5 }
+
+    Behavior on reveal {
+        NumberAnimation {
+            duration: root.displayState === 10 ? root.motionBase : root.motionExit
+            easing.type: root.displayState === 10 ? Easing.OutExpo : Easing.OutCubic
+        }
+    }
 
     Rectangle {
         width: 44
         height: 44
         radius: 12
-        color: "#20FFFFFF"
+        color: root.ink(0.125)
         Layout.alignment: Qt.AlignVCenter
         
         Text {
@@ -31,7 +40,7 @@ RowLayout {
         
         Text {
             text: root.notifyAppName
-            color: "#A0A0A5"
+            color: root.ink(0.65)
             font.family: root.uiFont
             font.pixelSize: 11
             font.weight: Font.Medium
@@ -41,7 +50,7 @@ RowLayout {
 
         Text {
             text: root.notifySummary
-            color: "#FFFFFF"
+            color: root.themeFg
             font.family: root.uiFont
             font.pixelSize: 14
             font.weight: Font.Bold
@@ -51,7 +60,7 @@ RowLayout {
         
         Text {
             text: root.notifyBody
-            color: "#C0C0C5"
+            color: root.ink(0.8)
             font.family: root.uiFont
             font.pixelSize: 12
             font.weight: Font.Normal

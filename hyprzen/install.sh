@@ -21,7 +21,7 @@ echo ""
 echo "🗑  Removing Caelestia setup..."
 
 # Kill any Caelestia-related processes gracefully
-for proc in caelestia ags quickshell hyprshell; do
+for proc in caelestia quickshell hyprshell; do
     pkill -x "$proc" 2>/dev/null && echo "  killed: $proc" || true
 done
 
@@ -84,6 +84,9 @@ link "$DOTFILES_DIR/.config/wlogout" "$CONFIG_DIR/wlogout"
 link "$DOTFILES_DIR/.config/fastfetch" "$CONFIG_DIR/fastfetch"
 link "$DOTFILES_DIR/.config/wal"     "$CONFIG_DIR/wal"
 link "$DOTFILES_DIR/.config/nvim"    "$CONFIG_DIR/nvim"
+# The system typography — Google Sans Flex as the UI face. Link the single
+# file rather than the whole fontconfig dir, which also holds user state.
+link "$DOTFILES_DIR/.config/fontconfig/fonts.conf" "$CONFIG_DIR/fontconfig/fonts.conf"
 
 # ── Zsh config ─────────────────────────────────────────────────
 echo ""

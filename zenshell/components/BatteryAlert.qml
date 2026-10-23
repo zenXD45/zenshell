@@ -2,11 +2,20 @@ import QtQuick
 import QtQuick.Layouts
 
 Item {
+    id: batteryRoot
     anchors.fill: parent
-    opacity: root.displayState === 8 ? 1 : 0
+    property real reveal: root.displayState === 8 ? 1 : 0
+    opacity: reveal
     visible: opacity > 0
     clip: true
-    Behavior on opacity { NumberAnimation { duration: root.displayState === 8 ? 240 : 160; easing.type: Easing.OutCubic } }
+    transform: Translate { y: (1 - batteryRoot.reveal) * 5 }
+
+    Behavior on reveal {
+        NumberAnimation {
+            duration: root.displayState === 8 ? root.motionBase : root.motionExit
+            easing.type: root.displayState === 8 ? Easing.OutExpo : Easing.OutCubic
+        }
+    }
 
     RowLayout {
         anchors.centerIn: parent
@@ -27,7 +36,7 @@ Item {
                 height: 14
                 radius: 4
                 color: "transparent"
-                border.color: "#666666"
+                border.color: root.ink(0.45)
                 border.width: 1.5
 
                 // Battery fill
@@ -38,7 +47,7 @@ Item {
                     anchors.margins: 2
                     width: Math.max(0, (parent.width - 4) * (root.batteryPercent / 100))
                     radius: 2
-                    color: root.batteryCharging ? "#34C759" : (root.batteryPercent <= 20 ? "#FF3B30" : "#FFFFFF")
+                    color: root.batteryCharging ? "#34C759" : (root.batteryPercent <= 20 ? "#FF3B30" : root.themeFg)
                     
                     // Charging lightning bolt overlay
                     Text {
@@ -59,13 +68,13 @@ Item {
                 width: 2
                 height: 6
                 radius: 1
-                color: "#666666"
+                color: root.ink(0.45)
             }
         }
 
         Text {
             text: root.batteryPercent + "%"
-            color: root.batteryCharging ? "#34C759" : (root.batteryPercent <= 20 ? "#FF3B30" : "#FFFFFF")
+            color: root.batteryCharging ? "#34C759" : (root.batteryPercent <= 20 ? "#FF3B30" : root.themeFg)
             font.family: root.uiFont
             font.pixelSize: 15
             font.weight: Font.Bold
@@ -74,7 +83,7 @@ Item {
 
         Text {
             text: root.batteryCharging ? "Charging" : (root.batteryPercent <= 20 ? "Low Battery" : "Battery")
-            color: "#A0A0A0"
+            color: root.ink(0.65)
             font.family: root.uiFont
             font.pixelSize: 13
             font.weight: Font.Medium

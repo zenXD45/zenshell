@@ -4,11 +4,18 @@ import QtQuick.Layouts
 Item {
     id: profileSwitcher
     anchors.fill: parent
-    opacity: root.displayState === 16 ? 1 : 0
+    property real reveal: root.displayState === 16 ? 1 : 0
+    opacity: reveal
     visible: opacity > 0
     clip: true
-    Behavior on opacity {
-        NumberAnimation { duration: root.displayState === 16 ? 220 : 140; easing.type: Easing.OutCubic }
+    scale: 0.992 + reveal * 0.008
+    transform: Translate { y: (1 - profileSwitcher.reveal) * 8 }
+
+    Behavior on reveal {
+        NumberAnimation {
+            duration: root.displayState === 16 ? root.motionPanel : root.motionExit
+            easing.type: root.displayState === 16 ? Easing.OutExpo : Easing.OutCubic
+        }
     }
 
     onVisibleChanged: {
@@ -101,9 +108,9 @@ Item {
                     height: 20
                     implicitWidth: escapeText.implicitWidth + 14
                     radius: 7
-                    color: "#0AFFFFFF"
+                    color: root.ink(0.039)
                     border.width: 1
-                    border.color: "#16FFFFFF"
+                    border.color: root.ink(0.086)
 
                     Text {
                         id: escapeText

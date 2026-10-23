@@ -2,13 +2,22 @@ import QtQuick
 import QtQuick.Layouts
 
 RowLayout {
+    id: timerRoot
     anchors.fill: parent
     anchors.margins: 12
     spacing: 12
-    opacity: root.displayState === 7 ? 1 : 0
+    property real reveal: root.displayState === 7 ? 1 : 0
+    opacity: reveal
     visible: opacity > 0
     clip: true
-    Behavior on opacity { NumberAnimation { duration: root.displayState === 7 ? 240 : 160; easing.type: Easing.OutCubic } }
+    transform: Translate { y: (1 - timerRoot.reveal) * 5 }
+
+    Behavior on reveal {
+        NumberAnimation {
+            duration: root.displayState === 7 ? root.motionBase : root.motionExit
+            easing.type: root.displayState === 7 ? Easing.OutExpo : Easing.OutCubic
+        }
+    }
 
     Text {
         text: "⏱️"
@@ -40,7 +49,7 @@ RowLayout {
         Text {
             anchors.centerIn: parent
             text: "×"
-            color: "#808080"
+            color: root.ink(0.6)
             font.pixelSize: 20
             font.weight: Font.Bold
         }

@@ -2,12 +2,20 @@ import QtQuick
 import QtQuick.Layouts
 
 Item {
+    id: themeRoot
     anchors.fill: parent
-    opacity: root.displayState === 11 ? 1 : 0
+    property real reveal: root.displayState === 11 ? 1 : 0
+    opacity: reveal
     visible: opacity > 0
     clip: true
-    Behavior on opacity {
-        NumberAnimation { duration: root.displayState === 11 ? 240 : 160; easing.type: Easing.OutCubic }
+    scale: 0.992 + reveal * 0.008
+    transform: Translate { y: (1 - themeRoot.reveal) * 8 }
+
+    Behavior on reveal {
+        NumberAnimation {
+            duration: root.displayState === 11 ? root.motionPanel : root.motionExit
+            easing.type: root.displayState === 11 ? Easing.OutExpo : Easing.OutCubic
+        }
     }
 
     onVisibleChanged: {
@@ -93,14 +101,17 @@ Item {
                 }
 
                 delegate: Item {
+                    id: themeCardItem
                     width: 90
                     height: ListView.view.height
+                    opacity: Math.max(0, Math.min(1, (themeRoot.reveal - 0.05 - Math.min(index, 6) * 0.035) / 0.72))
+                    transform: Translate { y: (1 - themeCardItem.opacity) * 8 }
 
                     property var theme: root.themesList[index] || {}
-                    property color themeBg: theme.bg || "#1e1e2e"
-                    property color themeSurface: theme.surface || "#242434"
-                    property color themeFg: theme.fg || "#cdd6f4"
-                    property color themeAccent: theme.accent || "#838996"
+                    property color themeBg: theme.bg || root.themeSurface
+                    property color themeSurface: theme.surface || root.themeSurface
+                    property color themeFg: theme.fg || root.themeFg
+                    property color themeAccent: theme.accent || root.themeAccent
                     property bool themeDark: theme.dark !== false
                     property bool isActive: theme.id === root.currentThemeId
                     property bool isSel: index === themeList.currentIndex
@@ -110,9 +121,9 @@ Item {
                         id: card
                         anchors.fill: parent
                         radius: 14
-                        color: isSel ? "#0BFFFFFF" : (isHov ? "#07FFFFFF" : "transparent")
+                        color: isSel ? root.ink(0.043) : (isHov ? root.ink(0.027) : "transparent")
                         border.width: 1
-                        border.color: isSel ? "#18FFFFFF" : "transparent"
+                        border.color: isSel ? root.ink(0.094) : "transparent"
                         Behavior on color { ColorAnimation { duration: 150 } }
                         Behavior on border.color { ColorAnimation { duration: 150 } }
 
@@ -143,7 +154,7 @@ Item {
                                 border.width: 1
                                 border.color: isActive
                                     ? themeAccent
-                                    : (isSel ? "#2EFFFFFF" : (themeDark ? "#1AFFFFFF" : "#1A000000"))
+                                    : (isSel ? root.ink(0.18) : (themeDark ? root.ink(0.102) : "#1A000000"))
                                 Behavior on border.color { ColorAnimation { duration: 150 } }
 
                                 Rectangle {
@@ -154,7 +165,7 @@ Item {
                                     radius: 5
                                     color: themeSurface
                                     border.width: 1
-                                    border.color: themeDark ? "#22FFFFFF" : "#18000000"
+                                    border.color: themeDark ? root.ink(0.133) : "#18000000"
 
                                     Column {
                                         anchors.fill: parent
@@ -205,7 +216,7 @@ Item {
                                     Text {
                                         anchors.centerIn: parent
                                         text: "\uf00c"
-                                        color: themeAccent.hslLightness > 0.6 ? "#0D0D11" : "#FFFFFF"
+                                        color: root.onAccent()
                                         font.family: root.font
                                         font.pixelSize: 7
                                     }
@@ -261,7 +272,7 @@ Item {
                 visible: root.themesList.length > 0
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
-                    GradientStop { position: 0.0; color: "#E60D0D11" }
+                    GradientStop { position: 0.0; color: root.glass(0.9) }
                     GradientStop { position: 1.0; color: "transparent" }
                 }
             }
@@ -275,7 +286,7 @@ Item {
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
                     GradientStop { position: 0.0; color: "transparent" }
-                    GradientStop { position: 1.0; color: "#E60D0D11" }
+                    GradientStop { position: 1.0; color: root.glass(0.9) }
                 }
             }
 
@@ -287,7 +298,7 @@ Item {
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: "\uf1fc"
-                    color: "#70FFFFFF"
+                    color: root.ink(0.439)
                     font.family: root.font
                     font.pixelSize: 22
                 }

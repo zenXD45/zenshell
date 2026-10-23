@@ -1,0 +1,49 @@
+{
+  "title": "Choose the shell composition",
+  "question": "The roll assigned Column. Keep it, take an alternate, or re-roll.",
+  "options": [
+    {
+      "id": "assigned",
+      "kind": "assigned",
+      "label": "Column",
+      "kicker": "THE ROLL",
+      "lineage": "one vertical instrument, read top to bottom",
+      "thesis": "Control and notifications live in a single right-edge column so status is always in one place instead of scattered across the screen.",
+      "palette": ["#0f1715", "#18221f", "#1db954", "#d3c6aa"],
+      "materials": ["translucent glass pane", "hairline divider"],
+      "viewport": "A detached top bar for workspaces, title, clock and power, with a 384px column on the right edge holding sound, display, connectivity and a ranked notification list in one scroll.",
+      "risk": "A tall column on a short screen leaves the notification list cramped.",
+      "html": ".impeccable/mocks/decision/column.html",
+      "htmlFrame": "1536x864"
+    },
+    {
+      "id": "dealt-shelf",
+      "kind": "dealt",
+      "label": "Shelf",
+      "lineage": "one horizontal instrument along the bottom edge",
+      "thesis": "The entire shell is a single bar along the bottom edge and every panel grows out of it, so the desktop above stays completely clear.",
+      "palette": ["#0f1715", "#18221f", "#1db954", "#d3c6aa"],
+      "materials": ["translucent glass pane", "hairline divider"],
+      "viewport": "A 64px shelf at the bottom edge carrying workspaces, running apps, clock and status, with quick settings, a notification card and the launcher search rising out of it.",
+      "risk": "Growing three panels out of one shelf crowds the lower third of the screen.",
+      "html": ".impeccable/mocks/decision/shelf.html",
+      "htmlFrame": "1536x864"
+    },
+    {
+      "id": "dealt-islands",
+      "kind": "dealt",
+      "label": "Islands",
+      "lineage": "independent floating capsules over an untouched desktop",
+      "thesis": "Each concern is its own small capsule — clock, now playing, workspaces, system, launcher — floating free so the wallpaper stays visible between them.",
+      "palette": ["#0f1715", "#18221f", "#1db954", "#d3c6aa"],
+      "materials": ["translucent glass capsule", "hairline divider"],
+      "viewport": "A clock capsule and now-playing capsule at top centre, a workspace strip on the left edge, a system stack on the right edge, and the launcher as a wide grid across the bottom.",
+      "risk": "Five separate floating pieces read as scattered rather than as one shell.",
+      "html": ".impeccable/mocks/decision/islands.html",
+      "htmlFrame": "1536x864"
+    }
+  ],
+  "reroll": { "registers": ["safer", "bolder"] },
+  "buildPath": { "value": "code" },
+  "steer": true
+}

@@ -16,8 +16,8 @@ local SA = "SUPER + ALT"
 -- to librewolf / nautilus / codium, none of which the installer shipped, so
 -- SUPER+B, SUPER+E and SUPER+C all silently did nothing on a fresh install.
 hl.bind(S .. " + RETURN", hl.dsp.exec_cmd("kitty"))
-hl.bind(S .. " + B", hl.dsp.exec_cmd("firefox"))
-hl.bind(S .. " + E", hl.dsp.exec_cmd("thunar"))
+hl.bind(S .. " + B", hl.dsp.exec_cmd("helium-browser"))
+hl.bind(S .. " + E", hl.dsp.exec_cmd("nautilus"))
 hl.bind(S .. " + C", hl.dsp.exec_cmd("codium"))
 hl.bind(S .. " + D", hl.dsp.exec_cmd("quickshell ipc -p ~/.config/quickshell/dynamic-island/modules/desktop-widgets call widgets toggle"))
 
@@ -41,6 +41,7 @@ hl.bind(S .. " + N", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/island
 hl.bind(S .. " + X", hl.dsp.exec_cmd("wlogout -b 5 -T 350 -B 350"))
 hl.bind(SS .. " + L", hl.dsp.exec_cmd("hyprlock"))
 hl.bind(SS .. " + C", hl.dsp.exec_cmd("~/scripts/caffeine.sh"))
+
 -- ── Theme & Wallpaper (ZenShell island) ───────────────────────
 hl.bind(S .. " + T", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/island_ctl.sh themes"))
 hl.bind(S .. " + W", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/island_ctl.sh wallpapers"))

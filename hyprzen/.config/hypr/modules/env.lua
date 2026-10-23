@@ -2,6 +2,10 @@
 hl.env("WLR_RENDERER_ALLOW_SOFTWARE", "1")
 hl.env("WLR_NO_HARDWARE_CURSORS", "1")
 
+-- Keep terminal apps (btop, etc.) in a UTF-8 locale. The system locale is
+-- en_IN, which has no UTF-8 codeset and makes btop refuse to start.
+hl.env("LANG", "en_IN.UTF-8")
+
 hl.env("SDL_VIDEODRIVER", "wayland")
 hl.env("CLUTTER_BACKEND", "wayland")
 hl.env("QT_QPA_PLATFORM", "wayland;xcb")

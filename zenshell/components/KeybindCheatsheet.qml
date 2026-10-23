@@ -7,12 +7,18 @@ import Quickshell.Io
 Item {
     id: cheatsheetRoot
     anchors.fill: parent
-    opacity: root.displayState === 23 ? 1 : 0
+    property real reveal: root.displayState === 23 ? 1 : 0
+    opacity: reveal
     visible: opacity > 0
     clip: true
+    scale: 0.992 + reveal * 0.008
+    transform: Translate { y: (1 - cheatsheetRoot.reveal) * 8 }
 
-    Behavior on opacity {
-        NumberAnimation { duration: root.displayState === 23 ? 220 : 150; easing.type: Easing.OutCubic }
+    Behavior on reveal {
+        NumberAnimation {
+            duration: root.displayState === 23 ? root.motionPanel : root.motionExit
+            easing.type: root.displayState === 23 ? Easing.OutExpo : Easing.OutCubic
+        }
     }
 
     property var allBinds: []
@@ -121,7 +127,7 @@ Item {
                 color: root.uiCard
                 border.width: 1
                 border.color: searchInput.activeFocus
-                    ? Qt.rgba(root.currentThemeAccent.r, root.currentThemeAccent.g, root.currentThemeAccent.b, 0.42)
+                    ? Qt.rgba(root.themeAccent.r, root.themeAccent.g, root.themeAccent.b, 0.42)
                     : root.uiBorder
                 Behavior on border.color { ColorAnimation { duration: 140 } }
 
@@ -153,7 +159,7 @@ Item {
                         focus: root.displayState === 23
                         focusPolicy: Qt.StrongFocus
                         selectByMouse: true
-                        selectionColor: Qt.rgba(root.currentThemeAccent.r, root.currentThemeAccent.g, root.currentThemeAccent.b, 0.30)
+                        selectionColor: Qt.rgba(root.themeAccent.r, root.themeAccent.g, root.themeAccent.b, 0.30)
 
                         onTextChanged: filterBinds(text)
 
@@ -186,8 +192,8 @@ Item {
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
                         width: 26; height: 18; radius: 5
-                        color: "#12FFFFFF"
-                        border.color: "#1AFFFFFF"
+                        color: root.ink(0.071)
+                        border.color: root.ink(0.102)
                         border.width: 1
                         Text {
                             anchors.centerIn: parent
@@ -219,7 +225,7 @@ Item {
                     contentItem: Rectangle {
                         implicitWidth: 3
                         radius: 1.5
-                        color: "#30FFFFFF"
+                        color: root.ink(0.188)
                     }
                 }
 
@@ -260,7 +266,7 @@ Item {
                 Text {
                     Layout.alignment: Qt.AlignHCenter
                     text: "\uf002"
-                    color: "#22FFFFFF"
+                    color: root.ink(0.133)
                     font.family: root.font
                     font.pixelSize: 20
                 }
@@ -281,10 +287,13 @@ Item {
         id: categoryCard
 
         Rectangle {
+            id: categoryRoot
             Layout.fillWidth: true
             implicitHeight: cardCol.implicitHeight + 28
+            opacity: Math.max(0, Math.min(1, (cheatsheetRoot.reveal - 0.04 - Math.min(index, 5) * 0.045) / 0.68))
+            transform: Translate { y: (1 - categoryRoot.opacity) * 10 }
             radius: root.uiRadiusMd
-            color: "#08FFFFFF"
+            color: root.ink(0.031)
             border.width: 1
             border.color: root.uiBorder
 
@@ -321,7 +330,7 @@ Item {
                     Text {
                         Layout.alignment: Qt.AlignVCenter
                         text: modelData.binds.length
-                        color: "#3DFFFFFF"
+                        color: root.ink(0.239)
                         font.family: root.uiFont
                         font.pixelSize: 10
                     }
@@ -340,15 +349,15 @@ Item {
                             height: 21
                             width: keyLabel.implicitWidth + 14
                             radius: 6
-                            color: "#10FFFFFF"
+                            color: root.ink(0.063)
                             border.width: 1
-                            border.color: "#1CFFFFFF"
+                            border.color: root.ink(0.11)
 
                             Text {
                                 id: keyLabel
                                 anchors.centerIn: parent
                                 text: modelData.key
-                                color: "#D9FFFFFF"
+                                color: root.ink(0.851)
                                 font.family: "JetBrainsMono Nerd Font"
                                 font.pixelSize: 10
                                 font.weight: Font.Medium

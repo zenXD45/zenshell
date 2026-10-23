@@ -4,9 +4,17 @@ import QtQuick.Layouts
 Item {
     id: compact
     anchors.fill: parent
-    opacity: (root.displayState === 1 && !root.isExpanded) ? 1 : 0
+    property real reveal: (root.displayState === 1 && !root.isExpanded) ? 1 : 0
+    opacity: reveal
     visible: opacity > 0
-    Behavior on opacity { NumberAnimation { duration: (root.displayState === 1 && !root.isExpanded) ? 240 : 160; easing.type: Easing.OutCubic } }
+    transform: Translate { y: (1 - compact.reveal) * 4 }
+
+    Behavior on reveal {
+        NumberAnimation {
+            duration: (root.displayState === 1 && !root.isExpanded) ? root.motionBase : root.motionExit
+            easing.type: (root.displayState === 1 && !root.isExpanded) ? Easing.OutExpo : Easing.OutCubic
+        }
+    }
 
     readonly property bool hasLyric: root.lyricsMode && root.currentLyricLine !== ""
 
@@ -65,7 +73,7 @@ Item {
             verticalAlignment: Text.AlignVCenter
             opacity: compact.hasLyric ? 0 : 1
             visible: opacity > 0
-            Behavior on opacity { NumberAnimation { duration: 170; easing.type: Easing.OutCubic } }
+            Behavior on opacity { NumberAnimation { duration: compact.hasLyric ? 150 : 220; easing.type: Easing.OutCubic } }
         }
 
         Text {
@@ -81,7 +89,15 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             opacity: compact.hasLyric && stage.showPrimary ? 1 : 0
-            Behavior on opacity { NumberAnimation { duration: 170; easing.type: Easing.OutCubic } }
+            scale: compact.hasLyric && stage.showPrimary ? 1 : 0.97
+            transformOrigin: Item.Center
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: compact.hasLyric && stage.showPrimary ? 220 : 150
+                    easing.type: Easing.OutCubic
+                }
+            }
+            Behavior on scale { NumberAnimation { duration: 220; easing.type: Easing.OutExpo } }
         }
 
         Text {
@@ -97,7 +113,15 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             opacity: compact.hasLyric && !stage.showPrimary ? 1 : 0
-            Behavior on opacity { NumberAnimation { duration: 170; easing.type: Easing.OutCubic } }
+            scale: compact.hasLyric && !stage.showPrimary ? 1 : 0.97
+            transformOrigin: Item.Center
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: compact.hasLyric && !stage.showPrimary ? 220 : 150
+                    easing.type: Easing.OutCubic
+                }
+            }
+            Behavior on scale { NumberAnimation { duration: 220; easing.type: Easing.OutExpo } }
         }
     }
 
@@ -155,7 +179,7 @@ Item {
         anchors.bottomMargin: 4
         height: 1.5
         radius: 0.75
-        color: "#12FFFFFF"
+        color: root.ink(0.071)
         visible: root.trackLength > 0
 
         Rectangle {

@@ -13,7 +13,10 @@ import Quickshell.Services.UPower
 Scope {
     id: barScope
 
-    readonly property color accent: root.currentThemeAccent || "#838996"
+    readonly property color accent: root.currentThemeAccent || root.themeAccent
+    // Bar metadata needs more than the shell's faint token: at 10px on near
+    // black, 36% white is a smudge. Keep a three-step ramp instead.
+    readonly property color barMeta: root.ink(0.6)
 
     // Live clock, updated only while the bar exists.
     property string clockTime: Qt.formatTime(new Date(), "HH:mm")
@@ -31,12 +34,23 @@ Scope {
         }
     }
 
-    readonly property string windowTitle: {
+    // Hyprland's focus event is not replayed for a window that was already
+    // focused when the shell started. Fall back to the client Hyprland marks
+    // as most recently focused, so the rail never opens with an empty title.
+    function focusedWindowTitle() {
         var client = Hyprland.focusedClient;
         if (client && client.title) return client.title;
         var toplevel = Hyprland.activeToplevel;
-        return toplevel && toplevel.title ? toplevel.title : "";
+        if (toplevel && toplevel.title) return toplevel.title;
+        var clients = Hyprland.toplevels.values;
+        for (var i = 0; i < clients.length; i++) {
+            var ipc = clients[i].lastIpcObject || {};
+            if (ipc.focusHistoryID === 0 && clients[i].title) return clients[i].title;
+        }
+        return "";
     }
+
+    readonly property string windowTitle: focusedWindowTitle()
 
     readonly property var battery: UPower.displayDevice
     readonly property bool batteryPresent: battery && battery.isPresent
@@ -129,22 +143,22 @@ Scope {
                 radius: root.barStyle === "floating" ? 18 : 0
                 opacity: root.barActive ? 1 : 0
                 border.width: 1
-                border.color: root.islandTheme === "liquid" ? "#33FFFFFF" : "#28FFFFFF"
+                border.color: root.islandTheme === "liquid" ? root.ink(0.2) : root.ink(0.157)
                 clip: true
 
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
                     GradientStop {
                         position: 0.0
-                        color: root.islandTheme === "liquid" ? "#D9191920" : "#F0161619"
+                        color: root.islandTheme === "liquid" ? root.surface(0.85) : root.glass(0.94)
                     }
                     GradientStop {
                         position: 0.48
-                        color: root.islandTheme === "liquid" ? "#C20B0B0F" : "#F00C0C10"
+                        color: root.islandTheme === "liquid" ? root.glass(0.76) : root.glass(0.94)
                     }
                     GradientStop {
                         position: 1.0
-                        color: root.islandTheme === "liquid" ? "#D918181F" : "#F009090C"
+                        color: root.islandTheme === "liquid" ? root.surface(0.85) : root.glass(0.94)
                     }
                 }
 
@@ -163,7 +177,7 @@ Scope {
                     gradient: Gradient {
                         orientation: Gradient.Horizontal
                         GradientStop { position: 0.0; color: "transparent" }
-                        GradientStop { position: 0.5; color: "#30FFFFFF" }
+                        GradientStop { position: 0.5; color: root.ink(0.188) }
                         GradientStop { position: 1.0; color: "transparent" }
                     }
                 }
@@ -184,15 +198,15 @@ Scope {
 
                 Item {
                     anchors.fill: parent
-                    anchors.leftMargin: root.barStyle === "edge" ? 14 : 12
-                    anchors.rightMargin: root.barStyle === "edge" ? 14 : 12
+                    anchors.leftMargin: root.barStyle === "edge" ? 16 : 14
+                    anchors.rightMargin: root.barStyle === "edge" ? 16 : 14
 
                     // ── Identity + navigation ─────────────────────────────
                     Row {
                         id: leftGroup
                         anchors.left: parent.left
                         anchors.verticalCenter: parent.verticalCenter
-                        spacing: 6
+                        spacing: 8
 
                         BarIconButton {
                             glyph: "\uf009"
@@ -204,7 +218,7 @@ Scope {
                             id: workspaceRow
                             visible: barScope.hasWidget("workspaces")
                             anchors.verticalCenter: parent.verticalCenter
-                            spacing: 2
+                            spacing: 3
 
                             Repeater {
                                 model: Hyprland.workspaces
@@ -213,22 +227,22 @@ Scope {
                                     required property int index
 
                                     visible: index < 5 || modelData.focused || modelData.active
-                                    width: 22
-                                    height: 24
-                                    radius: 7
+                                    width: 24
+                                    height: 26
+                                    radius: 8
                                     color: modelData.focused
-                                        ? Qt.rgba(barScope.accent.r, barScope.accent.g, barScope.accent.b, 0.15)
-                                        : (workspaceMouse.containsMouse ? "#10FFFFFF" : "transparent")
+                                        ? Qt.rgba(barScope.accent.r, barScope.accent.g, barScope.accent.b, 0.16)
+                                        : (workspaceMouse.containsMouse ? root.ink(0.063) : "transparent")
                                     border.width: modelData.focused ? 1 : 0
-                                    border.color: Qt.rgba(barScope.accent.r, barScope.accent.g, barScope.accent.b, 0.30)
+                                    border.color: Qt.rgba(barScope.accent.r, barScope.accent.g, barScope.accent.b, 0.38)
 
                                     Text {
                                         anchors.centerIn: parent
                                         text: modelData.name !== "" ? modelData.name : modelData.id
                                         color: modelData.focused ? barScope.accent : (workspaceMouse.containsMouse ? root.uiFg : root.uiFgDim)
                                         font.family: root.uiFont
-                                        font.pixelSize: 9
-                                        font.weight: Font.DemiBold
+                                        font.pixelSize: 10
+                                        font.weight: modelData.focused ? Font.DemiBold : Font.Medium
                                     }
 
                                     MouseArea {
@@ -244,9 +258,9 @@ Scope {
 
                         Rectangle {
                             width: 1
-                            height: 14
+                            height: 16
                             radius: 0.5
-                            color: "#18FFFFFF"
+                            color: root.ink(0.141)
                             visible: barScope.hasWidget("window")
                                 && barScope.windowTitle !== ""
                                 && barWindow.barWidth >= 1040
@@ -256,12 +270,12 @@ Scope {
                             visible: barScope.hasWidget("window")
                                 && barScope.windowTitle !== ""
                                 && barWindow.barWidth >= 1040
-                            width: Math.min(176, implicitWidth)
+                            width: Math.min(190, implicitWidth)
                             anchors.verticalCenter: parent.verticalCenter
                             text: barScope.windowTitle
                             color: root.uiFgDim
                             font.family: root.uiFont
-                            font.pixelSize: 11
+                            font.pixelSize: 12
                             font.weight: Font.Medium
                             elide: Text.ElideRight
                         }
@@ -272,21 +286,21 @@ Scope {
                         id: centerGroup
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.verticalCenter: parent.verticalCenter
-                        spacing: 8
+                        spacing: 16
 
                         Rectangle {
                             visible: barScope.hasWidget("media") && barScope.hasMedia
-                            width: 218
-                            height: 30
+                            width: 228
+                            height: 32
                             radius: 10
-                            color: mediaMouse.containsMouse ? "#0EFFFFFF" : "transparent"
+                            color: mediaMouse.containsMouse ? root.ink(0.055) : "transparent"
                             Behavior on color { ColorAnimation { duration: 140 } }
 
                             Row {
                                 anchors.fill: parent
-                                anchors.leftMargin: 9
-                                anchors.rightMargin: 8
-                                spacing: 8
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 9
+                                spacing: 9
 
                                 Item {
                                     width: 13
@@ -309,16 +323,16 @@ Scope {
                                 }
 
                                 Column {
-                                    width: 151
+                                    width: 164
                                     anchors.verticalCenter: parent.verticalCenter
-                                    spacing: -1
+                                    spacing: 0
 
                                     Text {
                                         width: parent.width
                                         text: root.trackTitle || "Now playing"
                                         color: root.uiFg
                                         font.family: root.uiFont
-                                        font.pixelSize: 10
+                                        font.pixelSize: 12
                                         font.weight: Font.DemiBold
                                         elide: Text.ElideRight
                                     }
@@ -326,9 +340,9 @@ Scope {
                                     Text {
                                         width: parent.width
                                         text: root.trackArtist || "Unknown artist"
-                                        color: root.uiFgFaint
+                                        color: barScope.barMeta
                                         font.family: root.uiFont
-                                        font.pixelSize: 9
+                                        font.pixelSize: 10
                                         font.weight: Font.Medium
                                         elide: Text.ElideRight
                                     }
@@ -337,9 +351,9 @@ Scope {
                                 Text {
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: root.isPlaying ? "\uf04c" : "\uf04b"
-                                    color: root.uiFgFaint
+                                    color: root.uiFgDim
                                     font.family: root.font
-                                    font.pixelSize: 8
+                                    font.pixelSize: 10
                                 }
                             }
 
@@ -354,27 +368,29 @@ Scope {
 
                         Column {
                             visible: barScope.hasWidget("clock")
+                            width: 66
                             anchors.verticalCenter: parent.verticalCenter
-                            spacing: -2
+                            spacing: 0
 
                             Text {
-                                anchors.horizontalCenter: parent.horizontalCenter
+                                width: parent.width
+                                horizontalAlignment: Text.AlignHCenter
                                 text: barScope.clockTime
                                 color: root.uiFg
                                 font.family: root.uiFont
-                                font.pixelSize: 14
+                                font.pixelSize: 15
                                 font.weight: Font.DemiBold
-                                font.letterSpacing: 0.1
+                                font.features: { "tnum": 1 }
                             }
 
                             Text {
-                                anchors.horizontalCenter: parent.horizontalCenter
+                                width: parent.width
+                                horizontalAlignment: Text.AlignHCenter
                                 text: barScope.clockDate
-                                color: root.uiFgFaint
+                                color: barScope.barMeta
                                 font.family: root.uiFont
-                                font.pixelSize: 9
+                                font.pixelSize: 10
                                 font.weight: Font.Medium
-                                font.letterSpacing: 0.15
                             }
                         }
                     }
@@ -384,29 +400,29 @@ Scope {
                         id: rightGroup
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
-                        spacing: 3
+                        spacing: 5
 
                         Rectangle {
                             visible: barScope.hasWidget("weather")
-                            width: weatherRow.implicitWidth + 8
-                            height: 26
+                            width: weatherRow.implicitWidth + 10
+                            height: 28
                             radius: 8
-                            color: weatherMouse.containsMouse ? "#0EFFFFFF" : "transparent"
+                            color: weatherMouse.containsMouse ? root.ink(0.055) : "transparent"
                             Behavior on color { ColorAnimation { duration: 140 } }
 
                             Row {
                                 id: weatherRow
                                 anchors.centerIn: parent
-                                spacing: 4
+                                spacing: 5
 
                                 Text {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    width: 14
+                                    width: 15
                                     horizontalAlignment: Text.AlignHCenter
                                     text: root.weatherIcon
                                     color: root.uiFgDim
                                     font.family: root.font
-                                    font.pixelSize: 12
+                                    font.pixelSize: 13
                                 }
 
                                 Text {
@@ -414,8 +430,8 @@ Scope {
                                     text: root.weatherTemp
                                     color: root.uiFgDim
                                     font.family: root.uiFont
-                                    font.pixelSize: 10
-                                    font.weight: Font.DemiBold
+                                    font.pixelSize: 11
+                                    font.weight: Font.Medium
                                 }
                             }
 
@@ -433,8 +449,8 @@ Scope {
 
                         Rectangle {
                             width: 1
-                            height: 14
-                            color: "#18FFFFFF"
+                            height: 16
+                            color: root.ink(0.141)
                             visible: barScope.hasWidget("weather") && barScope.hasWidget("system")
                         }
 
@@ -442,29 +458,29 @@ Scope {
                             id: systemRow
                             visible: barScope.hasWidget("system")
                             anchors.verticalCenter: parent.verticalCenter
-                            spacing: 9
+                            spacing: 10
 
                             Text {
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: barScope.networkOnline
                                     ? (Networking.wifiEnabled ? "\uf1eb" : "\uf0e8")
                                     : "\uf072"
-                                color: barScope.networkOnline ? root.uiFgDim : root.uiFgFaint
+                                color: barScope.networkOnline ? root.uiFgDim : root.ink(0.439)
                                 font.family: root.font
-                                font.pixelSize: 11
+                                font.pixelSize: 12
                             }
 
                             Text {
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: barScope.volumeGlyph()
-                                color: barScope.muted ? root.uiFgFaint : root.uiFgDim
+                                color: barScope.muted ? root.ink(0.439) : root.uiFgDim
                                 font.family: root.font
-                                font.pixelSize: 11
+                                font.pixelSize: 12
                             }
 
                             Row {
                                 anchors.verticalCenter: parent.verticalCenter
-                                spacing: 3
+                                spacing: 4
                                 visible: barScope.batteryPresent
 
                                 Text {
@@ -472,21 +488,21 @@ Scope {
                                     text: barScope.batteryGlyph()
                                     color: barScope.batteryCharging ? barScope.accent : root.uiFgDim
                                     font.family: root.font
-                                    font.pixelSize: 12
+                                    font.pixelSize: 13
                                 }
 
                                 Text {
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: barScope.battery ? Math.round(barScope.batteryLevel) + "%" : ""
-                                    color: root.uiFgFaint
+                                    color: barScope.barMeta
                                     font.family: root.uiFont
-                                    font.pixelSize: 9
+                                    font.pixelSize: 10
                                     font.weight: Font.Medium
                                 }
                             }
 
                             Item {
-                                width: Math.min(trayRow.implicitWidth, 76)
+                                width: Math.min(trayRow.implicitWidth, 80)
                                 height: 20
                                 clip: true
 
@@ -500,14 +516,14 @@ Scope {
                                         delegate: Item {
                                             required property var modelData
                                             required property int index
-                                            width: 18
-                                            height: 18
+                                            width: 20
+                                            height: 20
                                             visible: index < 4
 
                                             Image {
                                                 anchors.centerIn: parent
-                                                width: 15
-                                                height: 15
+                                                width: 16
+                                                height: 16
                                                 source: barScope.trayIcon(modelData)
                                                 smooth: true
                                             }
@@ -543,8 +559,8 @@ Scope {
 
                         Rectangle {
                             width: 1
-                            height: 14
-                            color: "#18FFFFFF"
+                            height: 16
+                            color: root.ink(0.141)
                             visible: barScope.hasWidget("weather") || barScope.hasWidget("system")
                         }
 
@@ -556,8 +572,8 @@ Scope {
 
                         BarIconButton {
                             glyph: "\uf013"
-                            label: "Bar settings"
-                            onClicked: root.displayState = 17
+                            label: "Settings"
+                            onClicked: root.openSettings("profile")
                         }
                     }
                 }

@@ -1,14 +1,9 @@
-# Matugen — fallback defaults.
+# Matugen 4.x ↔ HyprZen bridge.
 #
-# Same contract as dynamic.toml: this is only what Hyprland sees before matugen
-# has sampled a wallpaper. At runtime, matugen rewrites THIS file via
-# .config/matugen/templates/hyprzen.toml and then scripts/gen-themes.py fans the
-# new palette out to themes/matugen.{lua,conf,css} and the kitty theme.
-# theme-switch.sh / wallpaper-selector.sh do both steps for you.
-#
-# This file is therefore intentionally committed as the static fallback only —
-# do not commit the wallpaper-derived version it gets rewritten into.
-
+# Emits a complete HyprZen theme source (same schema as themes/source/*.toml)
+# from Matugen's Material You roles + base16 scheme. gen-themes.py consumes the
+# result, so the wallpaper palette reaches Hyprland, Kitty, GTK CSS and the
+# island without any of them parsing Matugen's own output format.
 [meta]
 name = "Matugen"
 slug = "matugen"
@@ -16,12 +11,12 @@ icon = "🎨"
 dark  = true
 
 [colors]
-bg      = "#131318"
-surface = "#1f1f25"
-overlay = "#47464f"
-accent  = "#c2c1ff"
-fg      = "#e4e1e9"
-subfg   = "#c8c5d0"
+bg      = "#191113"
+surface = "#191113"
+overlay = "#22191b"
+accent  = "#ffb1c0"
+fg      = "#efdee0"
+subfg   = "#d6c2c4"
 urgent  = "#ffb4ab"
 
 [geometry]
@@ -35,19 +30,19 @@ inactive_opacity = 0.93
 shadow_color = "rgba(0000008c)"
 
 [palette]
-black   = "#131318"
-red     = "#ffb4ab"
-green   = "#b6f6bc"
-yellow  = "#f7f4b4"
-blue    = "#89b4fa"
-magenta = "#f4b8e4"
-cyan    = "#81c8be"
-white   = "#e4e1e9"
-bright_black   = "#47464f"
-bright_red     = "#ffb4ab"
-bright_green   = "#b6f6bc"
-bright_yellow  = "#f9f6be"
-bright_blue    = "#a8c7fa"
-bright_magenta = "#f6c3e8"
-bright_cyan    = "#99d9cf"
-bright_white   = "#ffffff"
+black   = "#232223"
+red     = "#b2b2b2"
+green   = "#b2b2b2"
+yellow  = "#b2b2b2"
+blue    = "#b2b2b2"
+magenta = "#b2b2b2"
+cyan    = "#b2b2b2"
+white   = "#fefefe"
+bright_black   = "#818081"
+bright_red     = "#b2b2b2"
+bright_green   = "#b2b2b2"
+bright_yellow  = "#b2b2b2"
+bright_blue    = "#b2b2b2"
+bright_magenta = "#b2b2b2"
+bright_cyan    = "#b2b2b2"
+bright_white   = "#fefefe"

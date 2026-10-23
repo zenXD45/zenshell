@@ -1,13 +1,11 @@
-/* Dynamic (pywal) — generated from themes/source/dynamic.toml */
-
-@define-color bg_base       #15180a;
-@define-color bg_surface    rgba(21, 24, 10, 0.88);
-@define-color bg_overlay    rgba(105, 109, 89, 0.75);
-@define-color accent        #90aa22;
-@define-color accent_soft   rgba(144, 170, 34, 0.18);
-@define-color accent_glow   rgba(144, 170, 34, 0.35);
-@define-color secondary     #90aa22;
-@define-color text          #ebdbb2;
-@define-color subtext       #bdae93;
-@define-color border_color  rgba(144, 170, 34, 0.2);
-@define-color urgent        #fb4934;
+@define-color bg_base #1d0c0c;
+@define-color bg_surface #1d0c0c;
+@define-color bg_overlay #1d0c0c;
+@define-color accent #B2B2B2;
+@define-color accent_soft alpha(#B2B2B2, 0.18);
+@define-color accent_glow transparent;
+@define-color secondary #BAA2C0;
+@define-color text #c6c2c2;
+@define-color subtext #c6c2c2;
+@define-color border_color alpha(#B2B2B2, 0.20);
+@define-color urgent #929292;

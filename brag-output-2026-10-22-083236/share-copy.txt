@@ -1,0 +1,6 @@
+ZenShell is now live.
+
+Dynamic island, dock, spotlight, clipboard, control centre, theme picker and camera
+effects — one Quickshell process, replacing rofi, waybar, swaync and eww.
+
+15 themes · 2 shell profiles · one installer

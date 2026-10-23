@@ -1,4 +1,3 @@
-hl.curve("overshot", { type = "bezier", points = { { 0.13, 0.99 }, { 0.29, 1.1 } } })
 hl.curve("md3_decel", { type = "bezier", points = { { 0.05, 0.7 }, { 0.1, 1 } } })
 hl.curve("md3_accel", { type = "bezier", points = { { 0.3, 0 }, { 0.8, 0.15 } } })
 hl.curve("easeOut", { type = "bezier", points = { { 0.16, 1 }, { 0.3, 1 } } })
@@ -9,28 +8,28 @@ hl.animation({
     leaf = "windows",
     enabled = true,
     speed = 5,
-    bezier = "overshot",
-    style = "popin 80%",
+    bezier = "easeOutQuint",
+    style = "popin 91%",
 })
 hl.animation({
     leaf = "windowsIn",
     enabled = true,
     speed = 6,
-    bezier = "overshot",
-    style = "popin 70%",
+    bezier = "easeOutQuint",
+    style = "popin 91%",
 })
 hl.animation({
     leaf = "windowsOut",
     enabled = true,
-    speed = 4,
+    speed = 5,
     bezier = "easeOut",
-    style = "popin 80%",
+    style = "popin 95%",
 })
 hl.animation({
     leaf = "windowsMove",
     enabled = true,
     speed = 6,
-    bezier = "overshot",
+    bezier = "easeOutQuint",
 })
 hl.animation({
     leaf = "border",
@@ -68,21 +67,21 @@ hl.animation({
     enabled = true,
     speed = 7,
     bezier = "md3_decel",
-    style = "slide",
+    style = "slidefade 15%",
 })
 hl.animation({
     leaf = "specialWorkspace",
     enabled = true,
     speed = 6,
     bezier = "md3_decel",
-    style = "slidevert",
+    style = "slidefadevert 15%",
 })
 hl.animation({
     leaf = "layers",
     enabled = true,
     speed = 5,
     bezier = "easeOutQuint",
-    style = "slide top",
+    style = "fade",
 })
 hl.config({
     animations = {

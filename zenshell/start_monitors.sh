@@ -10,7 +10,7 @@
 
 set -u
 
-DIR="$HOME/.config/quickshell/dynamic-island"
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 LOCK="${XDG_RUNTIME_DIR:-/tmp}/zen-monitors.lock"
 
 exec 9>"$LOCK"
@@ -37,8 +37,12 @@ pkill -f "scripts/notification_monitor.sh"
 
 sleep 1
 
-nohup bash "$DIR/scripts/battery_monitor.sh" >/tmp/battery_mon.log 2>&1 &
-nohup bash "$DIR/scripts/bluetooth_monitor.sh" >/tmp/bluetooth_mon.log 2>&1 &
-nohup python3 "$DIR/scripts/notification_monitor.py" >/tmp/notification_mon.log 2>&1 &
+# 9>&- closes the lock fd in each child. Without it the daemons inherit the
+# flock and hold it for their whole lifetime, so the next run of this script
+# always bails out with "another start_monitors.sh is already running" even
+# though nothing is starting.
+nohup bash "$DIR/scripts/battery_monitor.sh" >/tmp/battery_mon.log 2>&1 9>&- &
+nohup bash "$DIR/scripts/bluetooth_monitor.sh" >/tmp/bluetooth_mon.log 2>&1 9>&- &
+nohup python3 "$DIR/scripts/notification_monitor.py" >/tmp/notification_mon.log 2>&1 9>&- &
 
 echo "monitors: started (battery, bluetooth, notifications)."

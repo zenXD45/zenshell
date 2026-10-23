@@ -5,13 +5,20 @@ import Quickshell
 import Quickshell.Io
 
 Item {
+    id: launcherRoot
     anchors.fill: parent
-    opacity: root.displayState === 3 ? 1 : 0
+    property real reveal: root.displayState === 3 ? 1 : 0
+    opacity: reveal
     visible: opacity > 0
     clip: true
+    scale: 0.992 + reveal * 0.008
+    transform: Translate { y: (1 - launcherRoot.reveal) * 8 }
 
-    Behavior on opacity {
-        NumberAnimation { duration: root.displayState === 3 ? 220 : 150; easing.type: Easing.OutCubic }
+    Behavior on reveal {
+        NumberAnimation {
+            duration: root.displayState === 3 ? root.motionPanel : root.motionExit
+            easing.type: root.displayState === 3 ? Easing.OutExpo : Easing.OutCubic
+        }
     }
 
     // ── Selection copy ───────────────────────────────────────────
@@ -112,7 +119,7 @@ Item {
             Layout.fillWidth: true
             Layout.preferredHeight: 40
             radius: 12
-            color: searchInput.activeFocus ? "#10FFFFFF" : "#08FFFFFF"
+            color: searchInput.activeFocus ? root.ink(0.063) : root.ink(0.031)
             clip: true
 
             Behavior on color { ColorAnimation { duration: 160 } }
@@ -145,7 +152,7 @@ Item {
                     focus: root.displayState === 3
                     focusPolicy: Qt.StrongFocus
                     selectByMouse: true
-                    selectionColor: Qt.rgba(root.currentThemeAccent.r, root.currentThemeAccent.g, root.currentThemeAccent.b, 0.30)
+                    selectionColor: Qt.rgba(root.themeAccent.r, root.themeAccent.g, root.themeAccent.b, 0.30)
                     cursorDelegate: Rectangle {
                         width: 1.5
                         height: 15
@@ -208,8 +215,8 @@ Item {
                 Rectangle {
                     Layout.alignment: Qt.AlignVCenter
                     width: 25; height: 17; radius: 5
-                    color: "#10FFFFFF"
-                    border.color: "#20FFFFFF"
+                    color: root.ink(0.063)
+                    border.color: root.ink(0.125)
                     border.width: 1
                     Text {
                         anchors.centerIn: parent
@@ -231,7 +238,7 @@ Item {
                 anchors.rightMargin: 12
                 height: 1
                 radius: 0.5
-                color: searchInput.activeFocus ? root.currentThemeAccent : "#16FFFFFF"
+                color: searchInput.activeFocus ? root.currentThemeAccent : root.ink(0.086)
                 opacity: searchInput.activeFocus ? 0.62 : 0.55
                 Behavior on color { ColorAnimation { duration: 160 } }
                 Behavior on opacity { NumberAnimation { duration: 160 } }
@@ -259,13 +266,16 @@ Item {
                     contentItem: Rectangle {
                         implicitWidth: 2
                         radius: 1
-                        color: "#3DFFFFFF"
+                        color: root.ink(0.239)
                     }
                 }
 
                 delegate: Item {
+                    id: resultRow
                     width: resultList.width
                     height: 40
+                    opacity: Math.max(0, Math.min(1, (launcherRoot.reveal - 0.05 - index * 0.035) / 0.70))
+                    transform: Translate { y: (1 - resultRow.opacity) * 6 }
 
                     required property int index
                     required property var model
@@ -279,7 +289,7 @@ Item {
                         radius: 10
                         color: isSel
                             ? Qt.rgba(accent.r, accent.g, accent.b, 0.10)
-                            : (isHov ? "#0EFFFFFF" : "transparent")
+                            : (isHov ? root.ink(0.055) : "transparent")
                         border.width: 1
                         border.color: isSel
                             ? Qt.rgba(accent.r, accent.g, accent.b, 0.30)
@@ -301,7 +311,7 @@ Item {
                             width: 26; height: 26; radius: 8
                             color: isSel
                                 ? Qt.rgba(accent.r, accent.g, accent.b, 0.12)
-                                : "#0EFFFFFF"
+                                : root.ink(0.055)
                             border.width: 1
                             border.color: isSel
                                 ? Qt.rgba(accent.r, accent.g, accent.b, 0.22)
@@ -339,7 +349,7 @@ Item {
                         Text {
                             Layout.fillWidth: true
                             text: model.name
-                            color: isSel ? "#FFFFFF" : root.uiFg
+                            color: isSel ? root.themeFg : root.uiFg
                             font.family: root.uiFont
                             font.pixelSize: 13
                             font.weight: isSel ? Font.DemiBold : Font.Medium
@@ -389,7 +399,7 @@ Item {
                 Text {
                     Layout.alignment: Qt.AlignHCenter
                     text: "\uf002"
-                    color: "#22FFFFFF"
+                    color: root.ink(0.133)
                     font.family: root.font
                     font.pixelSize: 18
                 }
@@ -420,8 +430,8 @@ Item {
             Rectangle {
                 Layout.alignment: Qt.AlignVCenter
                 width: 18; height: 14; radius: 4
-                color: "#0CFFFFFF"
-                border.color: "#18FFFFFF"
+                color: root.ink(0.047)
+                border.color: root.ink(0.094)
                 border.width: 1
                 Text {
                     anchors.centerIn: parent
@@ -444,8 +454,8 @@ Item {
             Rectangle {
                 Layout.alignment: Qt.AlignVCenter
                 width: 14; height: 14; radius: 4
-                color: "#0CFFFFFF"
-                border.color: "#18FFFFFF"
+                color: root.ink(0.047)
+                border.color: root.ink(0.094)
                 border.width: 1
                 Text {
                     anchors.centerIn: parent

@@ -2,11 +2,20 @@ import QtQuick
 import QtQuick.Layouts
 
 Item {
+    id: osdRoot
     anchors.fill: parent
-    opacity: root.displayState === 2 ? 1 : 0
+    property real reveal: root.displayState === 2 ? 1 : 0
+    opacity: reveal
     visible: opacity > 0
     clip: true
-    Behavior on opacity { NumberAnimation { duration: root.displayState === 2 ? 240 : 160; easing.type: Easing.OutCubic } }
+    transform: Translate { y: (1 - osdRoot.reveal) * 5 }
+
+    Behavior on reveal {
+        NumberAnimation {
+            duration: root.displayState === 2 ? root.motionBase : root.motionExit
+            easing.type: root.displayState === 2 ? Easing.OutExpo : Easing.OutCubic
+        }
+    }
 
     RowLayout {
         anchors.fill: parent

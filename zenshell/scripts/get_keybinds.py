@@ -16,6 +16,8 @@ def human_readable_action(action):
         '~/.config/quickshell/dynamic-island/island_ctl.sh power': 'Power Menu',
         '~/.config/quickshell/dynamic-island/island_ctl.sh control': 'Control Center / Notifications',
         '~/.config/quickshell/dynamic-island/island_ctl.sh profiles': 'Open Profile Switcher',
+        '~/.config/quickshell/dynamic-island/island_ctl.sh dock': 'Toggle Dock Auto-hide',
+        '~/.config/quickshell/dynamic-island/island_ctl.sh dock-settings': 'Open Dock Settings',
         'hyprlock': 'Lock Screen',
         '~/.config/quickshell/dynamic-island/island_ctl.sh powerprofile': 'Power Profiles',
         '~/.config/quickshell/dynamic-island/island_ctl.sh themes': 'Theme Switcher',

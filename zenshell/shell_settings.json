@@ -12,5 +12,14 @@
     "clock",
     "weather",
     "system"
-  ]
+  ],
+  "widgets_visible": true,
+  "ui_scale": 1.25,
+  "motion": "normal",
+  "lyrics_mode": true,
+  "dnd": false,
+  "power_profile": "balanced",
+  "night_light": false,
+  "caffeine": false,
+  "camera_output": "1280x720@30"
 }

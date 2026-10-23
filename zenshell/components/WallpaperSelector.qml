@@ -4,12 +4,20 @@ import Quickshell
 import Quickshell.Io
 
 Item {
+    id: wallpaperRoot
     anchors.fill: parent
-    opacity: root.displayState === 4 ? 1 : 0
+    property real reveal: root.displayState === 4 ? 1 : 0
+    opacity: reveal
     visible: opacity > 0
     clip: true
-    Behavior on opacity {
-        NumberAnimation { duration: root.displayState === 4 ? 240 : 160; easing.type: Easing.OutCubic }
+    scale: 0.992 + reveal * 0.008
+    transform: Translate { y: (1 - wallpaperRoot.reveal) * 8 }
+
+    Behavior on reveal {
+        NumberAnimation {
+            duration: root.displayState === 4 ? root.motionPanel : root.motionExit
+            easing.type: root.displayState === 4 ? Easing.OutExpo : Easing.OutCubic
+        }
     }
 
     property string currentWallpaperPath: ""
@@ -133,8 +141,11 @@ Item {
                 }
 
                 delegate: Item {
+                    id: wpCardItem
                     width: (index === wpListView.currentIndex) ? 180 : 118
                     height: ListView.view.height
+                    opacity: Math.max(0, Math.min(1, (wallpaperRoot.reveal - 0.05 - Math.min(index, 4) * 0.04) / 0.70))
+                    transform: Translate { y: (1 - wpCardItem.opacity) * 10 }
                     Behavior on width { NumberAnimation { duration: 260; easing.type: Easing.OutQuart } }
 
                     property bool isSel: index === wpListView.currentIndex
@@ -150,12 +161,12 @@ Item {
                             id: wpCard
                             anchors.fill: parent
                             radius: 14
-                            color: "#0F0F14"
+                            color: root.themeBg
                             clip: true
                             border.width: isSel ? 1.5 : 1
                             border.color: isSel
-                                ? Qt.rgba(root.currentThemeAccent.r, root.currentThemeAccent.g, root.currentThemeAccent.b, 0.55)
-                                : (isHov ? "#26FFFFFF" : "#12FFFFFF")
+                                ? Qt.rgba(root.themeAccent.r, root.themeAccent.g, root.themeAccent.b, 0.55)
+                                : (isHov ? root.ink(0.149) : root.ink(0.071))
                             Behavior on border.color { ColorAnimation { duration: 180 } }
 
                             property real press: 1.0
@@ -220,7 +231,7 @@ Item {
                 visible: wallpapersModel.count > 0
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
-                    GradientStop { position: 0.0; color: "#E60D0D11" }
+                    GradientStop { position: 0.0; color: root.glass(0.9) }
                     GradientStop { position: 1.0; color: "transparent" }
                 }
             }
@@ -234,7 +245,7 @@ Item {
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
                     GradientStop { position: 0.0; color: "transparent" }
-                    GradientStop { position: 1.0; color: "#E60D0D11" }
+                    GradientStop { position: 1.0; color: root.glass(0.9) }
                 }
             }
 
@@ -246,7 +257,7 @@ Item {
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: "\uf03e"
-                    color: "#70FFFFFF"
+                    color: root.ink(0.439)
                     font.family: root.font
                     font.pixelSize: 22
                 }

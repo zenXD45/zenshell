@@ -1,13 +1,13 @@
 /* Matugen — generated from themes/source/matugen.toml */
 
-@define-color bg_base       #131318;
-@define-color bg_surface    rgba(31, 31, 37, 0.88);
-@define-color bg_overlay    rgba(71, 70, 79, 0.75);
-@define-color accent        #c2c1ff;
-@define-color accent_soft   rgba(194, 193, 255, 0.18);
-@define-color accent_glow   rgba(194, 193, 255, 0.35);
-@define-color secondary     #c2c1ff;
-@define-color text          #e4e1e9;
-@define-color subtext       #c8c5d0;
-@define-color border_color  rgba(194, 193, 255, 0.2);
+@define-color bg_base       #191113;
+@define-color bg_surface    rgba(25, 17, 19, 0.88);
+@define-color bg_overlay    rgba(34, 25, 27, 0.75);
+@define-color accent        #ffb1c0;
+@define-color accent_soft   rgba(255, 177, 192, 0.18);
+@define-color accent_glow   rgba(255, 177, 192, 0.35);
+@define-color secondary     #ffb1c0;
+@define-color text          #efdee0;
+@define-color subtext       #d6c2c4;
+@define-color border_color  rgba(255, 177, 192, 0.2);
 @define-color urgent        #ffb4ab;

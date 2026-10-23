@@ -2,11 +2,20 @@ import QtQuick
 import QtQuick.Layouts
 
 Item {
+    id: weatherRoot
     anchors.fill: parent
-    opacity: root.displayState === 6 ? 1 : 0
+    property real reveal: root.displayState === 6 ? 1 : 0
+    opacity: reveal
     visible: opacity > 0
     clip: true
-    Behavior on opacity { NumberAnimation { duration: root.displayState === 6 ? 240 : 160; easing.type: Easing.OutCubic } }
+    transform: Translate { y: (1 - weatherRoot.reveal) * 5 }
+
+    Behavior on reveal {
+        NumberAnimation {
+            duration: root.displayState === 6 ? root.motionBase : root.motionExit
+            easing.type: root.displayState === 6 ? Easing.OutExpo : Easing.OutCubic
+        }
+    }
 
     RowLayout {
         anchors.centerIn: parent

@@ -68,8 +68,8 @@ def get_weather():
             "temp": f"{temp}°",
             "desc": desc,
             "icon": icon,
-            "high": f"H:{high}°",
-            "low": f"L:{low}°"
+            "high": f"{high}°",
+            "low": f"{low}°"
         }))
     except Exception as e:
         print(json.dumps({

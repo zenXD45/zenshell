@@ -8,17 +8,17 @@ Rectangle {
 
     property string glyph: ""
     property string label: ""
-    property color accent: root.currentThemeAccent || "#838996"
+    property color accent: root.currentThemeAccent || root.themeAccent
     property bool active: false
 
     signal clicked()
 
-    width: 26
-    height: 26
-    radius: 8
+    width: 28
+    height: 28
+    radius: 9
     color: active
         ? Qt.rgba(accent.r, accent.g, accent.b, 0.14)
-        : (pointer.containsMouse ? "#12FFFFFF" : "transparent")
+        : (pointer.containsMouse ? root.ink(0.071) : "transparent")
     border.width: active ? 1 : 0
     border.color: Qt.rgba(accent.r, accent.g, accent.b, 0.24)
 
@@ -29,7 +29,7 @@ Rectangle {
         text: button.glyph
         color: button.active ? button.accent : (pointer.containsMouse ? root.uiFg : root.uiFgDim)
         font.family: root.font
-        font.pixelSize: 12
+        font.pixelSize: 13
     }
 
     MouseArea {

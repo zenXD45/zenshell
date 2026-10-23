@@ -10,7 +10,7 @@ RowLayout {
     property string icon: ""
     property string hint: ""
     property string meta: ""
-    property color accent: root.currentThemeAccent || "#838996"
+    property color accent: root.currentThemeAccent || root.themeAccent
 
     Layout.fillWidth: true
     Layout.preferredHeight: 28
@@ -40,9 +40,8 @@ RowLayout {
         text: header.title
         color: root.uiFg
         font.family: root.uiFont
-        font.pixelSize: 14
+        font.pixelSize: 15
         font.weight: Font.DemiBold
-        font.letterSpacing: 0.1
     }
 
     Item { Layout.fillWidth: true }
@@ -51,10 +50,10 @@ RowLayout {
         Layout.alignment: Qt.AlignVCenter
         visible: header.hint !== ""
         text: header.hint
-        color: "#80FFFFFF"
+        color: root.ink(0.6)
         font.family: root.uiFont
-        font.pixelSize: 9
-        font.weight: Font.Medium
+        font.pixelSize: 10
+        font.weight: Font.Normal
     }
 
     Rectangle {
@@ -73,7 +72,7 @@ RowLayout {
             text: header.meta
             color: root.uiFgDim
             font.family: root.uiFont
-            font.pixelSize: 9
+            font.pixelSize: 10
             font.weight: Font.Medium
         }
     }

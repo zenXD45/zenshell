@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ZenShell AGS — Column</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:1536px; height:864px; overflow:hidden; }
+  body {
+    font-family:"Fira Sans",system-ui,sans-serif; color:#d3c6aa;
+    background:
+      radial-gradient(1100px 680px at 72% 22%, rgba(29,185,84,.20), transparent 62%),
+      radial-gradient(820px 560px at 18% 80%, rgba(127,187,179,.13), transparent 60%),
+      linear-gradient(168deg,#0f1715 0%,#101c18 46%,#0a1210 100%);
+    position:relative;
+  }
+  .haze { position:absolute; inset:0; background:linear-gradient(90deg,rgba(15,23,21,.30),rgba(15,23,21,.82)); }
+
+  /* ── Detached top bar ── */
+  .bar {
+    position:absolute; top:0; left:0; right:0; height:46px; display:flex; align-items:center;
+    padding:0 20px; gap:16px;
+    background:rgba(24,34,31,.80); border-bottom:1px solid rgba(29,185,84,.16);
+    backdrop-filter:blur(20px) saturate(1.15);
+  }
+  .pips { display:flex; gap:6px; }
+  .pip { width:8px; height:8px; border-radius:50%; background:rgba(157,169,160,.30); }
+  .pip.on { background:#1db954; box-shadow:0 0 0 3px rgba(29,185,84,.18); }
+  .pip.busy { background:rgba(211,198,170,.55); }
+  .title { font-size:12px; color:#9da9a0; }
+  .title b { color:#d3c6aa; font-weight:500; }
+  .spacer { flex:1; }
+  .clock { font-size:13px; font-weight:500; font-family:"JetBrains Mono",monospace; color:#d3c6aa; }
+  .stat { display:flex; align-items:center; gap:7px; font-size:11px; color:#9da9a0; font-family:"JetBrains Mono",monospace; }
+  .stat svg { width:14px; height:14px; stroke:#9da9a0; fill:none; stroke-width:1.7; }
+
+  /* ── The column: one vertical instrument, read top to bottom ── */
+  .column {
+    position:absolute; top:66px; right:22px; bottom:22px; width:384px;
+    border-radius:22px; background:rgba(24,34,31,.90);
+    border:1px solid rgba(29,185,84,.22);
+    box-shadow:0 26px 60px rgba(0,0,0,.60), inset 0 1px 0 rgba(255,255,255,.05);
+    backdrop-filter:blur(24px) saturate(1.15);
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  .colhead { padding:16px 18px 12px; display:flex; align-items:center; gap:10px;
+    border-bottom:1px solid rgba(211,198,170,.09); }
+  .colhead .lbl { font-size:10px; font-weight:600; letter-spacing:.15em; text-transform:uppercase; color:#9da9a0; }
+  .colhead .net { margin-left:auto; display:flex; align-items:center; gap:6px; font-size:10px;
+    color:#1db954; font-family:"JetBrains Mono",monospace; }
+  .colhead .net svg { width:12px; height:12px; stroke:#1db954; fill:none; stroke-width:1.9; }
+  .scroll { flex:1; overflow:hidden; padding:14px 18px 18px; }
+
+  .sec { font-size:10px; font-weight:600; letter-spacing:.15em; text-transform:uppercase;
+    color:#9da9a0; margin:0 0 10px; }
+  .sec.mt { margin-top:20px; }
+
+  .row { display:flex; align-items:center; gap:11px; margin-bottom:12px; }
+  .row svg { width:15px; height:15px; stroke:#9da9a0; fill:none; stroke-width:1.7; flex:none; }
+  .row .lab { font-size:12px; width:56px; color:#d3c6aa; }
+  .track { flex:1; height:5px; border-radius:3px; background:rgba(211,198,170,.13); position:relative; }
+  .fill { position:absolute; inset:0 auto 0 0; border-radius:3px; background:#1db954; }
+  .fill.warm { background:#dbbc7f; }
+  .pct { font-size:11px; color:#9da9a0; font-family:"JetBrains Mono",monospace; width:36px; text-align:right; }
+
+  .chips { display:flex; gap:8px; margin-bottom:4px; }
+  .chip { flex:1; height:34px; border-radius:11px; display:flex; align-items:center; justify-content:center; gap:6px;
+    background:rgba(211,198,170,.07); border:1px solid rgba(211,198,170,.08); }
+  .chip svg { width:14px; height:14px; stroke:#9da9a0; fill:none; stroke-width:1.7; }
+  .chip span { font-size:10px; color:#9da9a0; }
+  .chip.on { background:rgba(29,185,84,.18); border-color:rgba(29,185,84,.34); }
+  .chip.on svg { stroke:#1db954; }
+  .chip.on span { color:#d3c6aa; }
+
+  /* Notification rows — ranked by time, the column never reflows */
+  .note { display:flex; gap:11px; padding:11px 0; border-top:1px solid rgba(211,198,170,.08); }
+  .note:first-of-type { border-top:0; }
+  .note .bar2 { width:2px; border-radius:1px; background:rgba(29,185,84,.55); flex:none; }
+  .note.mute .bar2 { background:rgba(157,169,160,.30); }
+  .note .body { flex:1; min-width:0; }
+  .note .hd { display:flex; align-items:baseline; gap:8px; margin-bottom:3px; }
+  .note .nm { font-size:11px; font-weight:600; color:#d3c6aa; }
+  .note .wh { margin-left:auto; font-size:10px; color:#9da9a0; font-family:"JetBrains Mono",monospace; }
+  .note p { font-size:12px; color:#9da9a0; line-height:1.45; }
+  .note .act { margin-top:8px; display:flex; gap:7px; }
+  .note .act span { font-size:10px; padding:4px 9px; border-radius:7px;
+    background:rgba(29,185,84,.16); border:1px solid rgba(29,185,84,.30); color:#d3c6aa; }
+  .note .act span.sec2 { background:rgba(211,198,170,.07); border-color:rgba(211,198,170,.10); color:#9da9a0; }
+  .empty { font-size:11px; color:#9da9a0; font-style:italic; padding:14px 0 4px; }
+</style>
+</head>
+<body>
+  <div class="haze"></div>
+
+  <!-- Detached top bar -->
+  <div class="bar">
+    <div class="pips">
+      <span class="pip on"></span><span class="pip busy"></span><span class="pip"></span>
+      <span class="pip"></span><span class="pip"></span>
+    </div>
+    <div class="title"><b>kitty</b> — Create a beautiful AGS desktop rice</div>
+    <div class="spacer"></div>
+    <div class="stat"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M21 11v2"/><rect x="4" y="9" width="11" height="6" rx="1" fill="#1db954" stroke="none"/></svg>78%</div>
+    <div class="stat"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/></svg>70</div>
+    <div class="stat"><svg viewBox="0 0 24 24"><path d="M2 8a14 14 0 0118 0"/><path d="M5 12a9 9 0 0112 0"/><circle cx="12" cy="18" r="1.6"/></svg>BSNL0962</div>
+    <div class="clock">10:48</div>
+  </div>
+
+  <!-- The column -->
+  <div class="column">
+    <div class="colhead">
+      <span class="lbl">Control</span>
+      <span class="net"><svg viewBox="0 0 24 24"><path d="M2 8a14 14 0 0118 0"/><path d="M5 12a9 9 0 0112 0"/><circle cx="12" cy="18" r="1.6"/></svg>BSNL0962</span>
+    </div>
+    <div class="scroll">
+      <p class="sec">Sound &amp; display</p>
+      <div class="row">
+        <svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9a4 4 0 010 6"/></svg>
+        <span class="lab">Volume</span>
+        <div class="track"><div class="fill" style="width:70%"></div></div>
+        <span class="pct">70%</span>
+      </div>
+      <div class="row">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>
+        <span class="lab">Bright</span>
+        <div class="track"><div class="fill warm" style="width:58%"></div></div>
+        <span class="pct">58%</span>
+      </div>
+
+      <p class="sec mt">Connectivity</p>
+      <div class="chips">
+        <div class="chip on"><svg viewBox="0 0 24 24"><path d="M7 11l4 4 6-7"/></svg><span>Wi-Fi</span></div>
+        <div class="chip on"><svg viewBox="0 0 24 24"><path d="M7 11l4 4 6-7"/></svg><span>BT</span></div>
+        <div class="chip"><svg viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5"/></svg><span>DND</span></div>
+      </div>
+
+      <p class="sec mt">Notifications</p>
+      <div class="note">
+        <div class="bar2"></div>
+        <div class="body">
+          <div class="hd"><span class="nm">Kitty</span><span class="wh">now</span></div>
+          <p>Build finished — ags compiled in 412 ms.</p>
+          <div class="act"><span>Open</span><span class="sec2">Dismiss</span></div>
+        </div>
+      </div>
+      <div class="note mute">
+        <div class="bar2"></div>
+        <div class="body">
+          <div class="hd"><span class="nm">Helium</span><span class="wh">2m</span></div>
+          <p>Niri — a full desktop shell in about 85 mb of ram.</p>
+        </div>
+      </div>
+      <div class="note mute">
+        <div class="bar2"></div>
+        <div class="body">
+          <div class="hd"><span class="nm">Hyprland</span><span class="wh">9m</span></div>
+          <p>Config reloaded — 0 errors.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

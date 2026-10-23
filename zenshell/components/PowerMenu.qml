@@ -3,12 +3,20 @@ import QtQuick.Layouts
 import Quickshell.Io
 
 Item {
+    id: powerRoot
     anchors.fill: parent
-    opacity: root.displayState === 12 ? 1 : 0
+    property real reveal: root.displayState === 12 ? 1 : 0
+    opacity: reveal
     visible: opacity > 0
     clip: true
-    Behavior on opacity {
-        NumberAnimation { duration: root.displayState === 12 ? 240 : 160; easing.type: Easing.OutCubic }
+    scale: 0.992 + reveal * 0.008
+    transform: Translate { y: (1 - powerRoot.reveal) * 8 }
+
+    Behavior on reveal {
+        NumberAnimation {
+            duration: root.displayState === 12 ? root.motionPanel : root.motionExit
+            easing.type: root.displayState === 12 ? Easing.OutExpo : Easing.OutCubic
+        }
     }
 
     property int selectedIndex: 0
@@ -78,6 +86,8 @@ Item {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     Layout.minimumWidth: 64
+                    opacity: Math.max(0, Math.min(1, (powerRoot.reveal - 0.04 - index * 0.05) / 0.65))
+                    transform: Translate { y: (1 - actionCard.opacity) * 8 }
 
                     property bool isSel: index === selectedIndex
                     property bool isHov: btnArea.containsMouse
@@ -89,11 +99,11 @@ Item {
                         radius: 16
                         color: actionCard.isSel
                             ? Qt.rgba(actionCard.itemAccent.r, actionCard.itemAccent.g, actionCard.itemAccent.b, 0.11)
-                            : (actionCard.isHov ? "#0AFFFFFF" : "#05FFFFFF")
+                            : (actionCard.isHov ? root.ink(0.039) : root.ink(0.02))
                         border.width: actionCard.isSel ? 1.2 : 1
                         border.color: actionCard.isSel
                             ? Qt.rgba(actionCard.itemAccent.r, actionCard.itemAccent.g, actionCard.itemAccent.b, 0.42)
-                            : (actionCard.isHov ? "#1CFFFFFF" : "#0EFFFFFF")
+                            : (actionCard.isHov ? root.ink(0.11) : root.ink(0.055))
 
                         Behavior on color { ColorAnimation { duration: 150 } }
                         Behavior on border.color { ColorAnimation { duration: 150 } }
@@ -147,16 +157,16 @@ Item {
                             width: 15
                             height: 15
                             radius: 4
-                            color: actionCard.isSel ? Qt.rgba(actionCard.itemAccent.r, actionCard.itemAccent.g, actionCard.itemAccent.b, 0.08) : "#06FFFFFF"
+                            color: actionCard.isSel ? Qt.rgba(actionCard.itemAccent.r, actionCard.itemAccent.g, actionCard.itemAccent.b, 0.08) : root.ink(0.024)
                             border.width: 1
                             border.color: actionCard.isSel
                                 ? Qt.rgba(actionCard.itemAccent.r, actionCard.itemAccent.g, actionCard.itemAccent.b, 0.28)
-                                : "#10FFFFFF"
+                                : root.ink(0.063)
 
                             Text {
                                 anchors.centerIn: parent
                                 text: modelData.key
-                                color: actionCard.isSel ? actionCard.itemAccent : "#70FFFFFF"
+                                color: actionCard.isSel ? actionCard.itemAccent : root.ink(0.439)
                                 font.family: root.font
                                 font.pixelSize: 8
                                 font.weight: Font.Medium

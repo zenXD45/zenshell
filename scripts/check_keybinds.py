@@ -51,6 +51,9 @@ EXTERNAL = {
     "caffeine.sh",
     # installed as a side effect of a listed package
     "vscodium", "codium",
+    # The package is helium-browser-bin, but the binary it ships is named
+    # helium-browser — and the keybind calls the binary, not the package.
+    "helium-browser",
 }
 
 # Every media key must go through osd_control.sh, which performs the change and

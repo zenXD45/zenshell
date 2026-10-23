@@ -6,14 +6,21 @@ import Quickshell.Io
 Item {
     id: powerProfileMenu
     anchors.fill: parent
-    opacity: root.displayState === 14 ? 1 : 0
+    property real reveal: root.displayState === 14 ? 1 : 0
+    opacity: reveal
     visible: opacity > 0
     clip: true
-    Behavior on opacity {
-        NumberAnimation { duration: root.displayState === 14 ? 240 : 160; easing.type: Easing.OutCubic }
+    scale: 0.992 + reveal * 0.008
+    transform: Translate { y: (1 - powerProfileMenu.reveal) * 8 }
+
+    Behavior on reveal {
+        NumberAnimation {
+            duration: root.displayState === 14 ? root.motionPanel : root.motionExit
+            easing.type: root.displayState === 14 ? Easing.OutExpo : Easing.OutCubic
+        }
     }
 
-    property color themeAccent: root.currentThemeAccent || "#838996"
+    property color themeAccent: root.currentThemeAccent || root.themeAccent
     property string activeProfile: "balanced"
     property int selectedIndex: 1
 
@@ -121,11 +128,11 @@ Item {
                         radius: 16
                         color: profileCard.isActive
                             ? Qt.rgba(profileCard.itemAccent.r, profileCard.itemAccent.g, profileCard.itemAccent.b, 0.12)
-                            : (profileCard.isSel || profileCard.isHov ? "#0AFFFFFF" : "#05FFFFFF")
+                            : (profileCard.isSel || profileCard.isHov ? root.ink(0.039) : root.ink(0.02))
                         border.width: profileCard.isActive ? 1.3 : 1
                         border.color: profileCard.isActive
                             ? Qt.rgba(profileCard.itemAccent.r, profileCard.itemAccent.g, profileCard.itemAccent.b, 0.45)
-                            : (profileCard.isSel || profileCard.isHov ? "#1FFFFFFF" : "#0EFFFFFF")
+                            : (profileCard.isSel || profileCard.isHov ? root.ink(0.122) : root.ink(0.055))
 
                         Behavior on color { ColorAnimation { duration: 160 } }
                         Behavior on border.color { ColorAnimation { duration: 160 } }
@@ -173,7 +180,7 @@ Item {
                             Text {
                                 Layout.alignment: Qt.AlignHCenter
                                 text: modelData.sub
-                                color: profileCard.isActive ? "#A6FFFFFF" : "#80FFFFFF"
+                                color: profileCard.isActive ? root.ink(0.651) : root.ink(0.502)
                                 font.family: root.uiFont
                                 font.pixelSize: 9
                                 font.weight: Font.Medium
@@ -190,16 +197,16 @@ Item {
                             radius: 4
                             color: profileCard.isSel || profileCard.isActive
                                 ? Qt.rgba(profileCard.itemAccent.r, profileCard.itemAccent.g, profileCard.itemAccent.b, 0.08)
-                                : "#06FFFFFF"
+                                : root.ink(0.024)
                             border.width: 1
                             border.color: profileCard.isSel || profileCard.isActive
                                 ? Qt.rgba(profileCard.itemAccent.r, profileCard.itemAccent.g, profileCard.itemAccent.b, 0.28)
-                                : "#10FFFFFF"
+                                : root.ink(0.063)
 
                             Text {
                                 anchors.centerIn: parent
                                 text: modelData.key
-                                color: profileCard.isSel || profileCard.isActive ? profileCard.itemAccent : "#70FFFFFF"
+                                color: profileCard.isSel || profileCard.isActive ? profileCard.itemAccent : root.ink(0.439)
                                 font.family: root.font
                                 font.pixelSize: 8
                                 font.weight: Font.Medium

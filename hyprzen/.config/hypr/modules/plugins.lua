@@ -1,25 +1,23 @@
--- HyprZen — Plugin Configuration (scrolloverview)
--- The plugin is loaded at startup via "hyprpm reload -n" in exec.lua.
--- This file only sets plugin options; it will silently skip if the plugin
--- is not installed (pcall catches the unknown-key errors).
+-- .config/hypr/hyprland.lua
+hl.config({
+    plugin = {
+        scrolloverview = {
+            gesture_distance = 300, -- how far is the "max" for the gesture
+            scale = 0.5, -- preferred overview scale
+            workspace_gap = 100,
+            layout = "vertical", -- vertical, horizontal, or auto (per-monitor orientation)
+            wallpaper = 2, -- 0: global only, 1: per-workspace only, 2: both
+            blur = true, -- blur only the main overview wallpaper
 
-pcall(function()
-    hl.config({
-        plugin = {
-            scrolloverview = {
-                gesture_distance = 300,
-                scale = 0.5,
-                workspace_gap = 100,
-                layout = "vertical",
-                wallpaper = 0,
-                blur = false,
-                shadow = {
-                    enabled = false,
-                    range = 50,
-                    render_power = 3,
-                    color = 0xee1a1a1a,
-                },
+            shadow = {
+                enabled = true,
+                range = 50,
             },
         },
-    })
+    },
+})
+
+-- Toggle ScrollOverview with SUPER+g
+hl.bind("SUPER + g", function()
+    hl.plugin.scrolloverview.overview("toggle all")
 end)

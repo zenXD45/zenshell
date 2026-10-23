@@ -107,7 +107,12 @@ OFFICIAL_PKGS=(
     btop fastfetch cava thunar neovim
     # Desktop apps bound in modules/keybinds.lua (SUPER+B / SUPER+E / SUPER+C).
     # These must stay in sync with the keybinds or the binds are dead on arrival.
-    firefox vscodium
+    # The package is helium-browser-bin, but the binary it ships is named
+    # helium-browser — that is what the keybind calls. firefox and thunar are
+    # still installed: the window rules match their classes, and both remain
+    # usable from the dock.
+    helium-browser-bin nautilus vscodium
+    firefox
     # Shell tools (used by the zsh aliases / fzf-tab)
     eza bat fzf
     # Toolchain (only needed for the few AUR builds — hyprswitch, pywal)
@@ -120,7 +125,7 @@ OFFICIAL_PKGS=(
     # themes/*.css for GTK apps, so without it every GTK app is unthemed and the
     # wlogout CSS is dead weight. It lives in extra since the 2026 move — the
     # AUR entry this installer used to carry (`adw-gtk3`) no longer exists.
-    adw-gtk-theme cantarell-fonts ttf-jetbrains-mono-nerd noto-fonts-emoji papirus-icon-theme
+    adw-gtk-theme ttf-jetbrains-mono-nerd noto-fonts-emoji papirus-icon-theme
     # Python (monitors / control scripts)
     python python-dbus python-gobject
     # Shell
@@ -181,7 +186,7 @@ else
 fi
 
 # ── Fonts ───────────────────────────────────────────────────────────
-step "Fonts (GeistMono Nerd + Cantarell)"
+step "Fonts (GeistMono Nerd + Google Sans Flex)"
 
 # GeistMono Nerd Font — terminal + icon glyphs.
 FONT_DIR="$HOME/.local/share/fonts/GeistMonoNerdFont"
@@ -198,13 +203,27 @@ else
     ok "Font cached."
 fi
 
-# Cantarell — the humanist UI font. It ships as `cantarell-fonts` in the Arch
-# repos and is installed with the official package set above. Keep this check
-# explicit so a partial install does not silently substitute a generic sans.
-if fc-list 2> /dev/null | grep -qi 'Cantarell'; then
-    ok "Cantarell UI font available."
+# Google Sans Flex — the desktop's UI face. One variable font carrying the
+# wght (100-900), wdth, opsz, slnt and ROND axes, so every weight the
+# interface asks for is the same file rather than a dozen separate ones. It is
+# not in any distro repo, so it is fetched from the google/fonts upstream and
+# cached in the user's font dir. Keep this explicit: a partial install that
+# silently falls back to a generic sans looks like a font bug that never
+# reproduces.
+GSF_DIR="$HOME/.local/share/fonts/GoogleSansFlex"
+GSF_URL="https://github.com/google/fonts/raw/main/ofl/googlesansflex/GoogleSansFlex%5BROND%2Copsz%2Cslnt%2Cwdth%2Cwght%5D.ttf"
+if fc-list 2> /dev/null | grep -qi 'Google Sans Flex'; then
+    ok "Google Sans Flex UI font available."
 else
-    warn "Cantarell is missing — run: sudo pacman -S cantarell-fonts"
+    log "Downloading Google Sans Flex..."
+    mkdir -p "$GSF_DIR"
+    if curl -fL -o "$GSF_DIR/GoogleSansFlex.ttf" "$GSF_URL"; then
+        fc-cache -f &> /dev/null || true
+        ok "Google Sans Flex installed."
+    else
+        rm -f "$GSF_DIR/GoogleSansFlex.ttf"
+        warn "Google Sans Flex download failed — the UI falls back to a generic sans."
+    fi
 fi
 
 # ── Hyprland plugin ─────────────────────────────────────────────────
@@ -378,7 +397,7 @@ check "wallpapers [$HOME/wallpapers]"      sh -c '[ -d "$HOME/wallpapers" ] && [
 check "hypridle config"                    sh -c '[ -f "$HOME/.config/hypr/hypridle.conf" ]'
 check "hyprlock config"                    sh -c '[ -f "$HOME/.config/hypr/hyprlock.conf" ]'
 check "theme sources"                      sh -c '[ -n "$(ls "$HOME/.config/hypr/themes/source/"*.toml 2>/dev/null)" ]'
-check "Cantarell font (ZenShell UI)"      sh -c 'fc-list 2>/dev/null | grep -qi Cantarell'
+check "Google Sans Flex font (ZenShell UI)" sh -c 'fc-list 2>/dev/null | grep -qi "Google Sans Flex"'
 check "nerd font (icons)"                  sh -c 'fc-list 2>/dev/null | grep -qi nerd'
 # Re-enabled: this check was commented out because adw-gtk3 could never install
 # (the AUR name it used was gone). It installs from extra as adw-gtk-theme now,
@@ -390,8 +409,8 @@ check "matugen (wallpaper theme)"          sh -c 'command -v matugen'
 check "waypaper"                           sh -c 'command -v waypaper'
 check "hyprshot (screenshots)"             sh -c 'command -v hyprshot'
 check "keybind binary: kitty"              sh -c 'command -v kitty'
-check "keybind binary: firefox"            sh -c 'command -v firefox'
-check "keybind binary: thunar"             sh -c 'command -v thunar'
+check "keybind binary: helium-browser"      sh -c 'command -v helium-browser'
+check "keybind binary: nautilus"           sh -c 'command -v nautilus'
 check "keybind binary: codium"             sh -c 'command -v codium'
 check "keybind binary: wlogout"            sh -c 'command -v wlogout'
 check "zen shell themes.json"              sh -c '[ -f "$HOME/.config/hypr/themes/themes.json" ]'

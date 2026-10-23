@@ -8,15 +8,22 @@ import Quickshell.Services.Pipewire
 Item {
     id: controlPanel
     anchors.fill: parent
-    opacity: root.displayState === 13 ? 1 : 0
+    property real reveal: root.displayState === 13 ? 1 : 0
+    opacity: reveal
     visible: opacity > 0
     clip: true
-    Behavior on opacity {
-        NumberAnimation { duration: root.displayState === 13 ? 240 : 160; easing.type: Easing.OutCubic }
+    scale: 0.992 + reveal * 0.008
+    transform: Translate { y: (1 - controlPanel.reveal) * 8 }
+
+    Behavior on reveal {
+        NumberAnimation {
+            duration: root.displayState === 13 ? root.motionPanel : root.motionExit
+            easing.type: root.displayState === 13 ? Easing.OutExpo : Easing.OutCubic
+        }
     }
 
     // ── Dynamic Theme Accent ───────────────────────────────────────
-    property color themeAccent: root.currentThemeAccent || "#838996"
+    property color themeAccent: root.currentThemeAccent || root.themeAccent
 
     // ── View Navigation ────────────────────────────────────────────
     property string currentView: "main" // "main" | "network" | "bt"
@@ -211,30 +218,27 @@ Item {
     }
 
     // ── Toggles ────────────────────────────────────────────────────
+    // Caffeine, night light and Do Not Disturb are settings, not panel-local
+    // state. They go through root.setValue() so the store, the live effect
+    // and the persisted file stay in step — the control centre and the
+    // settings window are then two views of the same thing instead of two
+    // switches that quietly undo each other.
     function toggleCaffeine() {
-        if (caffeineEnabled) {
-            // Was on (idle daemon stopped) → restore idle protection.
-            runShell("pgrep -x hypridle >/dev/null 2>&1 || (nohup hypridle >/dev/null 2>&1 &)")
-            caffeineEnabled = false
-            showAction("Caffeine off", "Normal idle and lock restored")
-        } else {
-            runShell("pkill -x hypridle >/dev/null 2>&1 || true")
-            caffeineEnabled = true
-            showAction("Caffeine on", "Idle and sleep are inhibited")
-        }
-        caffeineRefresh.restart()
+        var next = !root.values.caffeine;
+        root.setValue("caffeine", next);
+        caffeineEnabled = next;
+        showAction(next ? "Caffeine on" : "Caffeine off",
+                   next ? "Idle and sleep are inhibited" : "Normal idle and lock restored");
+        caffeineRefresh.restart();
     }
 
     function toggleNightLight() {
-        nightLightEnabled = !nightLightEnabled
-        if (nightLightEnabled) {
-            runShell("pgrep -x hyprsunset >/dev/null 2>&1 || (nohup hyprsunset -t 4500 >/dev/null 2>&1 &)")
-        } else {
-            runShell("pkill -x hyprsunset >/dev/null 2>&1 || true")
-        }
-        showAction(nightLightEnabled ? "Night Light on" : "Night Light off",
-                   nightLightEnabled ? "Warm tint at 4500K" : "Display temperature restored")
-        nightRefresh.restart()
+        var next = !root.values.night_light;
+        root.setValue("night_light", next);
+        nightLightEnabled = next;
+        showAction(next ? "Night Light on" : "Night Light off",
+                   next ? "Warm tint at 4500K" : "Display temperature restored");
+        nightRefresh.restart();
     }
 
     function toggleMic() {
@@ -242,9 +246,10 @@ Item {
     }
 
     function toggleDnd() {
-        root.dndEnabled = !root.dndEnabled
-        showAction(root.dndEnabled ? "Do Not Disturb on" : "Do Not Disturb off",
-                   root.dndEnabled ? "Alerts stay in the notification shade" : "Island alerts are back")
+        var next = !root.values.dnd;
+        root.setValue("dnd", next);
+        showAction(next ? "Do Not Disturb on" : "Do Not Disturb off",
+                   next ? "Alerts stay in the notification shade" : "Island alerts are back")
     }
 
     function toggleRecord() {
@@ -395,10 +400,19 @@ Item {
     // │ MAIN VIEW
     // ════════════════════════════════════════════════════════════════
     ColumnLayout {
+        id: mainView
         anchors.fill: parent
         anchors.margins: 18
         spacing: 10
-        visible: currentView === "main"
+        opacity: currentView === "main" ? 1 : 0
+        visible: opacity > 0
+        transform: Translate { y: currentView === "main" ? (1 - mainView.opacity) * 8 : -mainView.opacity * 8 }
+        Behavior on opacity {
+            NumberAnimation {
+                duration: currentView === "main" ? root.motionBase : root.motionExit
+                easing.type: Easing.OutCubic
+            }
+        }
 
         // ── Header (compact) ─────────────────────────────────────
         RowLayout {
@@ -438,15 +452,54 @@ Item {
                 font.weight: Font.Medium
             }
 
+            // Settings. The full settings window lives on its own overlay
+            // surface, so the panel closes first — two surfaces asking for
+            // exclusive keyboard focus at once is how the compositor ends up
+            // with a dead keyboard.
+            Rectangle {
+                id: settingsChip
+                height: 22
+                width: 22
+                radius: 11
+                color: settingsChipMouse.containsMouse
+                    ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.18)
+                    : "transparent"
+                border.width: 1
+                border.color: settingsChipMouse.containsMouse
+                    ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.34)
+                    : "transparent"
+                Behavior on color { ColorAnimation { duration: 140 } }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "\uf013"
+                    color: settingsChipMouse.containsMouse ? themeAccent : root.uiFgDim
+                    font.family: root.font
+                    font.pixelSize: 11
+                }
+
+                MouseArea {
+                    id: settingsChipMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        root.displayState = 0;
+                        root.updateState();
+                        root.openSettings();
+                    }
+                }
+            }
+
             // Shell profile switcher. The 01/02 glyph reads as a miniature
             // island over a dock (01) or a single command rail (02).
             Rectangle {
                 height: 22
                 implicitWidth: profileChipRow.implicitWidth + 16
                 radius: 11
-                color: profileChipMouse.containsMouse ? "#14FFFFFF" : "#0AFFFFFF"
+                color: profileChipMouse.containsMouse ? root.ink(0.078) : root.ink(0.039)
                 border.width: 1
-                border.color: profileChipMouse.containsMouse ? "#24FFFFFF" : "#14FFFFFF"
+                border.color: profileChipMouse.containsMouse ? root.ink(0.141) : root.ink(0.078)
                 Behavior on color { ColorAnimation { duration: 140 } }
                 Behavior on border.color { ColorAnimation { duration: 140 } }
 
@@ -540,7 +593,7 @@ Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 radius: 14
-                color: netArea.containsMouse ? "#10FFFFFF" : root.uiCard
+                color: netArea.containsMouse ? root.ink(0.063) : root.uiCard
                 border.width: 1
                 border.color: netArea.containsMouse ? root.uiBorderStrong : root.uiBorder
                 Behavior on color { ColorAnimation { duration: 130 } }
@@ -615,7 +668,7 @@ Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 radius: 14
-                color: btArea.containsMouse ? "#10FFFFFF" : root.uiCard
+                color: btArea.containsMouse ? root.ink(0.063) : root.uiCard
                 border.width: 1
                 border.color: btArea.containsMouse ? root.uiBorderStrong : root.uiBorder
                 Behavior on color { ColorAnimation { duration: 130 } }
@@ -679,6 +732,92 @@ Item {
                     onClicked: { currentView = "bt"; refreshBluetooth() }
                 }
             }
+
+            // Camera — the ported camera-effects plugin. The tile is the
+            // entry point; the panel itself lives in the island.
+            Rectangle {
+                id: camTile
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                radius: 14
+                color: camArea.containsMouse ? root.ink(0.063) : root.uiCard
+                border.width: 1
+                border.color: camArea.containsMouse ? root.uiBorderStrong : root.uiBorder
+                Behavior on color { ColorAnimation { duration: 130 } }
+
+                property real press: 1.0
+                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: camTile.press; yScale: camTile.press }
+                Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
+
+                readonly property var svc: root.cameraService
+                readonly property bool live: svc ? (svc.consumers > 0 || svc.running) : false
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 10
+                    anchors.rightMargin: 8
+                    spacing: 9
+
+                    Rectangle {
+                        width: 30; height: 30; radius: 9
+                        color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, camTile.live ? 0.24 : 0.13)
+                        border.width: 1
+                        border.color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, camTile.live ? 0.5 : 0.24)
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰄀"
+                            color: themeAccent
+                            font.family: root.font
+                            font.pixelSize: 13
+                        }
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+
+                        Text {
+                            text: "Camera"
+                            color: root.uiFg
+                            font.family: root.uiFont
+                            font.pixelSize: 12
+                            font.weight: Font.Medium
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: !camTile.svc ? "Not installed"
+                                : camTile.svc.block ? "Blocked"
+                                : camTile.svc.consumers > 0 ? "In use"
+                                : camTile.svc.running ? "Live"
+                                : "Idle"
+                            color: camTile.live ? themeAccent : root.uiFgFaint
+                            font.family: root.uiFont
+                            font.pixelSize: 10
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    Text {
+                        text: ""
+                        color: root.uiFgFaint
+                        font.family: root.font
+                        font.pixelSize: 8
+                    }
+                }
+
+                MouseArea {
+                    id: camArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onPressed: parent.press = 0.98
+                    onReleased: parent.press = 1.0
+                    onClicked: {
+                        root.displayState = 24;
+                        root.updateState();
+                    }
+                }
+            }
         }
 
         // ── Quick toggles (compact) ──────────────────────────────
@@ -697,7 +836,7 @@ Item {
                 radius: 12
                 color: caffeineEnabled
                     ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.16)
-                    : (caffArea.containsMouse ? "#10FFFFFF" : root.uiCard)
+                    : (caffArea.containsMouse ? root.ink(0.063) : root.uiCard)
                 border.width: 1
                 border.color: caffeineEnabled
                     ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.38)
@@ -747,7 +886,7 @@ Item {
                 radius: 12
                 color: nightLightEnabled
                     ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.16)
-                    : (nightArea.containsMouse ? "#10FFFFFF" : root.uiCard)
+                    : (nightArea.containsMouse ? root.ink(0.063) : root.uiCard)
                 border.width: 1
                 border.color: nightLightEnabled
                     ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.38)
@@ -797,7 +936,7 @@ Item {
                 radius: 12
                 color: root.dndEnabled
                     ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.16)
-                    : (dndArea.containsMouse ? "#10FFFFFF" : root.uiCard)
+                    : (dndArea.containsMouse ? root.ink(0.063) : root.uiCard)
                 border.width: 1
                 border.color: root.dndEnabled
                     ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.38)
@@ -847,7 +986,7 @@ Item {
                 radius: 12
                 color: micMuted
                     ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.16)
-                    : (micArea.containsMouse ? "#10FFFFFF" : root.uiCard)
+                    : (micArea.containsMouse ? root.ink(0.063) : root.uiCard)
                 border.width: 1
                 border.color: micMuted
                     ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.38)
@@ -927,7 +1066,7 @@ Item {
                             anchors.verticalCenter: parent.verticalCenter
                             width: parent.width
                             height: 4; radius: 2
-                            color: "#1AFFFFFF"
+                            color: root.ink(0.102)
                         }
 
                         Rectangle {
@@ -942,7 +1081,7 @@ Item {
                             x: Math.max(0, Math.min(parent.width - width, (parent.width - 12) * (brightnessValue / 100)))
                             width: brightDrag.pressed ? 14 : 12
                             height: width; radius: width / 2
-                            color: "#FFFFFF"
+                            color: root.themeFg
                             Behavior on width { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
                         }
 
@@ -959,9 +1098,9 @@ Item {
 
                     Rectangle {
                         width: 36; height: 20; radius: 6
-                        color: "#10FFFFFF"
+                        color: root.ink(0.063)
                         border.width: 1
-                        border.color: "#18FFFFFF"
+                        border.color: root.ink(0.094)
                         Text {
                             anchors.centerIn: parent
                             text: Math.round(brightnessValue) + "%"
@@ -996,7 +1135,7 @@ Item {
                             anchors.verticalCenter: parent.verticalCenter
                             width: parent.width
                             height: 4; radius: 2
-                            color: "#1AFFFFFF"
+                            color: root.ink(0.102)
                         }
 
                         Rectangle {
@@ -1011,7 +1150,7 @@ Item {
                             x: Math.max(0, Math.min(parent.width - width, (parent.width - 12) * (volumeValue / 100)))
                             width: volDrag.pressed ? 14 : 12
                             height: width; radius: width / 2
-                            color: "#FFFFFF"
+                            color: root.themeFg
                             Behavior on width { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
                         }
 
@@ -1028,9 +1167,9 @@ Item {
 
                     Rectangle {
                         width: 36; height: 20; radius: 6
-                        color: "#10FFFFFF"
+                        color: root.ink(0.063)
                         border.width: 1
-                        border.color: "#18FFFFFF"
+                        border.color: root.ink(0.094)
                         Text {
                             anchors.centerIn: parent
                             text: Math.round(volumeValue) + "%"
@@ -1051,7 +1190,7 @@ Item {
             Layout.preferredHeight: 32
             radius: 11
             visible: recorderMode !== "none"
-            color: recArea.containsMouse ? "#10FFFFFF" : root.uiCard
+            color: recArea.containsMouse ? root.ink(0.063) : root.uiCard
             border.width: 1
             border.color: recordingActive
                 ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.35)
@@ -1098,9 +1237,9 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             radius: root.uiRadiusMd
-            color: "#07FFFFFF"
+            color: root.ink(0.027)
             border.width: 1
-            border.color: "#12FFFFFF"
+            border.color: root.ink(0.071)
 
             ColumnLayout {
                 anchors.fill: parent
@@ -1178,7 +1317,7 @@ Item {
                         Text {
                             Layout.alignment: Qt.AlignHCenter
                             text: "\uf0f3"
-                            color: "#20FFFFFF"
+                            color: root.ink(0.125)
                             font.family: root.font
                             font.pixelSize: 18
                         }
@@ -1219,7 +1358,7 @@ Item {
                             contentItem: Rectangle {
                                 implicitWidth: 3
                                 radius: 1.5
-                                color: "#40FFFFFF"
+                                color: root.ink(0.251)
                             }
                         }
 
@@ -1227,9 +1366,9 @@ Item {
                             width: ListView.view.width
                             height: 68
                             radius: 12
-                            color: notifHover.hovered ? "#12FFFFFF" : "#0AFFFFFF"
+                            color: notifHover.hovered ? root.ink(0.071) : root.ink(0.039)
                             border.width: 1
-                            border.color: notifHover.hovered ? "#20FFFFFF" : "#12FFFFFF"
+                            border.color: notifHover.hovered ? root.ink(0.125) : root.ink(0.071)
 
                             property var notif: root.notificationList[index] || {}
 
@@ -1337,10 +1476,19 @@ Item {
     // │ NETWORK & WI-FI SUB-VIEW
     // ════════════════════════════════════════════════════════════════
     ColumnLayout {
+        id: networkView
         anchors.fill: parent
         anchors.margins: 16
         spacing: 8
-        visible: currentView === "network"
+        opacity: currentView === "network" ? 1 : 0
+        visible: opacity > 0
+        transform: Translate { y: currentView === "network" ? (1 - networkView.opacity) * 8 : -networkView.opacity * 8 }
+        Behavior on opacity {
+            NumberAnimation {
+                duration: currentView === "network" ? root.motionBase : root.motionExit
+                easing.type: Easing.OutCubic
+            }
+        }
 
         // Sub-view header
         RowLayout {
@@ -1349,8 +1497,8 @@ Item {
 
             Rectangle {
                 width: 28; height: 28; radius: 10
-                color: backNetArea.containsMouse ? "#1AFFFFFF" : "#0AFFFFFF"
-                Text { anchors.centerIn: parent; text: "\uf060"; color: "#FFFFFF"; font.family: root.font; font.pixelSize: 12 }
+                color: backNetArea.containsMouse ? root.ink(0.102) : root.ink(0.039)
+                Text { anchors.centerIn: parent; text: "\uf060"; color: root.themeFg; font.family: root.font; font.pixelSize: 12 }
                 MouseArea {
                     id: backNetArea
                     anchors.fill: parent
@@ -1360,14 +1508,14 @@ Item {
                 }
             }
 
-            Text { text: "Network & Wi-Fi"; color: "#FFFFFF"; font.family: root.uiFont; font.pixelSize: 14; font.weight: Font.Bold }
+            Text { text: "Network & Wi-Fi"; color: root.themeFg; font.family: root.uiFont; font.pixelSize: 14; font.weight: Font.Bold }
 
             Item { Layout.fillWidth: true }
 
             Rectangle {
                 width: 28; height: 28; radius: 10
-                color: openNmArea.containsMouse ? "#1AFFFFFF" : "#0AFFFFFF"
-                Text { anchors.centerIn: parent; text: "\uf013"; color: "#8A8A90"; font.family: root.font; font.pixelSize: 12 }
+                color: openNmArea.containsMouse ? root.ink(0.102) : root.ink(0.039)
+                Text { anchors.centerIn: parent; text: "\uf013"; color: root.ink(0.52); font.family: root.font; font.pixelSize: 12 }
                 MouseArea {
                     id: openNmArea
                     anchors.fill: parent
@@ -1379,7 +1527,7 @@ Item {
 
             Rectangle {
                 width: 28; height: 28; radius: 10
-                color: refNetArea.containsMouse ? "#1AFFFFFF" : "#0AFFFFFF"
+                color: refNetArea.containsMouse ? root.ink(0.102) : root.ink(0.039)
                 Text { anchors.centerIn: parent; text: "\uf021"; color: themeAccent; font.family: root.font; font.pixelSize: 12 }
                 MouseArea {
                     id: refNetArea
@@ -1401,8 +1549,8 @@ id: wiredTile
                 Layout.fillWidth: true
                 Layout.preferredHeight: 52
                 radius: 14
-                color: wiredActive ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14) : "#08FFFFFF"
-                border.color: wiredActive ? themeAccent : "#10FFFFFF"
+                color: wiredActive ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14) : root.ink(0.031)
+                border.color: wiredActive ? themeAccent : root.ink(0.063)
                 border.width: 1
                 property real press: 1.0
                 transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: wiredTile.press; yScale: wiredTile.press }
@@ -1416,7 +1564,7 @@ id: wiredTile
 
                     Text {
                         text: "󰈀"
-                        color: wiredActive ? themeAccent : "#55555A"
+                        color: wiredActive ? themeAccent : root.ink(0.45)
                         font.family: root.font
                         font.pixelSize: 16
                     }
@@ -1426,14 +1574,14 @@ id: wiredTile
                         spacing: 1
                         Text {
                             text: "Ethernet"
-                            color: "#FFFFFF"
+                            color: root.themeFg
                             font.family: root.uiFont
                             font.pixelSize: 11
                             font.weight: Font.Bold
                         }
                         Text {
                             text: wiredActive ? (wiredConn || "Connected") : "Tap to connect"
-                            color: wiredActive ? "#88888E" : "#55555A"
+                            color: wiredActive ? root.ink(0.55) : root.ink(0.45)
                             font.family: root.uiFont
                             font.pixelSize: 9
                         }
@@ -1441,7 +1589,7 @@ id: wiredTile
 
                     Rectangle {
                         width: 12; height: 12; radius: 6
-                        color: wiredActive ? themeAccent : "#33333A"
+                        color: wiredActive ? themeAccent : root.ink(0.24)
                         Behavior on color { ColorAnimation { duration: 150 } }
                     }
                 }
@@ -1461,8 +1609,8 @@ id: wifiTile
                 Layout.fillWidth: true
                 Layout.preferredHeight: 52
                 radius: 14
-                color: wifiRadio ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14) : "#08FFFFFF"
-                border.color: wifiRadio ? themeAccent : "#10FFFFFF"
+                color: wifiRadio ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14) : root.ink(0.031)
+                border.color: wifiRadio ? themeAccent : root.ink(0.063)
                 border.width: 1
                 property real press: 1.0
                 transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: wifiTile.press; yScale: wifiTile.press }
@@ -1476,7 +1624,7 @@ id: wifiTile
 
                     Text {
                         text: "\uf1eb"
-                        color: wifiRadio ? themeAccent : "#55555A"
+                        color: wifiRadio ? themeAccent : root.ink(0.45)
                         font.family: root.font
                         font.pixelSize: 16
                     }
@@ -1486,14 +1634,14 @@ id: wifiTile
                         spacing: 1
                         Text {
                             text: "Wi-Fi"
-                            color: "#FFFFFF"
+                            color: root.themeFg
                             font.family: root.uiFont
                             font.pixelSize: 11
                             font.weight: Font.Bold
                         }
                         Text {
                             text: wifiRadio ? "Radio on" : "Radio off"
-                            color: wifiRadio ? "#88888E" : "#55555A"
+                            color: wifiRadio ? root.ink(0.55) : root.ink(0.45)
                             font.family: root.uiFont
                             font.pixelSize: 9
                         }
@@ -1502,13 +1650,13 @@ id: wifiTile
                     // Toggle switch
                     Rectangle {
                         width: 34; height: 20; radius: 10
-                        color: wifiRadio ? themeAccent : "#2A2A30"
+                        color: wifiRadio ? themeAccent : root.ink(0.17)
                         Behavior on color { ColorAnimation { duration: 150 } }
                         Rectangle {
                             width: 16; height: 16; radius: 8
                             x: wifiRadio ? 16 : 2
                             anchors.verticalCenter: parent.verticalCenter
-                            color: "#FFFFFF"
+                            color: root.themeFg
                             Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
                         }
                     }
@@ -1529,7 +1677,7 @@ id: wifiTile
             Layout.fillWidth: true
             Text {
                 text: "AVAILABLE NETWORKS"
-                color: "#4A4A50"
+                color: root.ink(0.36)
                 font.family: root.uiFont
                 font.pixelSize: 9
                 font.weight: Font.Bold
@@ -1537,7 +1685,7 @@ id: wifiTile
             Item { Layout.fillWidth: true }
             Text {
                 text: ipAddress || ""
-                color: "#55555A"
+                color: root.ink(0.45)
                 font.family: root.uiFont
                 font.pixelSize: 9
             }
@@ -1555,8 +1703,8 @@ id: wifiTile
                 width: ListView.view.width
                 height: 42
                 radius: 12
-                color: itemNet.in_use ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14) : (netItemArea.containsMouse ? "#10FFFFFF" : "#06FFFFFF")
-                border.color: itemNet.in_use ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.45) : "#12FFFFFF"
+                color: itemNet.in_use ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14) : (netItemArea.containsMouse ? root.ink(0.063) : root.ink(0.024))
+                border.color: itemNet.in_use ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.45) : root.ink(0.071)
                 border.width: 1
 
                 property var itemNet: wifiNetworks[index] || {}
@@ -1570,14 +1718,14 @@ id: wifiTile
 
                     Text {
                         text: "\uf1eb"
-                        color: itemNet.in_use ? themeAccent : "#77777C"
+                        color: itemNet.in_use ? themeAccent : root.ink(0.6)
                         font.family: root.font
                         font.pixelSize: 13
                     }
 
                     Text {
                         text: itemNet.ssid || "Hidden Network"
-                        color: itemNet.in_use ? "#FFFFFF" : "#D8D8DC"
+                        color: itemNet.in_use ? root.themeFg : root.ink(0.85)
                         font.family: root.uiFont
                         font.pixelSize: 11
                         font.weight: itemNet.in_use ? Font.DemiBold : Font.Normal
@@ -1588,13 +1736,13 @@ id: wifiTile
                     // Signal bars
                     Text {
                         text: itemNet.signal >= 75 ? "▂▄▆█" : (itemNet.signal >= 50 ? "▂▄▆" : "▂▄")
-                        color: itemNet.in_use ? themeAccent : "#55555A"
+                        color: itemNet.in_use ? themeAccent : root.ink(0.45)
                         font.pixelSize: 9
                     }
 
                     Text {
                         text: isConnecting ? "Connecting…" : (itemNet.security ? "" : "Open")
-                        color: isConnecting ? themeAccent : "#44444A"
+                        color: isConnecting ? themeAccent : root.ink(0.3)
                         font.family: root.uiFont
                         font.pixelSize: 9
                     }
@@ -1623,7 +1771,7 @@ id: wifiTile
             Layout.alignment: Qt.AlignHCenter
             Layout.bottomMargin: 2
             text: wifiLoading ? "Scanning…" : (wifiNetworks.length === 0 ? "No networks found" : wifiNetworks.length + " networks")
-            color: "#4A4A50"
+            color: root.ink(0.36)
             font.family: root.uiFont
             font.pixelSize: 9
         }
@@ -1633,10 +1781,19 @@ id: wifiTile
     // │ BLUETOOTH SUB-VIEW
     // ════════════════════════════════════════════════════════════════
     ColumnLayout {
+        id: btView
         anchors.fill: parent
         anchors.margins: 16
         spacing: 8
-        visible: currentView === "bt"
+        opacity: currentView === "bt" ? 1 : 0
+        visible: opacity > 0
+        transform: Translate { y: currentView === "bt" ? (1 - btView.opacity) * 8 : -btView.opacity * 8 }
+        Behavior on opacity {
+            NumberAnimation {
+                duration: currentView === "bt" ? root.motionBase : root.motionExit
+                easing.type: Easing.OutCubic
+            }
+        }
 
         RowLayout {
             Layout.fillWidth: true
@@ -1644,8 +1801,8 @@ id: wifiTile
 
             Rectangle {
                 width: 28; height: 28; radius: 10
-                color: backBtArea.containsMouse ? "#1AFFFFFF" : "#0AFFFFFF"
-                Text { anchors.centerIn: parent; text: "\uf060"; color: "#FFFFFF"; font.family: root.font; font.pixelSize: 12 }
+                color: backBtArea.containsMouse ? root.ink(0.102) : root.ink(0.039)
+                Text { anchors.centerIn: parent; text: "\uf060"; color: root.themeFg; font.family: root.font; font.pixelSize: 12 }
                 MouseArea {
                     id: backBtArea
                     anchors.fill: parent
@@ -1655,14 +1812,14 @@ id: wifiTile
                 }
             }
 
-            Text { text: "Bluetooth Devices"; color: "#FFFFFF"; font.family: root.uiFont; font.pixelSize: 14; font.weight: Font.Bold }
+            Text { text: "Bluetooth Devices"; color: root.themeFg; font.family: root.uiFont; font.pixelSize: 14; font.weight: Font.Bold }
 
             Item { Layout.fillWidth: true }
 
             Rectangle {
                 width: 28; height: 28; radius: 10
-                color: openBtArea.containsMouse ? "#1AFFFFFF" : "#0AFFFFFF"
-                Text { anchors.centerIn: parent; text: "\uf013"; color: "#8A8A90"; font.family: root.font; font.pixelSize: 12 }
+                color: openBtArea.containsMouse ? root.ink(0.102) : root.ink(0.039)
+                Text { anchors.centerIn: parent; text: "\uf013"; color: root.ink(0.52); font.family: root.font; font.pixelSize: 12 }
                 MouseArea {
                     id: openBtArea
                     anchors.fill: parent
@@ -1674,7 +1831,7 @@ id: wifiTile
 
             Rectangle {
                 width: 28; height: 28; radius: 10
-                color: refBtArea.containsMouse ? "#1AFFFFFF" : "#0AFFFFFF"
+                color: refBtArea.containsMouse ? root.ink(0.102) : root.ink(0.039)
                 Text { anchors.centerIn: parent; text: "\uf021"; color: themeAccent; font.family: root.font; font.pixelSize: 12 }
                 MouseArea {
                     id: refBtArea
@@ -1692,8 +1849,8 @@ id: powerTile
             Layout.fillWidth: true
             Layout.preferredHeight: 48
             radius: 14
-            color: btPowered ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14) : "#08FFFFFF"
-            border.color: btPowered ? themeAccent : "#10FFFFFF"
+            color: btPowered ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14) : root.ink(0.031)
+            border.color: btPowered ? themeAccent : root.ink(0.063)
             border.width: 1
             property real press: 1.0
             transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: powerTile.press; yScale: powerTile.press }
@@ -1707,7 +1864,7 @@ id: powerTile
 
                 Text {
                     text: "\uf293"
-                    color: btPowered ? themeAccent : "#55555A"
+                    color: btPowered ? themeAccent : root.ink(0.45)
                     font.family: root.font
                     font.pixelSize: 15
                 }
@@ -1716,14 +1873,14 @@ id: powerTile
                     spacing: 1
                     Text {
                         text: "Bluetooth Adapter"
-                        color: "#FFFFFF"
+                        color: root.themeFg
                         font.family: root.uiFont
                         font.pixelSize: 11
                         font.weight: Font.Bold
                     }
                     Text {
                         text: btPowered ? "On" : "Off"
-                        color: btPowered ? "#88888E" : "#55555A"
+                        color: btPowered ? root.ink(0.55) : root.ink(0.45)
                         font.family: root.uiFont
                         font.pixelSize: 9
                     }
@@ -1731,13 +1888,13 @@ id: powerTile
 
                 Rectangle {
                     width: 36; height: 20; radius: 10
-                    color: btPowered ? themeAccent : "#2A2A30"
+                    color: btPowered ? themeAccent : root.ink(0.17)
                     Behavior on color { ColorAnimation { duration: 150 } }
                     Rectangle {
                         width: 16; height: 16; radius: 8
                         x: btPowered ? 18 : 2
                         anchors.verticalCenter: parent.verticalCenter
-                        color: "#FFFFFF"
+                        color: root.themeFg
                         Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
                     }
                 }
@@ -1755,7 +1912,7 @@ id: powerTile
 
         Text {
             text: "DEVICES"
-            color: "#4A4A50"
+            color: root.ink(0.36)
             font.family: root.uiFont
             font.pixelSize: 9
             font.weight: Font.Bold
@@ -1773,8 +1930,8 @@ id: powerTile
                 width: ListView.view.width
                 height: 46
                 radius: 12
-                color: itemBt.connected ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14) : (btItemArea.containsMouse ? "#10FFFFFF" : "#06FFFFFF")
-                border.color: itemBt.connected ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.45) : "#12FFFFFF"
+                color: itemBt.connected ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14) : (btItemArea.containsMouse ? root.ink(0.063) : root.ink(0.024))
+                border.color: itemBt.connected ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.45) : root.ink(0.071)
                 border.width: 1
 
                 property var itemBt: btDevices[index] || {}
@@ -1788,7 +1945,7 @@ id: powerTile
 
                     Text {
                         text: itemBt.icon === "phone" ? "\uf10b" : (itemBt.icon === "audio-headset" ? "\uf025" : "\uf293")
-                        color: itemBt.connected ? themeAccent : "#77777C"
+                        color: itemBt.connected ? themeAccent : root.ink(0.6)
                         font.family: root.font
                         font.pixelSize: 14
                     }
@@ -1798,7 +1955,7 @@ id: powerTile
                         spacing: 1
                         Text {
                             text: itemBt.name || "Bluetooth Device"
-                            color: itemBt.connected ? "#FFFFFF" : "#D8D8DC"
+                            color: itemBt.connected ? root.themeFg : root.ink(0.85)
                             font.family: root.uiFont
                             font.pixelSize: 11
                             font.weight: itemBt.connected ? Font.DemiBold : Font.Normal
@@ -1807,7 +1964,7 @@ id: powerTile
                         }
                         Text {
                             text: itemBt.paired ? "Paired" : "Not paired"
-                            color: "#55555A"
+                            color: root.ink(0.45)
                             font.family: root.uiFont
                             font.pixelSize: 9
                         }
@@ -1817,14 +1974,14 @@ id: powerTile
                         height: 22
                         implicitWidth: btStateText.implicitWidth + 14
                         radius: 11
-                        color: itemBt.connected ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.25) : "#10FFFFFF"
+                        color: itemBt.connected ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.25) : root.ink(0.063)
                         border.color: itemBt.connected ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.4) : "transparent"
                         border.width: itemBt.connected ? 1 : 0
                         Text {
                             id: btStateText
                             anchors.centerIn: parent
                             text: isConnecting ? "Working…" : (itemBt.connected ? "Disconnect" : "Connect")
-                            color: itemBt.connected ? "#FFFFFF" : "#B0B0B6"
+                            color: itemBt.connected ? root.themeFg : root.ink(0.7)
                             font.family: root.uiFont
                             font.pixelSize: 9
                             font.weight: itemBt.connected ? Font.Bold : Font.Medium
@@ -1846,7 +2003,7 @@ id: powerTile
             Layout.alignment: Qt.AlignHCenter
             Layout.bottomMargin: 2
             text: btLoading ? "Scanning…" : (btPowered ? (btDevices.length + " devices") : "Bluetooth is off")
-            color: "#4A4A50"
+            color: root.ink(0.36)
             font.family: root.uiFont
             font.pixelSize: 9
         }
@@ -1865,11 +2022,12 @@ id: powerTile
         width: actionRow.implicitWidth + 26
         height: 36
         radius: 12
-        color: "#F20B0B0F"
+        color: root.glass(0.95)
         border.width: 1
         border.color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.45)
         opacity: controlPanel.actionVisible ? 1 : 0
         visible: opacity > 0
+        transform: Translate { y: (1 - actionToast.opacity) * 6 }
         Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
 
         RowLayout {
