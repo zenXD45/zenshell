@@ -209,6 +209,8 @@ Scope {
         bar_widgets: ["workspaces", "window", "media", "clock", "weather", "system"],
         dock_theme: "liquid",
         dock_auto_hide: true,
+        dock_transparency: 0.5,
+        dock_frost: 0.5,
         ui_scale: 1.25,
         motion: "normal",
         lyrics_mode: true,
@@ -298,6 +300,12 @@ Scope {
             }
             if (typeof settings.widgets_visible === "boolean") {
                 next.widgets_visible = settings.widgets_visible;
+            }
+            if (typeof settings.dock_transparency === "number" && settings.dock_transparency >= 0.0 && settings.dock_transparency <= 1.0) {
+                next.dock_transparency = settings.dock_transparency;
+            }
+            if (typeof settings.dock_frost === "number" && settings.dock_frost >= 0.0 && settings.dock_frost <= 1.0) {
+                next.dock_frost = settings.dock_frost;
             }
             if (settings.power_profile === "performance" || settings.power_profile === "balanced" || settings.power_profile === "power-saver") {
                 next.power_profile = settings.power_profile;
@@ -412,6 +420,12 @@ Scope {
                 break;
             case "widgets_visible":
                 root.saveSetting("widgets_visible", value);
+                break;
+            case "dock_transparency":
+                root.saveSetting("dock_transparency", value);
+                break;
+            case "dock_frost":
+                root.saveSetting("dock_frost", value);
                 break;
             case "power_profile":
                 root.setPowerProfile(value);

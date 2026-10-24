@@ -159,6 +159,16 @@ hl.bind(S .. " + escape", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/i
 hl.bind(SS .. " + P", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/island_ctl.sh powerprofile"))
 hl.bind(SS .. " + M", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/modules/spotlight/toggle.sh"))
 
+-- ── ZenShell Dock / Camera / Settings ─────────────────────────
+-- Dock auto-hide toggle
+hl.bind(SA .. " + D", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/island_ctl.sh dock"))
+-- Dock settings menu
+hl.bind(SA .. " + SHIFT + D", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/island_ctl.sh dock-settings"))
+-- Camera effects panel
+hl.bind(SA .. " + C", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/island_ctl.sh camera"))
+-- Settings app (also SUPER+. from the island launcher)
+hl.bind(SA .. " + period", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/island_ctl.sh settings"))
+
 -- ── System ────────────────────────────────────────────────────
 hl.bind(SC .. " + R", hl.dsp.exec_cmd("hyprctl reload && notify-send \"Hyprland\" \"Config reloaded\""))
 hl.bind(SC .. " + Q", hl.dsp.exit())

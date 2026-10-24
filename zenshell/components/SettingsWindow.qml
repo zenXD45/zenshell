@@ -151,7 +151,9 @@ Item {
                                 title: "Dock",
                                 rows: [
                                     { type: "toggle", id: "dock_auto_hide", label: "Auto-hide", desc: "Keep the dock out of the way until the pointer reaches the edge" },
-                                    { type: "segment", id: "dock_theme", label: "Dock material", desc: "The same choice as the island", options: [ { value: "solid", label: "Solid" }, { value: "liquid", label: "Liquid" } ] }
+                                    { type: "segment", id: "dock_theme", label: "Dock material", desc: "The same choice as the island", options: [ { value: "solid", label: "Solid" }, { value: "liquid", label: "Liquid" } ] },
+                                    { type: "slider", id: "dock_transparency", label: "Transparency", desc: "Background opacity of the dock surface", min: 0.0, max: 1.0, step: 0.05, unit: "" },
+                                    { type: "slider", id: "dock_frost", label: "Frost", desc: "Milkiness of the liquid glass material", min: 0.0, max: 1.0, step: 0.05, unit: "" }
                                 ]
                             },
                             {

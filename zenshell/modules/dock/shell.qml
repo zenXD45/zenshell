@@ -104,11 +104,38 @@ Scope {
   // ── Depth ───────────────────────────────────────────────────────
   // Transparent padding inside the layer surface gives the shadow room to
   // fall without moving the visible pill or changing the auto-hide travel.
-  readonly property int shadowPad: 40
-  readonly property color shadowColor: dockTheme === "liquid" ? "#60000000" : "#9A000000"
-  readonly property int shadowBlur: dockTheme === "liquid" ? 36 : 28
-  readonly property int shadowOffsetY: dockTheme === "liquid" ? 12 : 10
-  readonly property color liquidSurface: root.themeDark ? root.glass(0.43) : root.ink(0.28)
+  readonly property int shadowPad: 48
+
+  // Configurable appearance (synced with shell_settings.json)
+  property real dockTransparency: 0.5      // 0.0 = opaque, 1.0 = fully transparent
+  property real dockFrost: 0.5             // 0.0 = clear glass, 1.0 = heavy frost
+
+  // Base theme values (used as multipliers)
+  property color baseShadowColor: dockTheme === "liquid" ? "#4D000000" : "#66000000"
+  property int baseShadowBlur: dockTheme === "liquid" ? 48 : 36
+  property int baseShadowOffsetY: dockTheme === "liquid" ? 16 : 14
+  property color baseAoColor: dockTheme === "liquid" ? "#1A000000" : "#26000000"
+  property int baseAoBlur: dockTheme === "liquid" ? 64 : 48
+  property int baseAoOffsetY: dockTheme === "liquid" ? 24 : 20
+
+  // Computed effective values
+  readonly property color shadowColor: Qt.rgba(
+    root.baseShadowColor.r, root.baseShadowColor.g, root.baseShadowColor.b,
+    root.baseShadowColor.a * (1.0 - root.dockTransparency * 0.3)
+  )
+  readonly property int shadowBlur: Math.round(root.baseShadowBlur * (1.0 - root.dockTransparency * 0.2))
+  readonly property int shadowOffsetY: root.baseShadowOffsetY
+  readonly property color aoColor: Qt.rgba(
+    root.baseAoColor.r, root.baseAoColor.g, root.baseAoColor.b,
+    root.baseAoColor.a * (1.0 - root.dockTransparency * 0.4)
+  )
+  readonly property int aoBlur: Math.round(root.baseAoBlur * (1.0 - root.dockTransparency * 0.2))
+  readonly property int aoOffsetY: root.baseAoOffsetY
+
+  // Liquid surface color with transparency/frost
+  readonly property color liquidSurface: root.themeDark
+    ? Qt.rgba(root.glass(0.38).r, root.glass(0.38).g, root.glass(0.38).b, 0.38 * (1.0 - root.dockTransparency * 0.5))
+    : Qt.rgba(root.ink(0.24).r, root.ink(0.24).g, root.ink(0.24).b, 0.24 * (1.0 - root.dockTransparency * 0.5))
 
   // One popup owns both menus so only one can ever be open. appData is a
   // snapshot of the dock item; it is refreshed while the menu is open so the
@@ -141,6 +168,12 @@ Scope {
         }
         if (typeof settings.dock_auto_hide === "boolean") {
           root.isAutoHide = settings.dock_auto_hide;
+        }
+        if (typeof settings.dock_transparency === "number") {
+          root.dockTransparency = Math.max(0.0, Math.min(1.0, settings.dock_transparency));
+        }
+        if (typeof settings.dock_frost === "number") {
+          root.dockFrost = Math.max(0.0, Math.min(1.0, settings.dock_frost));
         }
         if (settings.profile === "island" || settings.profile === "bar") {
           if (root.shellProfile !== settings.profile) {
@@ -179,6 +212,16 @@ Scope {
     root.saveDockSetting("dock_auto_hide", enabled);
   }
 
+  function setDockTransparency(value) {
+    root.dockTransparency = Math.max(0.0, Math.min(1.0, value));
+    root.saveDockSetting("dock_transparency", root.dockTransparency);
+  }
+
+  function setDockFrost(value) {
+    root.dockFrost = Math.max(0.0, Math.min(1.0, value));
+    root.saveDockSetting("dock_frost", root.dockFrost);
+  }
+
   IpcHandler {
     target: "qs-dock"
     function updateTheme(themeName: string): void {
@@ -201,6 +244,12 @@ Scope {
     function menuAction(actionId: string): void {
       root.handleMenuAction(actionId);
       root.closeContextMenu();
+    }
+    function setTransparency(value: real): void {
+      root.setDockTransparency(value);
+    }
+    function setFrost(value: real): void {
+      root.setDockFrost(value);
     }
   }
   
@@ -583,6 +632,7 @@ Scope {
   Component {
     id: appDelegate
     Item {
+      id: iconRect
       width: 44
       height: 44
 
@@ -595,11 +645,32 @@ Scope {
         anchors.fill: parent
         radius: 14
         color: modelData.isFocused ? root.ink(0.188) : (mouseArea.containsMouse ? root.ink(0.125) : "transparent")
-        Behavior on color { ColorAnimation { duration: 150 } }
+        Behavior on color { ColorAnimation { duration: 120 } }
         
-        scale: mouseArea.containsMouse ? 1.15 : 1.0
-        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+        // Hover/focus elevation shadow for the icon itself
+        RectangularShadow {
+          anchors.fill: parent
+          radius: 14
+          color: mouseArea.containsMouse || modelData.isFocused ? "#40000000" : "#00000000"
+          blur: 16
+          offset: Qt.vector2d(0, 4)
+          opacity: mouseArea.containsMouse || modelData.isFocused ? 1 : 0
+          Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+          Behavior on blur { NumberAnimation { duration: 120 } }
+        }
         
+        // Inner press depth
+        Rectangle {
+          anchors.fill: parent
+          radius: 14
+          opacity: mouseArea.pressed ? 0.6 : 0
+          gradient: Gradient {
+            GradientStop { position: 0.0; color: "#10000000" }
+            GradientStop { position: 1.0; color: "#30000000" }
+          }
+          Behavior on opacity { NumberAnimation { duration: 80 } }
+        }
+
         IconImage {
           id: appIcon
           anchors.centerIn: parent
@@ -607,6 +678,15 @@ Scope {
           height: 32
           source: Quickshell.iconPath(modelData.icon, true)
         }
+        
+        // Scale animation on hover
+        scale: mouseArea.containsMouse ? 1.12 : 1.0
+        Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+        
+        // Pressed scale
+        property real pressScale: mouseArea.pressed ? 0.94 : 1.0
+        Behavior on pressScale { NumberAnimation { duration: 60; easing.type: Easing.OutQuad } }
+        transform: Scale { origin.x: 22; origin.y: 22; xScale: iconRect.pressScale; yScale: iconRect.pressScale }
         
         Text {
           anchors.centerIn: parent
@@ -636,9 +716,20 @@ Scope {
             height: width
             radius: width / 2
             color: modelData.isFocused && index === modelData.focusedWindowIndex ? root.themeFg : root.ink(0.65)
+            
+            // Subtle shadow for the indicator dots
+            RectangularShadow {
+              anchors.fill: parent
+              radius: width / 2
+              color: modelData.isFocused && index === modelData.focusedWindowIndex ? "#40000000" : "#20000000"
+              blur: 6
+              offset: Qt.vector2d(0, 2)
+              opacity: 1
+            }
 
-            Behavior on width { NumberAnimation { duration: 150 } }
-            Behavior on height { NumberAnimation { duration: 150 } }
+            Behavior on width { NumberAnimation { duration: 120 } }
+            Behavior on height { NumberAnimation { duration: 120 } }
+            Behavior on color { ColorAnimation { duration: 120 } }
           }
         }
       }
@@ -694,19 +785,87 @@ Scope {
       // clicks through to whatever is under the dock.
       mask: Region { item: dockSurface }
 
-      // Shadow lives in the transparent padding above and beside the pill.
-      // It is a sibling of the surface so the pill's own fill stays on top.
-      RectangularShadow {
+      // ── Optimized Pill Shadow ──
+      // Uses RectangularShadow (GPU-accelerated) for the base, plus a single
+      // blurred Item for the true capsule ends. Only 2 blur passes total.
+      Item {
+        id: shadowStack
         anchors.fill: dockSurface
-        radius: dockSurface.radius
-        color: root.shadowColor
-        blur: root.shadowBlur
-        offset: Qt.vector2d(0, root.shadowOffsetY)
+        y: root.shadowOffsetY
 
-        Behavior on color { ColorAnimation { duration: 200 } }
-        Behavior on blur { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+        // Base shadow: RectangularShadow handles the straight sections efficiently.
+        // The radius makes it a rounded-rect; we add end caps for true pill shape.
+        RectangularShadow {
+          id: baseShadow
+          anchors.fill: dockSurface
+          radius: dockSurface.radius
+          color: root.shadowColor
+          blur: root.shadowBlur
+          offset: Qt.vector2d(0, 0)
+          Behavior on color { ColorAnimation { duration: 200 } }
+          Behavior on blur { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+        }
+
+        // True capsule end caps — only these need per-frame blur.
+        // Single blurred item with both caps; one render target, one blur pass.
+        Item {
+          id: endCaps
+          anchors.fill: parent
+          anchors.topMargin: 0
+          anchors.bottomMargin: 0
+
+          Rectangle {
+            width: dockSurface.height
+            height: dockSurface.height
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            radius: dockSurface.height / 2
+            color: root.shadowColor
+            layer.enabled: true
+            layer.effect: FastBlur {
+              radius: root.shadowBlur / 2
+              samples: root.shadowBlur > 24 ? 9 : 5
+              transparentBorder: true
+            }
+          }
+
+          Rectangle {
+            width: dockSurface.height
+            height: dockSurface.height
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            radius: dockSurface.height / 2
+            color: root.shadowColor
+            layer.enabled: true
+            layer.effect: FastBlur {
+              radius: root.shadowBlur / 2
+              samples: root.shadowBlur > 24 ? 9 : 5
+              transparentBorder: true
+            }
+          }
+        }
+
+        // Ambient occlusion pool — single wide blurred rect (no end caps needed;
+        // the softness hides the rectangular shape).
+        Rectangle {
+          id: aoPool
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          anchors.margins: -16
+          radius: dockSurface.radius + 8
+          color: root.aoColor
+          layer.enabled: true
+          layer.effect: FastBlur {
+            radius: root.aoBlur / 2
+            samples: 9
+            transparentBorder: true
+          }
+        }
       }
 
+      // The visible pill surface.
       Rectangle {
         id: dockSurface
         width: Math.min(layout.implicitWidth + 24, modelData.width - 40)
@@ -724,33 +883,102 @@ Scope {
           id: panelHover
         }
 
-        // Inner sheen: the top catches light, the bottom settles into shade.
-        Rectangle {
+        // ── Liquid glass material (liquid theme) ──
+        // Combined into 2 layers: (1) base glass + subsurface + fresnel + inner depth,
+        // (2) waterline + lower specular catch. Minimal overdraw.
+        // Frost (0=clear, 1=heavy) increases milkiness and reduces clarity.
+        Item {
+          id: liquidMaterial
           anchors.fill: parent
-          radius: parent.radius
-          opacity: root.dockTheme === "liquid" ? 1 : 0.7
-          gradient: Gradient {
-            GradientStop { position: 0.0; color: root.ink(0.086) }
-            GradientStop { position: 0.38; color: root.ink(0.012) }
-            GradientStop { position: 0.62; color: "#00000000" }
-            GradientStop { position: 1.0; color: "#30000000" }
+          visible: root.dockTheme === "liquid"
+
+          // Frost overlay — adds milkiness based on dockFrost (0.0 to 1.0)
+          Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            opacity: root.dockFrost * 0.4
+            color: root.themeDark ? root.glass(1.0) : root.ink(1.0)
+            Behavior on opacity { NumberAnimation { duration: 200 } }
           }
-          Behavior on opacity { NumberAnimation { duration: 200 } }
+
+          // Layer 1: Combined base glass — subsurface warmth, fresnel top, inner depth bottom
+          Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            opacity: 1.0 - root.dockFrost * 0.3
+            gradient: Gradient {
+              // Top: Fresnel highlight + subsurface warmth
+              GradientStop { position: 0.00; color: root.ink(0.12) }
+              GradientStop { position: 0.08; color: root.accent(0.08) }
+              GradientStop { position: 0.15; color: root.ink(0.06) }
+              GradientStop { position: 0.22; color: root.accent(0.03) }
+              GradientStop { position: 0.35; color: "#00000000" }
+              GradientStop { position: 0.50; color: "#00000000" }
+              GradientStop { position: 0.65; color: "#00000000" }
+              // Bottom: inner depth + lower specular
+              GradientStop { position: 0.75; color: root.ink(0.015) }
+              GradientStop { position: 0.85; color: root.accent(0.02) }
+              GradientStop { position: 0.92; color: "#20000000" }
+              GradientStop { position: 1.00; color: "#3A000000" }
+            }
+            Behavior on opacity { NumberAnimation { duration: 200 } }
+          }
+
+          // Layer 2: Waterline + lower specular catch (thin horizontal accents)
+          Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            opacity: 1.0 - root.dockFrost * 0.5
+            gradient: Gradient {
+              // Waterline at ~22%
+              GradientStop { position: 0.00; color: "#00000000" }
+              GradientStop { position: 0.20; color: "#00000000" }
+              GradientStop { position: 0.22; color: root.ink(0.18) }
+              GradientStop { position: 0.24; color: "#00000000" }
+              GradientStop { position: 0.94; color: "#00000000" }
+              // Lower specular at ~96%
+              GradientStop { position: 0.96; color: root.ink(0.15) }
+              GradientStop { position: 1.00; color: "#00000000" }
+            }
+            Behavior on opacity { NumberAnimation { duration: 200 } }
+          }
         }
 
-        // Rim light along the flat part of the top edge.
-        Rectangle {
-          width: parent.width - 64
-          height: 1
-          anchors.top: parent.top
-          anchors.topMargin: 1
-          anchors.horizontalCenter: parent.horizontalCenter
-          opacity: root.dockTheme === "liquid" ? 0.9 : 0.65
-          gradient: Gradient {
-            orientation: Gradient.Horizontal
-            GradientStop { position: 0.0; color: "transparent" }
-            GradientStop { position: 0.5; color: root.ink(0.251) }
-            GradientStop { position: 1.0; color: "transparent" }
+        // ── Solid theme material ──
+        Item {
+          id: solidMaterial
+          anchors.fill: parent
+          visible: root.dockTheme !== "liquid"
+
+          // Combined: top highlight + inner depth
+          Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            gradient: Gradient {
+              GradientStop { position: 0.00; color: root.ink(0.12) }
+              GradientStop { position: 0.15; color: root.ink(0.06) }
+              GradientStop { position: 0.35; color: "#00000000" }
+              GradientStop { position: 0.50; color: "#00000000" }
+              GradientStop { position: 0.65; color: "#00000000" }
+              GradientStop { position: 0.80; color: "#15000000" }
+              GradientStop { position: 1.00; color: "#2A000000" }
+            }
+          }
+
+          // Top rim catch
+          Rectangle {
+            width: parent.width - 64
+            height: 1
+            anchors.top: parent.top
+            anchors.topMargin: 1
+            anchors.horizontalCenter: parent.horizontalCenter
+            opacity: 0.65
+            gradient: Gradient {
+              orientation: Gradient.Horizontal
+              GradientStop { position: 0.0; color: "transparent" }
+              GradientStop { position: 0.5; color: root.ink(0.25) }
+              GradientStop { position: 1.0; color: "transparent" }
+            }
           }
         }
 
@@ -815,13 +1043,34 @@ Scope {
           }
           
           // Visual separator
-          Rectangle {
+          Item {
             width: 2
             height: 32
-            color: root.ink(0.251)
-            radius: 1
             visible: root.unpinnedDockItems.length > 0
             anchors.verticalCenter: parent.verticalCenter
+
+            Rectangle {
+              anchors.fill: parent
+              radius: 1
+              gradient: Gradient {
+                GradientStop { position: 0.0; color: "#00000000" }
+                GradientStop { position: 0.3; color: root.ink(0.15) }
+                GradientStop { position: 0.7; color: root.ink(0.15) }
+                GradientStop { position: 1.0; color: "#00000000" }
+              }
+            }
+            
+            // Subtle glow on the separator
+            Rectangle {
+              anchors.fill: parent
+              radius: 1
+              opacity: 0.5
+              gradient: Gradient {
+                GradientStop { position: 0.0; color: root.accent(0.08) }
+                GradientStop { position: 0.5; color: root.accent(0.02) }
+                GradientStop { position: 1.0; color: root.accent(0.08) }
+              }
+            }
           }
           
           Repeater {

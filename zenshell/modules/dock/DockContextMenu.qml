@@ -221,8 +221,8 @@ PanelWindow {
       onClicked: menu.dismiss()
     }
 
-    Rectangle {
-      id: surface
+    Item {
+      id: menuSurface
       width: menu.surfaceWidth
       height: menu.surfaceHeight
       x: {
@@ -235,14 +235,10 @@ PanelWindow {
         if (above >= 12) return above;
         return Math.min(menu.anchorScreenY + 10, screenHeight - height - 12);
       }
-      radius: 16
-      color: root.glass(0.98)
-      border.width: 1
-      border.color: root.ink(0.149)
       opacity: menu.menuVisible ? 1 : 0
       scale: menu.menuVisible ? 1 : 0.97
       transformOrigin: Item.Bottom
-      transform: Translate { y: (1 - surface.opacity) * 8 }
+      transform: Translate { y: (1 - menuSurface.opacity) * 8 }
 
       Behavior on opacity {
         NumberAnimation {
@@ -257,11 +253,75 @@ PanelWindow {
         }
       }
 
-      MouseArea {
-        anchors.fill: parent
-        acceptedButtons: Qt.AllButtons
-        onClicked: {}
+      // Context menu shadow stack — true rounded-rect shadows via layered blur
+      Item {
+        id: menuShadowStack
+        anchors.fill: surface
+        y: 18
+
+        // AO pool (wider, softer)
+        Rectangle {
+          anchors.fill: parent
+          radius: 16
+          color: "#26000000"
+          anchors.margins: -12
+          layer.enabled: true
+          layer.effect: FastBlur { radius: 28; samples: 9; transparentBorder: true }
+        }
+
+        // Key shadow (tighter)
+        Rectangle {
+          anchors.fill: parent
+          radius: 16
+          color: "#40000000"
+          anchors.margins: -6
+          layer.enabled: true
+          layer.effect: FastBlur { radius: 16; samples: 9; transparentBorder: true }
+        }
       }
+
+      Rectangle {
+        id: surface
+        anchors.fill: parent
+        radius: 16
+        color: root.glass(0.98)
+        border.width: 1
+        border.color: root.ink(0.149)
+
+        // Inner depth
+        Rectangle {
+          anchors.fill: parent
+          radius: 16
+          opacity: 0.5
+          gradient: Gradient {
+            GradientStop { position: 0.0; color: root.ink(0.08) }
+            GradientStop { position: 0.3; color: "#00000000" }
+            GradientStop { position: 0.7; color: "#00000000" }
+            GradientStop { position: 1.0; color: "#1A000000" }
+          }
+        }
+        
+        // Top rim highlight
+        Rectangle {
+          width: parent.width - 24
+          height: 1
+          anchors.top: parent.top
+          anchors.topMargin: 2
+          anchors.horizontalCenter: parent.horizontalCenter
+          opacity: 0.6
+          gradient: Gradient {
+            orientation: Gradient.Horizontal
+            GradientStop { position: 0.0; color: "transparent" }
+            GradientStop { position: 0.5; color: root.ink(0.2) }
+            GradientStop { position: 1.0; color: "transparent" }
+          }
+        }
+
+        MouseArea {
+          anchors.fill: parent
+          acceptedButtons: Qt.AllButtons
+          onClicked: {}
+        }
 
       Column {
         id: contentColumn
@@ -516,4 +576,5 @@ PanelWindow {
   onDockLiquidChanged: rebuildActions()
   onPinnedCountChanged: rebuildActions()
   Component.onCompleted: rebuildActions()
+}
 }

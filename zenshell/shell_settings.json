@@ -2,6 +2,8 @@
   "island_theme": "dark",
   "dock_theme": "liquid",
   "dock_auto_hide": true,
+  "dock_transparency": 0.5,
+  "dock_frost": 0.5,
   "profile": "island",
   "bar_style": "floating",
   "bar_position": "top",
