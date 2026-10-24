@@ -34,20 +34,24 @@ that seam is the easiest place to extend it.
 ## Previews
 
 <p align="center">
-  <img src="../docs/images/shell-1.webp" alt="Dynamic Island" width="49%" />
-  <img src="../docs/images/shell-2.webp" alt="Dock and widgets" width="49%" />
+  <img src="../docs/images/shell-1.webp" alt="Dynamic island and dock" width="49%" />
+  <img src="../docs/images/shell-2.webp" alt="Desktop widgets: clock and weather" width="49%" />
 </p>
 <p align="center">
   <img src="../docs/images/shell-3.webp" alt="Control centre" width="49%" />
-  <img src="../docs/images/shell-4.webp" alt="Clipboard manager" width="49%" />
+  <img src="../docs/images/shell-4.webp" alt="Settings app, Theme &amp; Colors page" width="49%" />
 </p>
 <p align="center">
   <img src="../docs/images/shell-5.webp" alt="Theme switcher" width="49%" />
   <img src="../docs/images/shell-6.webp" alt="Wallpaper picker" width="49%" />
 </p>
 <p align="center">
-  <img src="../docs/images/shell-7.webp" alt="Spotlight search" width="90%" />
+  <img src="../docs/images/shell-7.webp" alt="App launcher" width="49%" />
+  <img src="../docs/images/shell-8.webp" alt="Camera effects panel" width="49%" />
 </p>
+
+All screenshots are of the `noir` theme with the `liquid` island and dock
+material.
 
 ## What's in the box
 
@@ -56,8 +60,7 @@ that seam is the easiest place to extend it.
   rather than a hardcoded colour.
 - **Glassmorphic dock** — pinned apps plus running windows, with no system-tray
   clutter. Right-click an app for focus, new-window, pin/unpin, reorder and close
-  actions; right-click bare dock space or press `SUPER + ALT + SHIFT + D` for
-  dock settings.
+  actions; right-click bare dock space for the dock menu and auto-hide switch.
 - **Profile 02 command bar** — a floating or edge-mounted rail with workspaces,
   window title, now playing, clock, weather, system status and tray. Layout,
   position and individual widgets are live-configurable from its gear button.
@@ -67,12 +70,13 @@ that seam is the easiest place to extend it.
 - **Camera Effects** — a virtual webcam and virtual microphone with Center
   Stage, Portrait, Studio Light, backgrounds, filters, face effects,
   reactions, a privacy shutter, voice isolation and voice changers. The panel
-  lives in the notification center (the **Camera** tile) and on `SUPER + ALT + C`.
+  lives in the notification center (the **Camera** tile), or open it directly
+  with `island_ctl.sh camera`.
   Ported from the [Omarchy plugin](https://github.com/alanfortlink/camera-effects).
 - **Settings** — a full-screen settings app with a searchable page tree:
   wallpapers, themes, shell surfaces, profile and bar, dock, desktop widgets,
-  alerts, power, camera and keyboard shortcuts. Opens on `SUPER + period`, from
-  the gear in the command bar, or from the gear in the control centre.
+  alerts, power, camera and keyboard shortcuts. Opens from the gear in the
+  command bar, the gear in the control centre, or `island_ctl.sh settings`.
 - **Control centre** — Wi-Fi, Bluetooth, caffeine and microphone mute.
 - **Clipboard manager** — `cliphist`-backed history.
 - **Keybind cheatsheet** — a searchable index generated from your *actual*
@@ -231,28 +235,41 @@ hl.exec_cmd("~/.config/quickshell/dynamic-island/start_all.sh")
 
 ### Keybinds
 
-With HyprZen these are already bound. If you need them elsewhere, everything
-routes through `island_ctl.sh` except spotlight and widgets, which are their own
-Quickshell processes:
+With HyprZen the launcher, clipboard, pickers, control centre, power menu,
+cheatsheet, spotlight, widgets and profile switcher are already bound — see the
+[root README](../README.md#-keybinds) for the full table.
+
+The remaining surfaces have no default combo: they are opened from the control
+centre (the **Camera** tile, the gear for settings) or by right-clicking the
+dock. If you want keys for them, HyprZen's binds all route through
+`island_ctl.sh`, so these lines are all it takes:
 
 ```lua
 local ISLAND = "~/.config/quickshell/dynamic-island/island_ctl.sh"
 
-hl.bind("SUPER", "SPACE",   hl.dsp.exec_cmd(ISLAND .. " launcher"))
-hl.bind("SUPER", "comma",   hl.dsp.exec_cmd(ISLAND .. " cheatsheet"))
-hl.bind("SUPER", "period",  hl.dsp.exec_cmd(ISLAND .. " settings"))
-hl.bind("SUPER", "V",       hl.dsp.exec_cmd(ISLAND .. " clipboard"))
-hl.bind("SUPER", "T",       hl.dsp.exec_cmd(ISLAND .. " themes"))
-hl.bind("SUPER", "W",       hl.dsp.exec_cmd(ISLAND .. " wallpapers"))
-hl.bind("SUPER", "N",       hl.dsp.exec_cmd(ISLAND .. " control"))
-hl.bind("SUPER", "escape",  hl.dsp.exec_cmd(ISLAND .. " power"))
-hl.bind("SUPER + SHIFT", "P", hl.dsp.exec_cmd(ISLAND .. " powerprofile"))
-hl.bind("SUPER + ALT", "D", hl.dsp.exec_cmd(ISLAND .. " dock"))
-hl.bind("SUPER + ALT + SHIFT", "D", hl.dsp.exec_cmd(ISLAND .. " dock-settings"))
-hl.bind("SUPER + ALT", "C", hl.dsp.exec_cmd(ISLAND .. " camera"))
-hl.bind("SUPER + SHIFT", "M",
-    hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/modules/spotlight/toggle.sh"))
-hl.bind("SUPER", "D", hl.dsp.exec_cmd(
+hl.bind(SA .. " + C",  hl.dsp.exec_cmd(ISLAND .. " camera"))          # camera effects
+hl.bind(SA .. " + .",  hl.dsp.exec_cmd(ISLAND .. " settings"))        # settings app
+hl.bind(SA .. " + D",  hl.dsp.exec_cmd(ISLAND .. " dock"))            # dock auto-hide
+hl.bind(SA .. " + SD", hl.dsp.exec_cmd(ISLAND .. " dock-settings"))   # dock menu
+```
+
+For a config that is not HyprZen, the surfaces that *are* bound there need
+these lines:
+
+```lua
+local ISLAND = "~/.config/quickshell/dynamic-island/island_ctl.sh"
+
+hl.bind(S .. "SPACE",   hl.dsp.exec_cmd(ISLAND .. " launcher"))
+hl.bind(S .. "comma",   hl.dsp.exec_cmd(ISLAND .. " cheatsheet"))
+hl.bind(S .. "V",       hl.dsp.exec_cmd(ISLAND .. " clipboard"))
+hl.bind(S .. "T",       hl.dsp.exec_cmd(ISLAND .. " themes"))
+hl.bind(S .. "W",       hl.dsp.exec_cmd(ISLAND .. " wallpapers"))
+hl.bind(S .. "N",       hl.dsp.exec_cmd(ISLAND .. " control"))
+hl.bind(S .. "escape",  hl.dsp.exec_cmd(ISLAND .. " power"))
+hl.bind(SS .. "P",      hl.dsp.exec_cmd(ISLAND .. " powerprofile"))
+hl.bind(SS .. "M",      hl.dsp.exec_cmd(
+    "~/.config/quickshell/dynamic-island/modules/spotlight/toggle.sh"))
+hl.bind(S .. "D",       hl.dsp.exec_cmd(
     "quickshell ipc -p ~/.config/quickshell/dynamic-island/modules/desktop-widgets call widgets toggle"))
 ```
 

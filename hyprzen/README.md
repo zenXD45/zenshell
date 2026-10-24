@@ -86,11 +86,12 @@ current theme is kept unless none has been selected yet.
 
 ZenShell claims the plain `SUPER+` keys. These are the ones HyprZen keeps:
 
+### Apps
 | Action | Shortcut |
 | :--- | :--- |
 | Terminal (kitty) | `SUPER + ENTER` |
-| Browser (Firefox) | `SUPER + B` |
-| Files (Thunar) | `SUPER + E` |
+| Browser (Helium) | `SUPER + B` |
+| Files (Nautilus) | `SUPER + E` |
 | Editor (VSCodium) | `SUPER + C` |
 | wlogout | `SUPER + X` |
 | Caffeine (hold off idle) | `SUPER + SHIFT + C` |
