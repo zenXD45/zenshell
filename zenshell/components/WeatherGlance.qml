@@ -1,6 +1,8 @@
 import QtQuick
 import QtQuick.Layouts
 
+// Idle island weather glance. The condition glyph leads, the temperature is
+// the one large number, the description sits under it — no card, no border.
 Item {
     id: weatherRoot
     anchors.fill: parent
@@ -12,20 +14,20 @@ Item {
 
     Behavior on reveal {
         NumberAnimation {
-            duration: root.displayState === 6 ? root.motionBase : root.motionExit
+            duration: root.displayState === 6 ? root.dNormal : root.dFast
             easing.type: root.displayState === 6 ? Easing.OutExpo : Easing.OutCubic
         }
     }
 
     RowLayout {
         anchors.centerIn: parent
-        spacing: 12
+        spacing: root.s4
 
         Text {
             text: root.weatherIcon
-            color: root.uiFg
-            font.family: root.font
-            font.pixelSize: 30
+            color: root.cAccent
+            font.family: root.fontMono
+            font.pixelSize: 26
             Layout.preferredWidth: 40
             horizontalAlignment: Text.AlignHCenter
             Layout.alignment: Qt.AlignVCenter
@@ -33,20 +35,21 @@ Item {
 
         ColumnLayout {
             Layout.alignment: Qt.AlignVCenter
-            spacing: 2
+            spacing: 0
 
             Text {
                 text: root.weatherTemp
-                color: root.uiFg
-                font.family: root.uiFont
-                font.pixelSize: 22
-                font.weight: Font.Bold
+                color: root.cFgPrimary
+                font.family: root.fontSans
+                font.pixelSize: root.tH1[0]
+                font.weight: root.tH1[2]
+                font.letterSpacing: root.tH1[3]
             }
             Text {
                 text: root.weatherDesc
-                color: root.uiFgDim
-                font.family: root.uiFont
-                font.pixelSize: 13
+                color: root.cFgMuted
+                font.family: root.fontSans
+                font.pixelSize: root.tBodySm[0]
                 font.weight: Font.Medium
                 Layout.maximumWidth: 180
                 elide: Text.ElideRight

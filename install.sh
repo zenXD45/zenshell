@@ -12,7 +12,14 @@
 #   with a working, themed Hyprland session. Tolerant of missing
 #   AUR packages (warns, keeps going) so nothing dead-ends.
 #
-#   Usage:  bash install.sh
+#   Re-running is safe: your current theme, shell settings and dock
+#   pins are preserved, and only the code is refreshed.
+#
+#   Usage:
+#     bash install.sh                 # install / update
+#     bash install.sh --with-camera   # + virtual camera daemon
+#     bash install.sh --theme noir    # force a theme on this run
+#     bash install.sh --help
 # ═══════════════════════════════════════════════════════════════════
 
 set -euo pipefail
@@ -43,11 +50,60 @@ EOF
     printf "      %bHyprZen (rice) + ZenShell (island/dock/spotlight)%b\n" "$C" "$N"
 }
 
+usage() {
+    cat <<'EOF'
+HyprZen Fusion installer
+
+Usage:
+  bash install.sh [options]
+
+Options:
+  --with-camera       Also build the Camera Effects daemon and load the
+                      v4l2loopback virtual camera. Adds OpenCV, onnxruntime,
+                      ffmpeg, EasyEffects and the kernel module (~140 MB).
+  --theme <name>      Apply this theme after installing instead of keeping
+                      the current one. Fresh installs default to catppuccin.
+  -h, --help          Show this help.
+
+The installer is idempotent. On a re-run it refreshes the code, but keeps
+~/.config/quickshell/shell_settings.json, the dock's pinned apps and your
+current HyprZen theme.
+EOF
+}
+
+# ── Arguments ───────────────────────────────────────────────────────
+WITH_CAMERA=0
+THEME_OVERRIDE=""
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --with-camera) WITH_CAMERA=1 ;;
+        --theme)
+            if [ "$#" -lt 2 ]; then
+                err "--theme needs a theme name."
+                exit 2
+            fi
+            THEME_OVERRIDE="$2"
+            shift
+            ;;
+        --theme=*) THEME_OVERRIDE="${1#*=}" ;;
+        -h|--help) usage; exit 0 ;;
+        *)
+            err "Unknown option: $1"
+            usage
+            exit 2
+            ;;
+    esac
+    shift
+done
+
 # ── Resolve script location ─────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 REPO_HYPRZEN="$SCRIPT_DIR/hyprzen"
 REPO_ZENSHELL="$SCRIPT_DIR/zenshell"
 DEFAULT_THEME="catppuccin"
+QS_PARENT="$HOME/.config/quickshell"
+QS_DEST="$QS_PARENT/dynamic-island"
+QS_SETTINGS="$QS_PARENT/shell_settings.json"
 
 # ── Preflight ───────────────────────────────────────────────────────
 banner
@@ -69,18 +125,24 @@ for d in "$REPO_HYPRZEN" "$REPO_ZENSHELL"; do
 done
 
 step "One-shot install: deps, configs, fonts, plugins, services, theme"
-log "This will install packages and overwrite existing dotfiles."
-log "(Backups are taken where needed.)"
+log "This installs packages and refreshes managed dotfiles."
+log "Existing theme, shell settings and dock pins are kept on a re-run."
 sudo -v || { err "sudo required."; exit 1; }
 printf "  Ready. Starting install in a moment...\n"
 sleep 2
+
+# ── Package helpers ─────────────────────────────────────────────────
+# `pacman -T` succeeds when a package is installed *or* provided by another
+# package (e.g. qt6ct-kde provides qt6ct). `pacman -Qi` does not, which is why
+# the old checks reinstalled packages that were already satisfied.
+installed() { pacman -T "$1" &> /dev/null; }
 
 # ── Official packages ───────────────────────────────────────────────
 step "Official packages (pacman)"
 OFFICIAL_PKGS=(
     # Window / compositor & core UI
     hyprland hyprlock hypridle hyprsunset kitty
-    xdg-desktop-portal-hyprland
+    xdg-desktop-portal-hyprland xdg-desktop-portal-gtk
     # ZenShell needs NO waybar/rofi — the island + dock are the default.
     # Notifications are owned by ZenShell's island, not swaync.
     # Audio / OSD / input
@@ -89,33 +151,30 @@ OFFICIAL_PKGS=(
     cliphist wl-clipboard
     # System bits
     polkit-gnome network-manager-applet upower bluez-utils power-profiles-daemon
-    socat inotify-tools xdg-utils libnotify glib2
+    socat inotify-tools xdg-utils libnotify glib2 pciutils
     # ZenShell Qt runtime (Qt5Compat.GraphicalEffects used by the island/dock)
     qt6-5compat
-    # Wallpaper / theme pipeline (pywal itself moved to the AUR — see AUR_PKGS)
+    # Qt app theming (qt6ct-kde also satisfies this)
+    qt6ct
+    # Wallpaper / theme pipeline (pywal itself is AUR — see install_pywal)
     awww imagemagick matugen
-    # Wallpaper / screenshot helpers bound in the keybinds
-    waypaper satty hyprshot
+    # Screenshot helpers bound in the keybinds (waypaper is AUR)
+    satty hyprshot
     # ZenShell's compositor runtime. This used to be `quickshell-git` in the AUR
     # because Noctalia's fork (noctalia-qs) had replaced upstream; upstream
     # quickshell is in extra now, so a fresh install neither builds from the AUR
     # nor drags Noctalia back in.
     quickshell
-    # Lock/logout UI
-    wlogout
     # Terminal apps
     btop fastfetch cava thunar neovim
     # Desktop apps bound in modules/keybinds.lua (SUPER+B / SUPER+E / SUPER+C).
-    # These must stay in sync with the keybinds or the binds are dead on arrival.
-    # The package is helium-browser-bin, but the binary it ships is named
-    # helium-browser — that is what the keybind calls. firefox and thunar are
-    # still installed: the window rules match their classes, and both remain
-    # usable from the dock.
-    helium-browser-bin nautilus vscodium
-    firefox
+    # helium-browser-bin and vscodium-bin are AUR packages (see AUR_PKGS);
+    # nautilus and firefox are official. The binaries the keybinds call are
+    # helium-browser, nautilus and codium.
+    nautilus firefox
     # Shell tools (used by the zsh aliases / fzf-tab)
     eza bat fzf
-    # Toolchain (only needed for the few AUR builds — hyprswitch, pywal)
+    # Toolchain (only needed for the AUR builds — hyprswitch, pywal, paru)
     base-devel git cmake cpio pkgconf gcc make unzip wget curl jq npm ripgrep fd rust
     # Networks
     impala
@@ -125,15 +184,51 @@ OFFICIAL_PKGS=(
     # themes/*.css for GTK apps, so without it every GTK app is unthemed and the
     # wlogout CSS is dead weight. It lives in extra since the 2026 move — the
     # AUR entry this installer used to carry (`adw-gtk3`) no longer exists.
-    adw-gtk-theme ttf-jetbrains-mono-nerd noto-fonts-emoji papirus-icon-theme
+    # JetBrainsMono Nerd is what kitty and ZenShell actually ask for by name;
+    # Google Sans Flex is downloaded below because no distro ships it.
+    adw-gtk-theme ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji papirus-icon-theme
     # Python (monitors / control scripts)
     python python-dbus python-gobject
     # Shell
     zsh
+    # GTK3 runtime for the GTK theme CSS imported by the dotfiles
+    gtk3
 )
-log "Installing ${#OFFICIAL_PKGS[@]} official packages (--needed)..."
-sudo pacman -S --needed --noconfirm "${OFFICIAL_PKGS[@]}"
+log "Checking ${#OFFICIAL_PKGS[@]} official packages..."
+# Filter through `pacman -T` first. `--needed` only skips an exact package name;
+# it does not know that qt6ct-kde provides qt6ct or that hyprland-git provides
+# hyprland. Passing those names in one transaction can produce a file conflict
+# and abort *every* package in the list, so never hand pacman a satisfied name.
+OFFICIAL_TODO=()
+for pkg in "${OFFICIAL_PKGS[@]}"; do
+    if ! installed "$pkg"; then
+        OFFICIAL_TODO+=("$pkg")
+    fi
+done
+if [ "${#OFFICIAL_TODO[@]}" -gt 0 ]; then
+    log "${#OFFICIAL_TODO[@]} not yet satisfied — installing those..."
+    sudo pacman -S --needed --noconfirm "${OFFICIAL_TODO[@]}"
+else
+    ok "All official packages already satisfied."
+fi
 ok "Official packages done."
+
+# Optional official packages. Screen recording is a nice-to-have, not required
+# for the desktop to start, so install these best-effort instead of letting one
+# missing or failing package abort the run.
+step "Optional packages"
+OPTIONAL_PKGS=(gpu-screen-recorder gpu-screen-recorder-ui)
+for pkg in "${OPTIONAL_PKGS[@]}"; do
+    if installed "$pkg"; then
+        ok "$pkg already installed."
+    elif ! pacman -Si "$pkg" &> /dev/null; then
+        warn "$pkg is not in the configured repos — skipping."
+    elif sudo pacman -S --needed --noconfirm "$pkg" &> "/tmp/hyprzen-optional-$pkg.log"; then
+        ok "$pkg installed."
+    else
+        warn "$pkg failed (see /tmp/hyprzen-optional-$pkg.log). Continuing."
+    fi
+done
 
 # ── AUR helper ──────────────────────────────────────────────────────
 step "AUR helper"
@@ -143,64 +238,122 @@ if command -v paru &> /dev/null; then
 elif command -v yay &> /dev/null; then
     AUR_HELPER="yay"
 else
-    log "No AUR helper found — installing paru (official repo)..."
-    sudo pacman -S --needed --noconfirm paru
-    AUR_HELPER="paru"
+    # paru is AUR-only; `pacman -S paru` can never work. Bootstrap paru-bin
+    # with makepkg (base-devel + git are installed above).
+    log "No AUR helper found — bootstrapping paru-bin from the AUR..."
+    sudo -v || true
+    PARU_BUILD="$(mktemp -d "${TMPDIR:-/tmp}/hyprzen-paru.XXXXXX")"
+    if git clone --depth=1 https://aur.archlinux.org/paru-bin.git "$PARU_BUILD/paru-bin" &> /tmp/hyprzen-paru-clone.log \
+        && ( cd "$PARU_BUILD/paru-bin" && makepkg -si --noconfirm &> /tmp/hyprzen-paru-build.log ); then
+        AUR_HELPER="paru"
+        ok "paru installed."
+    else
+        warn "Could not bootstrap paru (logs: /tmp/hyprzen-paru-*.log)."
+        warn "AUR packages will be skipped; install an AUR helper and re-run."
+    fi
+    rm -rf "$PARU_BUILD"
 fi
-ok "Using AUR helper: $AUR_HELPER"
+if [ -n "$AUR_HELPER" ]; then
+    ok "Using AUR helper: $AUR_HELPER"
+fi
 
 # ── AUR packages (tolerant) ─────────────────────────────────────────
 step "AUR packages"
-# Only what genuinely is still AUR-only. quickshell, matugen, wlogout, satty,
-# hyprshot and waypaper all moved to the official repos (see OFFICIAL_PKGS), so
-# a fresh install no longer needs an AUR build for the shell itself — and in
-# particular no longer pulls in noctalia-qs. The helper + --needed skips
-# whatever is already satisfied.
+# Only what genuinely is AUR-only. quickshell, matugen, satty, hyprshot and
+# adw-gtk-theme are in the official repos (see OFFICIAL_PKGS). waypaper,
+# wlogout, helium-browser-bin and vscodium-bin are not — the old installer put
+# them in the pacman list, so a fresh install failed on the first missing name.
 AUR_PKGS=(
     hyprswitch
     bibata-cursor-theme
-    # pywal feeds dynamic-colors.sh (the "dynamic" theme) and was previously
-    # installed by hyprzen/setup.sh, which the top-level installer never ran —
-    # leaving keybinds and dynamic-colors.sh expecting a missing command.
-    pywal
+    waypaper
+    wlogout
+    helium-browser-bin
+    vscodium-bin
 )
 FAILED_AUR=()
-for pkg in "${AUR_PKGS[@]}"; do
-    if pacman -Qi "$pkg" &> /dev/null; then
-        ok "$pkg already installed."
-        continue
+
+# CachyOS ships `vscodium` (repo) while Arch only has `vscodium-bin` (AUR).
+# Both own /usr/bin/codium, so installing vscodium-bin on a CachyOS box would
+# hit a file conflict. Treat a working codium binary as satisfied.
+aur_satisfied() {
+    case "$1" in
+        vscodium-bin) command -v codium &> /dev/null ;;
+        *) installed "$1" ;;
+    esac
+}
+
+install_aur_one() {
+    local pkg="$1"
+    if aur_satisfied "$pkg"; then
+        ok "$pkg already satisfied."
+        return 0
+    fi
+    if [ -z "$AUR_HELPER" ]; then
+        warn "$pkg needs an AUR helper — skipping."
+        FAILED_AUR+=("$pkg")
+        return 0
     fi
     log "Installing $pkg..."
-    if $AUR_HELPER -S --needed --noconfirm "$pkg" &> /tmp/hyprzen-aur-$pkg.log; then
+    if "$AUR_HELPER" -S --needed --noconfirm "$pkg" &> "/tmp/hyprzen-aur-$pkg.log"; then
         ok "$pkg installed."
     else
         warn "$pkg failed (see /tmp/hyprzen-aur-$pkg.log). Continuing."
         FAILED_AUR+=("$pkg")
     fi
+}
+
+for pkg in "${AUR_PKGS[@]}"; do
+    install_aur_one "$pkg"
 done
+
+# pywal: the old AUR `pywal` package was deleted. python-pywal16 is the
+# maintained provider (python-pywal is the older fallback). Either one ships
+# the `wal` binary that dynamic-colors.sh calls, so accept an existing `wal`
+# even when it came from a distro package or a manual install.
+install_pywal() {
+    if command -v wal &> /dev/null; then
+        ok "pywal already available ($(command -v wal))."
+        return 0
+    fi
+    local candidate
+    for candidate in python-pywal16 python-pywal; do
+        if pacman -Si "$candidate" &> /dev/null; then
+            log "Installing $candidate (official)..."
+            if sudo pacman -S --needed --noconfirm "$candidate"; then
+                ok "$candidate installed."
+                return 0
+            fi
+        elif [ -n "$AUR_HELPER" ]; then
+            log "Installing $candidate (AUR)..."
+            if "$AUR_HELPER" -S --needed --noconfirm "$candidate" &> "/tmp/hyprzen-aur-$candidate.log"; then
+                ok "$candidate installed."
+                return 0
+            fi
+            warn "$candidate failed (see /tmp/hyprzen-aur-$candidate.log)."
+        fi
+    done
+    warn "Could not install pywal — the dynamic theme will use bundled defaults."
+    FAILED_AUR+=("python-pywal16")
+}
+install_pywal
+
 if [ "${#FAILED_AUR[@]}" -gt 0 ]; then
     warn "Some AUR packages failed to build: ${FAILED_AUR[*]}"
-    warn "You can retry later: $AUR_HELPER -S ${FAILED_AUR[*]}"
+    warn "You can retry later: ${AUR_HELPER:-paru} -S ${FAILED_AUR[*]}"
 else
     ok "All AUR packages installed."
 fi
 
 # ── Fonts ───────────────────────────────────────────────────────────
-step "Fonts (GeistMono Nerd + Google Sans Flex)"
+step "Fonts (JetBrainsMono Nerd + Google Sans Flex)"
 
-# GeistMono Nerd Font — terminal + icon glyphs.
-FONT_DIR="$HOME/.local/share/fonts/GeistMonoNerdFont"
-if fc-list 2> /dev/null | grep -qi 'GeistMono.*Nerd'; then
-    ok "GeistMono Nerd Font already installed."
+# JetBrainsMono Nerd Font — terminal + icon glyphs. Installed from the official
+# repo above; this only reports it so the log is honest.
+if fc-list 2> /dev/null | grep -qi 'JetBrainsMono.*Nerd'; then
+    ok "JetBrainsMono Nerd Font available."
 else
-    log "Downloading GeistMono Nerd Font..."
-    mkdir -p "$FONT_DIR"
-    curl -fL -o /tmp/geistmono.zip \
-        "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/GeistMono.zip" \
-        && unzip -oq /tmp/geistmono.zip -d "$FONT_DIR" \
-        && rm -f /tmp/geistmono.zip
-    fc-cache -f &> /dev/null || true
-    ok "Font cached."
+    warn "JetBrainsMono Nerd Font not found — kitty/ZenShell glyphs may fall back."
 fi
 
 # Google Sans Flex — the desktop's UI face. One variable font carrying the
@@ -289,11 +442,11 @@ done
 
 # Set default shell to zsh
 CURRENT_SHELL="$(getent passwd "$USER" | cut -d: -f7)"
-if [ "$CURRENT_SHELL" != "$(which zsh)" ]; then
+if [ "$CURRENT_SHELL" != "$(command -v zsh)" ]; then
     log "Setting default shell to zsh..."
-    chsh -s "$(which zsh)" 2>/dev/null \
+    chsh -s "$(command -v zsh)" 2>/dev/null \
         && ok "Default shell → zsh." \
-        || warn "chsh failed — run: chsh -s \$(which zsh)"
+        || warn "chsh failed — run: chsh -s \$(command -v zsh)"
 else
     ok "Default shell already zsh."
 fi
@@ -301,29 +454,52 @@ fi
 # ── Deploy HyprZen configs ──────────────────────────────────────────
 step "HyprZen configs (symlinks + scripts + wallpapers)"
 log "Running hyprzen/install.sh ..."
-bash "$REPO_HYPRZEN/install.sh" || warn "hyprzen/install.sh exited with errors."
+# --no-theme: the top-level installer decides whether to apply a theme, so a
+# re-run does not reset the user's current theme to the default.
+bash "$REPO_HYPRZEN/install.sh" --no-theme || warn "hyprzen/install.sh exited with errors."
 ok "HyprZen configs deployed."
 
 # ── Deploy ZenShell ─────────────────────────────────────────────────
 step "ZenShell suite (Dynamic Island / Dock / Spotlight / Widgets)"
-QS_DEST="$HOME/.config/quickshell/dynamic-island"
-mkdir -p "$HOME/.config/quickshell"
-if [ -d "$QS_DEST" ]; then
+mkdir -p "$QS_PARENT"
+
+# The dock writes its pins into the install directory. Preserve that one file
+# across the code refresh — otherwise every reinstall silently unpins the
+# user's apps back to the repo defaults.
+PINNED_BAK=""
+if [ -f "$QS_DEST/modules/dock/pinned_apps.json" ]; then
+    PINNED_BAK="$(mktemp "${TMPDIR:-/tmp}/hyprzen-pins.XXXXXX")"
+    cp "$QS_DEST/modules/dock/pinned_apps.json" "$PINNED_BAK"
+fi
+
+if [ -d "$QS_DEST" ] || [ -L "$QS_DEST" ]; then
     bak="${QS_DEST}.bak.$(date +%Y%m%d_%H%M%S)"
     log "Existing install found — backing up to $bak"
     mv "$QS_DEST" "$bak"
 fi
 cp -r "$REPO_ZENSHELL" "$QS_DEST"
+
+if [ -n "$PINNED_BAK" ]; then
+    cp "$PINNED_BAK" "$QS_DEST/modules/dock/pinned_apps.json"
+    rm -f "$PINNED_BAK"
+    ok "Dock pins preserved."
+fi
+
+# Python leaves __pycache__ inside the repo when its scripts have been run.
+# Copying it into the install makes stale bytecode look newer than edited
+# sources, so ship source only.
+find "$QS_DEST" -type d -name __pycache__ -prune -exec rm -rf {} + 2> /dev/null || true
+find "$QS_DEST" -type f -name '*.pyc' -delete 2> /dev/null || true
+
 chmod +x "$QS_DEST"/*.sh
 chmod +x "$QS_DEST"/scripts/*.sh "$QS_DEST"/scripts/*.py 2> /dev/null || true
 find "$QS_DEST/modules" -type f \( -name '*.sh' -o -name '*.py' \) -exec chmod +x {} + 2> /dev/null || true
 ok "ZenShell deployed to $QS_DEST"
 
 # shell_settings.json is read by shell.qml and modules/dock/shell.qml from
-# ~/.config/quickshell/ — one level ABOVE the dynamic-island directory. Nothing
-# in the repo used to create it, so the island and dock silently fell back to
-# their compiled-in defaults and the user's choices never persisted.
-QS_SETTINGS="$HOME/.config/quickshell/shell_settings.json"
+# ~/.config/quickshell/ — one level ABOVE the dynamic-island directory.
+# Re-seeding it on every run would undo the user's UI scale, motion and
+# profile choices, so only create it when it does not exist yet.
 if [ -f "$QS_SETTINGS" ]; then
     ok "shell_settings.json already present — leaving your choices alone."
 else
@@ -331,24 +507,96 @@ else
     ok "Seeded $QS_SETTINGS"
 fi
 
-# ── Apply default theme + wallpaper ─────────────────────────────────
-step "Apply default theme: $DEFAULT_THEME"
-if [ -f "$HOME/scripts/theme-switch.sh" ]; then
-    "$HOME/scripts/theme-switch.sh" "$DEFAULT_THEME" \
-        && ok "Theme $DEFAULT_THEME applied." \
-        || warn "theme-switch.sh had issues (normal outside a desktop session)."
+# ── Camera Effects (optional) ───────────────────────────────────────
+if [ "$WITH_CAMERA" -eq 1 ]; then
+    step "Camera Effects (virtual camera + microphone)"
+    CAMERA_PKGS=(opencv onnxruntime-cpu v4l2loopback-dkms v4l2loopback-utils dkms ffmpeg easyeffects)
+    for pkg in "${CAMERA_PKGS[@]}"; do
+        if installed "$pkg"; then
+            ok "$pkg already installed."
+        elif pacman -Si "$pkg" &> /dev/null && sudo pacman -S --needed --noconfirm "$pkg"; then
+            ok "$pkg installed."
+        else
+            warn "$pkg failed to install — the camera panel may not work."
+        fi
+    done
+    log "Building the camera-effects daemon..."
+    "$QS_DEST/scripts/camera_effects_install.sh" \
+        && ok "camera-effects built." \
+        || warn "Camera Effects build failed; the panel can retry it."
+    if [ -x "$HOME/.local/lib/camera-effects/camera-effects-setup" ] && command -v pkexec &> /dev/null; then
+        log "Creating the virtual camera (asks for your password)..."
+        pkexec "$HOME/.local/lib/camera-effects/camera-effects-setup" install \
+            "$HOME/.local/lib/camera-effects/camera-effects-server" \
+            "$HOME/.local/lib/camera-effects/camera-effects-setup" \
+            || warn "Could not create the virtual camera yet; the panel can retry it."
+    fi
+fi
+
+# ── Theme ───────────────────────────────────────────────────────────
+step "Theme"
+CURRENT_THEME_FILE="$HOME/.config/hypr/themes/current_theme.lua"
+THEMES_JSON="$HOME/.config/hypr/themes/themes.json"
+
+current_theme_name() {
+    [ -f "$CURRENT_THEME_FILE" ] || return 0
+    sed -n 's/.*require("themes\.\([^"]*\)").*/\1/p' "$CURRENT_THEME_FILE" | head -n 1
+}
+
+theme_is_valid() {
+    local name="$1"
+    [ -n "$name" ] || return 1
+    [ -f "$THEMES_JSON" ] || return 0
+    jq -e --arg id "$name" 'any(.[]; .id == $id)' "$THEMES_JSON" &> /dev/null
+}
+
+apply_theme() {
+    local name="$1"
+    if [ -f "$HOME/scripts/theme-switch.sh" ]; then
+        "$HOME/scripts/theme-switch.sh" "$name" \
+            && ok "Theme $name applied." \
+            || warn "theme-switch.sh had issues (normal outside a desktop session)."
+    else
+        warn "~/.config/hypr not linked? theme-switch.sh missing. Configs must be linked."
+    fi
+}
+
+if [ -n "$THEME_OVERRIDE" ]; then
+    if theme_is_valid "$THEME_OVERRIDE"; then
+        EFFECTIVE_THEME="$THEME_OVERRIDE"
+        apply_theme "$EFFECTIVE_THEME"
+    elif [ -f "$CURRENT_THEME_FILE" ]; then
+        EFFECTIVE_THEME="$(current_theme_name)"
+        warn "Unknown theme '$THEME_OVERRIDE' — keeping $EFFECTIVE_THEME."
+    else
+        EFFECTIVE_THEME="$DEFAULT_THEME"
+        warn "Unknown theme '$THEME_OVERRIDE' — applying $DEFAULT_THEME instead."
+        apply_theme "$EFFECTIVE_THEME"
+    fi
+elif [ -f "$CURRENT_THEME_FILE" ]; then
+    EXISTING_THEME="$(current_theme_name)"
+    if theme_is_valid "$EXISTING_THEME"; then
+        EFFECTIVE_THEME="$EXISTING_THEME"
+        ok "Existing theme preserved: $EFFECTIVE_THEME"
+    else
+        EFFECTIVE_THEME="$DEFAULT_THEME"
+        warn "Current theme '${EXISTING_THEME:-unknown}' is not in themes.json — applying $DEFAULT_THEME."
+        apply_theme "$EFFECTIVE_THEME"
+    fi
 else
-    warn "~/.config/hypr not linked? theme-switch.sh missing. Configs must be linked."
+    EFFECTIVE_THEME="$DEFAULT_THEME"
+    log "No theme selected yet — applying default: $DEFAULT_THEME"
+    apply_theme "$EFFECTIVE_THEME"
 fi
 
 if [ ! -e "$HOME/wallpapers/current" ]; then
-    log "Setting a default wallpaper for $DEFAULT_THEME..."
-    WALL="$(find "$HOME/wallpapers/$DEFAULT_THEME" -type f \( -iname '*.jpg' -o -iname '*.png' -o -iname '*.webp' \) 2> /dev/null | head -n 1 || true)"
+    log "Setting a default wallpaper for $EFFECTIVE_THEME..."
+    WALL="$(find "$HOME/wallpapers/$EFFECTIVE_THEME" -type f \( -iname '*.jpg' -o -iname '*.png' -o -iname '*.webp' \) 2> /dev/null | head -n 1 || true)"
     if [ -n "$WALL" ]; then
         ln -sf "$WALL" "$HOME/wallpapers/current"
         ok "Default wallpaper set: $WALL"
     else
-        warn "No wallpapers found for $DEFAULT_THEME — pick one later with Super+W (island picker)."
+        warn "No wallpapers found for $EFFECTIVE_THEME — pick one later with Super+W (island picker)."
     fi
 else
     ok "Wallpaper already set."
@@ -383,7 +631,10 @@ check "hypridle"        sh -c 'command -v hypridle'
 check "hyprlock"        sh -c 'command -v hyprlock'
 check "hypr [$HOME/.config/hypr]"   sh -c '[ -e "$HOME/.config/hypr" ]'
 check "scripts [$HOME/scripts]"     sh -c '[ -e "$HOME/scripts" ]'
-check "zen shell [$QS_DEST/shell.qml]" sh -c '[ -f "$HOME/.config/quickshell/dynamic-island/shell.qml" ]'
+# Use $HOME inside the single-quoted script rather than $QS_DEST: QS_DEST is a
+# shell variable of this installer, not an exported one, so the old checks
+# expanded to an empty path and always failed.
+check "zen shell"                   sh -c '[ -f "$HOME/.config/quickshell/dynamic-island/shell.qml" ]'
 check "theme current_theme.lua"     sh -c '[ -f "$HOME/.config/hypr/themes/current_theme.lua" ]'
 check "cliphist"        sh -c 'command -v cliphist'
 check "zsh"             sh -c 'command -v zsh'
@@ -398,7 +649,7 @@ check "hypridle config"                    sh -c '[ -f "$HOME/.config/hypr/hypri
 check "hyprlock config"                    sh -c '[ -f "$HOME/.config/hypr/hyprlock.conf" ]'
 check "theme sources"                      sh -c '[ -n "$(ls "$HOME/.config/hypr/themes/source/"*.toml 2>/dev/null)" ]'
 check "Google Sans Flex font (ZenShell UI)" sh -c 'fc-list 2>/dev/null | grep -qi "Google Sans Flex"'
-check "nerd font (icons)"                  sh -c 'fc-list 2>/dev/null | grep -qi nerd'
+check "JetBrainsMono Nerd font (kitty/icons)" sh -c 'fc-list 2>/dev/null | grep -qi "JetBrainsMono.*Nerd"'
 # Re-enabled: this check was commented out because adw-gtk3 could never install
 # (the AUR name it used was gone). It installs from extra as adw-gtk-theme now,
 # so the check tests for the theme directory the dotfiles actually reference.
@@ -408,17 +659,39 @@ check "pywal (dynamic theme)"              sh -c 'command -v wal'
 check "matugen (wallpaper theme)"          sh -c 'command -v matugen'
 check "waypaper"                           sh -c 'command -v waypaper'
 check "hyprshot (screenshots)"             sh -c 'command -v hyprshot'
+check "hyprswitch (SUPER+ALT+TAB)"         sh -c 'command -v hyprswitch'
 check "keybind binary: kitty"              sh -c 'command -v kitty'
 check "keybind binary: helium-browser"      sh -c 'command -v helium-browser'
 check "keybind binary: nautilus"           sh -c 'command -v nautilus'
 check "keybind binary: codium"             sh -c 'command -v codium'
 check "keybind binary: wlogout"            sh -c 'command -v wlogout'
 check "zen shell themes.json"              sh -c '[ -f "$HOME/.config/hypr/themes/themes.json" ]'
-check "zen shell get_themes.py runs"       sh -c 'python3 "$QS_DEST/scripts/get_themes.py" >/dev/null 2>&1'
-check "zen shell get_wallpapers.py runs"   sh -c 'python3 "$QS_DEST/scripts/get_wallpapers.py" >/dev/null 2>&1'
+check "dock pins file"                     sh -c '[ -f "$HOME/.config/quickshell/dynamic-island/modules/dock/pinned_apps.json" ]'
+check "zen shell get_themes.py runs"       sh -c 'python3 "$HOME/.config/quickshell/dynamic-island/scripts/get_themes.py" >/dev/null 2>&1'
+check "zen shell get_wallpapers.py runs"   sh -c 'python3 "$HOME/.config/quickshell/dynamic-island/scripts/get_wallpapers.py" >/dev/null 2>&1'
 check "shell_settings.json seeded"         sh -c '[ -f "$HOME/.config/quickshell/shell_settings.json" ]'
+if [ "$WITH_CAMERA" -eq 1 ]; then
+    check "camera-effects daemon"          sh -c '[ -x "$HOME/.local/lib/camera-effects/camera-effects-server" ]'
+fi
 
 printf "\n${G}${BD}Checks passed: ${pass}${N}${R}${BD}   Failed: ${fail}${N}\n"
+
+# ── Restart ZenShell in a live session ──────────────────────────────
+# The config installer no longer kills Quickshell, so the old shell survived
+# the file refresh. Restart just the ZenShell configs (not any other
+# Quickshell the user runs) so the new QML is what is actually on screen.
+if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && [ -x "$QS_DEST/start_all.sh" ]; then
+    step "Restart ZenShell"
+    pkill -f "$QS_DEST" 2> /dev/null || true
+    sleep 1
+    if command -v setsid &> /dev/null; then
+        setsid "$QS_DEST/start_all.sh" > /tmp/zenshell-restart.log 2>&1 < /dev/null &
+        ok "ZenShell restarted (log: /tmp/zenshell-restart.log)."
+    else
+        nohup "$QS_DEST/start_all.sh" > /tmp/zenshell-restart.log 2>&1 < /dev/null &
+        ok "ZenShell restarted (log: /tmp/zenshell-restart.log)."
+    fi
+fi
 
 step "Done — reboot or restart"
 cat <<'EOF'

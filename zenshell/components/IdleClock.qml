@@ -51,7 +51,7 @@ RowLayout {
         width: 6
         height: 6
         radius: 3
-        color: "#FF3B30"
+        color: root.cDanger
         Layout.alignment: Qt.AlignVCenter
         visible: Pipewire.defaultAudioSource && Pipewire.defaultAudioSource.state === 3 // PwNodeState.Running
         
@@ -67,7 +67,7 @@ RowLayout {
     Text {
         text: root.currentTime
         color: root.themeFg
-        font.family: root.uiFont
+        font.family: root.fontSans
         font.pixelSize: 13
         font.bold: true
         Layout.alignment: Qt.AlignVCenter

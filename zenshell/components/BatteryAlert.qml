@@ -47,7 +47,7 @@ Item {
                     anchors.margins: 2
                     width: Math.max(0, (parent.width - 4) * (root.batteryPercent / 100))
                     radius: 2
-                    color: root.batteryCharging ? "#34C759" : (root.batteryPercent <= 20 ? "#FF3B30" : root.themeFg)
+                    color: root.batteryCharging ? root.cSuccess : (root.batteryPercent <= 20 ? root.cDanger : root.themeFg)
                     
                     // Charging lightning bolt overlay
                     Text {
@@ -74,8 +74,8 @@ Item {
 
         Text {
             text: root.batteryPercent + "%"
-            color: root.batteryCharging ? "#34C759" : (root.batteryPercent <= 20 ? "#FF3B30" : root.themeFg)
-            font.family: root.uiFont
+            color: root.batteryCharging ? root.cSuccess : (root.batteryPercent <= 20 ? root.cDanger : root.themeFg)
+            font.family: root.fontSans
             font.pixelSize: 15
             font.weight: Font.Bold
             Layout.alignment: Qt.AlignVCenter
@@ -84,7 +84,7 @@ Item {
         Text {
             text: root.batteryCharging ? "Charging" : (root.batteryPercent <= 20 ? "Low Battery" : "Battery")
             color: root.ink(0.65)
-            font.family: root.uiFont
+            font.family: root.fontSans
             font.pixelSize: 13
             font.weight: Font.Medium
             Layout.alignment: Qt.AlignVCenter

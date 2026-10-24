@@ -18,8 +18,8 @@ urgent  = "#e05a5a"
 [geometry]
 rounding = 16
 border_size = 0
-gaps_in = 6
-gaps_out = 14
+gaps_in = 5
+gaps_out = 12
 blur_size = 6
 blur_passes = 3
 inactive_opacity = 0.92

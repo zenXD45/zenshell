@@ -77,7 +77,10 @@ Manjaro, Garuda):
 
 Then `hyprctl reload`, or `SUPER + CTRL + R`.
 
-The installer is idempotent — re-running it skips what's already in place.
+The installer is idempotent — re-running it skips what's already in place,
+keeps an existing `~/.zshrc` / `~/.p10k.zsh`, and backs up any real config
+directory it has to replace (with a timestamp) instead of deleting it. The
+current theme is kept unless none has been selected yet.
 
 ## Keybinds
 

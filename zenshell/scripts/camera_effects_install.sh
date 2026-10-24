@@ -28,18 +28,41 @@ say() { printf '› %s\n' "$*"; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
 # ── Dependencies ─────────────────────────────────────────────────────────────
+# The panel runs this script on every shell start, so the polkit prompt for the
+# package install used to come back at every single login (and a dismissed
+# prompt is remembered by nobody, so it came back anyway). Ask once, remember
+# the attempt, and after that print the command to run instead of asking.
 missing=()
-for p in gcc make pkgconf opencv onnxruntime-cpu pipewire; do
+# Build deps first, then the runtime pieces the panel actually uses: ffmpeg
+# measures the pipeline, EasyEffects carries the virtual microphone. Both are
+# opt-in with the camera, never pulled in by a shell-only install.
+for p in gcc make pkgconf opencv onnxruntime-cpu pipewire ffmpeg easyeffects; do
   pacman -Q "$p" >/dev/null 2>&1 || missing+=("$p")
 done
+DEPS_MARKER=$CACHE/deps-prompted
 if ((${#missing[@]})); then
+  if [[ -f $DEPS_MARKER ]]; then
+    say "missing packages: ${missing[*]}"
+    say "already asked once — not asking again."
+    say "install them yourself to finish this: sudo pacman -S --needed ${missing[*]}"
+    say "(to be asked again, delete $DEPS_MARKER)"
+    die "missing build dependencies"
+  fi
+  mkdir -p "$CACHE"
+  printf '%s\n' "${missing[*]}" >"$DEPS_MARKER"
   say "installing missing packages: ${missing[*]}"
   if command -v pkexec >/dev/null 2>&1; then
-    pkexec pacman -S --needed --noconfirm "${missing[@]}"
+    if ! pkexec pacman -S --needed --noconfirm "${missing[@]}"; then
+      say "the install did not go through; not asking again (delete $DEPS_MARKER to retry)"
+      die "missing build dependencies"
+    fi
   else
     say "no polkit agent: install them yourself with: sudo pacman -S ${missing[*]}"
     die "missing build dependencies"
   fi
+  rm -f "$DEPS_MARKER"   # they are in now, so a later miss may ask again
+else
+  rm -f "$DEPS_MARKER"   # all present: allow a future prompt again
 fi
 
 # ── Upstream checkout ────────────────────────────────────────────────────────
@@ -80,7 +103,11 @@ install -m 644 "$SRC"/wireplumber/*.lua "$SHARE/wireplumber/"
 ln -sfn "$LIB/camera-effects-server" "$BIN/camera-effects-server"
 
 # The panel calls this script by path, so keep a copy where it expects it.
-install -m 755 "${BASH_SOURCE[0]}" "$SHARE/install.sh"
+# (Skip it when we *are* that copy: install would fail with "same file" and the
+# script would exit non-zero even though the build was fine.)
+if [[ "$(readlink -f "${BASH_SOURCE[0]}")" != "$(readlink -f "$SHARE/install.sh")" ]]; then
+  install -m 755 "${BASH_SOURCE[0]}" "$SHARE/install.sh"
+fi
 
 # Remember which upstream commit this build came from: the shell compares it
 # with the checkout and rebuilds when it moves.

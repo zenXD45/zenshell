@@ -29,7 +29,7 @@ border_size = 0
 
 gaps_in = 5
 
-gaps_out = 14
+gaps_out = 12
 
 blur_size = 6
 

@@ -1,6 +1,9 @@
 import QtQuick
 import QtQuick.Layouts
 
+// Profile picker for the two shell modes. Each mode is a card previewing what
+// it keeps on the desktop; the footer states that switching is in-place so
+// nobody expects a restart.
 Item {
     id: profileSwitcher
     anchors.fill: parent
@@ -13,7 +16,7 @@ Item {
 
     Behavior on reveal {
         NumberAnimation {
-            duration: root.displayState === 16 ? root.motionPanel : root.motionExit
+            duration: root.displayState === 16 ? root.dPage : root.dFast
             easing.type: root.displayState === 16 ? Easing.OutExpo : Easing.OutCubic
         }
     }
@@ -44,84 +47,42 @@ Item {
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 16
-            spacing: 10
+            anchors.margins: root.s5
+            spacing: 0
 
             MenuHeader {
-                title: "Shell profiles"
-                icon: "\uf0c9"
-                hint: "press 1 or 2"
-                meta: "2 modes"
+                title: "Shell profile"
+                hint: "1 / 2"
             }
 
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 160
-                spacing: 10
+            Item { Layout.preferredHeight: root.s4 }
 
-                ProfileCard {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
+            Group {
+                ProfileRow {
                     profileId: "island"
                     title: "Island"
-                    description: "Dynamic island · dock"
+                    description: "Dynamic island \u00b7 dock"
                     active: root.activeProfile === "island"
                     onActivated: root.setProfile("island")
                 }
 
-                ProfileCard {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
+                ProfileRow {
                     profileId: "bar"
                     title: "Bar"
-                    description: "Command rail · widgets"
+                    description: "Command rail \u00b7 widgets"
                     active: root.activeProfile === "bar"
+                    last: true
                     onActivated: root.setProfile("bar")
                 }
             }
 
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 24
-                spacing: 8
+            Item { Layout.fillHeight: true }
 
-                Text {
-                    Layout.fillWidth: true
-                    text: "The whole shell changes in place — no restart."
-                    color: root.uiFgDim
-                    font.family: root.uiFont
-                    font.pixelSize: 9
-                    font.weight: Font.Medium
-                    elide: Text.ElideRight
-                }
-
-                Text {
-                    text: "1 / 2"
-                    color: root.uiFgFaint
-                    font.family: root.font
-                    font.pixelSize: 8
-                    font.weight: Font.Medium
-                    font.letterSpacing: 0.4
-                }
-
-                Rectangle {
-                    height: 20
-                    implicitWidth: escapeText.implicitWidth + 14
-                    radius: 7
-                    color: root.ink(0.039)
-                    border.width: 1
-                    border.color: root.ink(0.086)
-
-                    Text {
-                        id: escapeText
-                        anchors.centerIn: parent
-                        text: "esc"
-                        color: root.uiFgFaint
-                        font.family: root.font
-                        font.pixelSize: 8
-                        font.weight: Font.Medium
-                    }
-                }
+            HintBar {
+                hints: [
+                    { key: "1 2", label: "switch" },
+                    { key: "esc", label: "close" }
+                ]
             }
         }
     }

@@ -16,20 +16,14 @@ Item {
     Layout.fillWidth: true
     Layout.preferredHeight: 160
 
-    scale: pointer.containsMouse ? 1.012 : 1.0
-    transformOrigin: Item.Center
-    Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-
     Rectangle {
         anchors.fill: parent
-        radius: root.uiRadiusMd
+        radius: root.rMd
         color: card.active
-            ? Qt.rgba(root.themeAccent.r, root.themeAccent.g, root.themeAccent.b, 0.09)
-            : (pointer.containsMouse ? root.ink(0.055) : root.ink(0.027))
-        border.width: 1
-        border.color: card.active
-            ? Qt.rgba(root.themeAccent.r, root.themeAccent.g, root.themeAccent.b, 0.42)
-            : (pointer.containsMouse ? root.ink(0.141) : root.ink(0.071))
+            ? Qt.rgba(root.themeAccent.r, root.themeAccent.g, root.themeAccent.b, 0.07)
+            : (pointer.containsMouse ? root.ink(0.05) : root.ink(0.028))
+        border.width: card.active ? 1 : 0
+        border.color: Qt.rgba(root.themeAccent.r, root.themeAccent.g, root.themeAccent.b, 0.35)
         Behavior on color { ColorAnimation { duration: 160 } }
         Behavior on border.color { ColorAnimation { duration: 160 } }
     }
@@ -40,11 +34,9 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.margins: 10
-        height: 92
-        radius: 12
-        color: "#06000000"
-        border.width: 1
-        border.color: root.ink(0.063)
+        height: 86
+        radius: 8
+        color: "#08000000"
         clip: true
 
         Rectangle {
@@ -62,11 +54,12 @@ Item {
             anchors.left: parent.left
             anchors.margins: 9
             text: card.profileId === "island" ? "01" : "02"
-            color: root.uiFgDim
-            font.family: root.font
-            font.pixelSize: 8
+            color: root.cFgSecondary
+            font.family: root.fontMono
+            font.pixelSize: 10
             font.weight: Font.Medium
-            font.letterSpacing: 0.8
+            font.letterSpacing: 0.6
+            opacity: 0.55
         }
 
         // 01 — the island over a dock.
@@ -215,27 +208,27 @@ Item {
             }
         }
 
-        Rectangle {
+        Row {
             visible: card.active
             anchors.top: parent.top
             anchors.right: parent.right
-            anchors.margins: 8
-            height: 17
-            implicitWidth: activeText.implicitWidth + 12
-            radius: 8.5
-            color: root.glass(0.8)
-            border.width: 1
-            border.color: Qt.rgba(root.themeAccent.r, root.themeAccent.g, root.themeAccent.b, 0.38)
+            anchors.margins: 12
+            spacing: 5
+
+            Rectangle {
+                width: 5
+                height: 5
+                radius: 2.5
+                anchors.verticalCenter: parent.verticalCenter
+                color: root.currentThemeAccent
+            }
 
             Text {
-                id: activeText
-                anchors.centerIn: parent
-                text: "LIVE"
+                text: "In use"
                 color: root.currentThemeAccent
-                font.family: root.uiFont
-                font.pixelSize: 7
-                font.weight: Font.Bold
-                font.letterSpacing: 0.8
+                font.family: root.fontSans
+                font.pixelSize: 10
+                font.weight: Font.Medium
             }
         }
     }
@@ -252,8 +245,8 @@ Item {
         Text {
             width: parent.width
             text: card.title
-            color: root.uiFg
-            font.family: root.uiFont
+            color: root.cFgPrimary
+            font.family: root.fontSans
             font.pixelSize: 13
             font.weight: Font.DemiBold
             elide: Text.ElideRight
@@ -262,10 +255,11 @@ Item {
         Text {
             width: parent.width
             text: card.description
-            color: root.uiFgDim
-            font.family: root.uiFont
-            font.pixelSize: 9
-            font.weight: Font.Medium
+            color: root.cFgSecondary
+            font.family: root.fontSans
+            font.pixelSize: 11
+            font.weight: Font.Normal
+            opacity: 0.72
             elide: Text.ElideRight
         }
     }

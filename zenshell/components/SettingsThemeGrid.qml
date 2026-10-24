@@ -119,7 +119,7 @@ GridLayout {
                 width: parent.width - 30
                 text: tile.modelData.name || tile.modelData.id
                 color: root.ink(0.949)
-                font.family: root.uiFont
+                font.family: root.fontSans
                 font.pixelSize: 10
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
@@ -139,7 +139,7 @@ GridLayout {
                     anchors.centerIn: parent
                     text: "\uf00c"
                     color: root.onAccent()
-                    font.family: root.font
+                    font.family: root.fontMono
                     font.pixelSize: 8
                 }
             }
@@ -157,8 +157,8 @@ GridLayout {
     Text {
         visible: grid.visibleThemes.length === 0
         text: grid.filter ? "No theme matches \"" + grid.filter + "\"" : "No themes installed"
-        color: root.uiFgFaint
-        font.family: root.uiFont
+        color: root.cFgMuted
+        font.family: root.fontSans
         font.pixelSize: 11
     }
 }

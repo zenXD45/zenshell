@@ -62,8 +62,8 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 16
-        spacing: 8
+        anchors.margins: root.s5
+        spacing: root.s3
 
         MenuHeader {
             title: "Wallpapers"
@@ -146,7 +146,7 @@ Item {
                     height: ListView.view.height
                     opacity: Math.max(0, Math.min(1, (wallpaperRoot.reveal - 0.05 - Math.min(index, 4) * 0.04) / 0.70))
                     transform: Translate { y: (1 - wpCardItem.opacity) * 10 }
-                    Behavior on width { NumberAnimation { duration: 260; easing.type: Easing.OutQuart } }
+                    Behavior on width { NumberAnimation { duration: root.dNormal; easing.type: Easing.OutQuart } }
 
                     property bool isSel: index === wpListView.currentIndex
                     property bool isHov: wpArea.containsMouse
@@ -155,7 +155,7 @@ Item {
                         anchors.centerIn: parent
                         width: parent.width
                         height: isSel ? parent.height - 8 : parent.height - 24
-                        Behavior on height { NumberAnimation { duration: 260; easing.type: Easing.OutQuart } }
+                        Behavior on height { NumberAnimation { duration: root.dNormal; easing.type: Easing.OutQuart } }
 
                         Rectangle {
                             id: wpCard
@@ -163,11 +163,9 @@ Item {
                             radius: 14
                             color: root.themeBg
                             clip: true
-                            border.width: isSel ? 1.5 : 1
-                            border.color: isSel
-                                ? Qt.rgba(root.themeAccent.r, root.themeAccent.g, root.themeAccent.b, 0.55)
-                                : (isHov ? root.ink(0.149) : root.ink(0.071))
-                            Behavior on border.color { ColorAnimation { duration: 180 } }
+                            border.width: isSel ? 2 : 0
+                            border.color: Qt.rgba(root.themeAccent.r, root.themeAccent.g, root.themeAccent.b, 0.80)
+                            Behavior on border.color { ColorAnimation { duration: root.dFast } }
 
                             property real press: 1.0
                             transform: Scale {
@@ -176,7 +174,7 @@ Item {
                                 xScale: wpCard.press
                                 yScale: wpCard.press
                             }
-                            Behavior on press { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                            Behavior on press { NumberAnimation { duration: root.dMicro; easing.type: Easing.OutCubic } }
 
                             Image {
                                 anchors.fill: parent
@@ -185,7 +183,7 @@ Item {
                                 asynchronous: true
                                 cache: true
                                 opacity: isSel ? 1.0 : (isHov ? 0.78 : 0.48)
-                                Behavior on opacity { NumberAnimation { duration: 200 } }
+                                Behavior on opacity { NumberAnimation { duration: root.dFast } }
                             }
 
                             // A soft floor keeps the crop from ending abruptly
@@ -251,22 +249,22 @@ Item {
 
             Column {
                 anchors.centerIn: parent
-                spacing: 8
+                spacing: root.s3
                 visible: wallpapersModel.count === 0
 
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: "\uf03e"
                     color: root.ink(0.439)
-                    font.family: root.font
+                    font.family: root.fontMono
                     font.pixelSize: 22
                 }
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: "No wallpapers found"
-                    color: root.uiFgDim
-                    font.family: root.uiFont
-                    font.pixelSize: 11
+                    color: root.cFgSecondary
+                    font.family: root.fontSans
+                    font.pixelSize: root.tBodySm[0]
                     font.weight: Font.Medium
                 }
             }
@@ -278,10 +276,10 @@ Item {
             Layout.preferredHeight: 14
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            font.family: root.uiFont
-            font.pixelSize: 10
+            font.family: root.fontSans
+            font.pixelSize: 12
             font.weight: Font.Medium
-            color: root.uiFgDim
+            color: root.cFgMuted
             elide: Text.ElideMiddle
             text: {
                 if (wpListView.hoveredWpName && wpListView.hoveredWpName !== "") return wpListView.hoveredWpName;

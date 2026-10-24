@@ -55,7 +55,7 @@ Scope {
     // Text drawn on top of an accent-filled shape needs the opposite lightness
     // from the accent, not from the theme.
     function onAccent(): color {
-        return root.themeAccent.hslLightness > 0.6 ? root.themeBg : root.themeFg;
+        return root.themeAccent.hslLightness > 0.6 ? "#101014" : "#FFFFFF";
     }
 
     // ── Panel design tokens ────────────────────────────────────────
@@ -78,6 +78,71 @@ Scope {
     readonly property int uiRadiusSm: Math.max(3, themeRounding - 3)
     readonly property bool panelOpen: displayState === 3 || displayState === 13 || displayState === 16 || displayState === 23 || displayState === 24
     readonly property bool compactMenu: displayState === 4 || displayState === 11 || displayState === 12 || displayState === 14 || displayState === 15
+
+    // ── DESIGN.md token layer ─────────────────────────────────────
+    // The component-level vocabulary. Every value here is derived from the
+    // active Hyprland theme palette, so switching themes repaints panels,
+    // controls and status colours together instead of only the accent.
+    // Components should reach for these tokens, never for raw literals.
+    readonly property color cBgPrimary: themeBg
+    readonly property color cBgSecondary: themeSurface
+    readonly property color cBgTertiary: themeDark ? Qt.lighter(themeSurface, 1.16) : Qt.darker(themeSurface, 1.04)
+    readonly property color cBgElevated: themeDark ? Qt.lighter(themeSurface, 1.32) : Qt.darker(themeSurface, 1.08)
+    readonly property color cFgPrimary: themeFg
+    readonly property color cFgSecondary: Qt.rgba(themeFg.r, themeFg.g, themeFg.b, 0.76)
+    readonly property color cFgMuted: Qt.rgba(themeFg.r, themeFg.g, themeFg.b, 0.54)
+    readonly property color cAccent: themeAccent
+    readonly property color cAccentStrong: themeAccent.hslLightness > 0.55 ? Qt.darker(themeAccent, 1.18) : Qt.lighter(themeAccent, 1.18)
+    readonly property color cBorderSubtle: Qt.rgba(themeFg.r, themeFg.g, themeFg.b, 0.08)
+    readonly property color cBorderDefault: Qt.rgba(themeFg.r, themeFg.g, themeFg.b, 0.16)
+    readonly property color cBorderStrong: Qt.rgba(themeFg.r, themeFg.g, themeFg.b, 0.28)
+    readonly property color cSuccess: "#a6e3a1"
+    readonly property color cWarning: "#f9e2af"
+    readonly property color cDanger: "#f38ba8"
+    readonly property color cInfo: "#89dceb"
+
+    // 4px base spacing scale — 2px for hairline gaps, 64px for page inset.
+    readonly property int s0: 0
+    readonly property int s1: 2
+    readonly property int s2: 4
+    readonly property int s3: 8
+    readonly property int s4: 12
+    readonly property int s5: 16
+    readonly property int s6: 24
+    readonly property int s7: 32
+    readonly property int s8: 48
+    readonly property int s9: 64
+
+    readonly property int rNone: 0
+    readonly property int rSm: uiRadiusSm
+    readonly property int rMd: uiRadiusMd
+    readonly property int rLg: uiRadiusLg
+    readonly property int rXl: uiRadiusLg + 4
+    readonly property int rFull: 9999
+
+    readonly property string fontSans: uiFont
+    readonly property string fontMono: font
+    readonly property string fontDisplay: uiFont
+
+    // [pixelSize, lineHeight, weight, letterSpacing]
+    readonly property var tDisplay: [26, 1.15, 600, -0.02]
+    readonly property var tH1: [21, 1.2, 600, -0.015]
+    readonly property var tH2: [17, 1.2, 600, -0.01]
+    readonly property var tH3: [14, 1.25, 600, -0.005]
+    readonly property var tBodyLg: [14, 1.45, 400, 0]
+    readonly property var tBody: [13, 1.45, 400, 0]
+    readonly property var tBodySm: [12, 1.4, 400, 0]
+    readonly property var tCaption: [11, 1.35, 500, 0.02]
+    readonly property var tMono: [12, 1.35, 400, 0]
+    readonly property var tMonoSm: [11, 1.35, 400, 0]
+
+    readonly property int dInstant: 0
+    readonly property int dMicro: Math.round(120 * motionScale)
+    readonly property int dFast: Math.round(180 * motionScale)
+    readonly property int dNormal: Math.round(240 * motionScale)
+    readonly property int dSlow: Math.round(320 * motionScale)
+    readonly property int dPage: Math.round(480 * motionScale)
+    readonly property int dHero: Math.round(800 * motionScale)
 
     // ── Motion tokens ─────────────────────────────────────────────
     // One rhythm for the whole shell: surfaces arrive on a long decelerating
@@ -112,7 +177,7 @@ Scope {
     readonly property int islandShadowOffsetY: islandRaised ? 14 : 8
     // Liquid keeps more tint than the old 21% fill so it can cross the
     // compositor's blur threshold while the softer shadow stays below it.
-    readonly property color liquidSurface: root.themeDark ? root.glass(0.43) : root.ink(0.28)
+    readonly property color liquidSurface: "#6E000000"
 
     // ── Shell profiles ────────────────────────────────────────────
     // Profile 01 is the island + dock + desktop widgets. Profile 02 is a
@@ -640,7 +705,7 @@ Scope {
             var t = root.themesList[i];
             if (t.id === root.currentThemeId) {
                 root.currentThemeName = t.name;
-                root.currentThemeAccent = t.accent || root.themeAccent;
+                root.currentThemeAccent = t.accent || "#838996";
                 if (t.bg) root.themeBg = t.bg;
                 if (t.surface) root.themeSurface = t.surface;
                 if (t.fg) root.themeFg = t.fg;
@@ -1066,6 +1131,9 @@ Scope {
 
     IpcHandler {
         target: "island"
+        function state() {
+            return "" + root.displayState;
+        }
         function showLauncher() {
             var now = Date.now();
             if (now - root.lastToggleTime < 350) return;
@@ -1478,7 +1546,7 @@ Scope {
                 width: root.displayState === 23 ? 680 :
                        root.displayState === 24 ? 540 :
                        root.displayState === 16 ? 460 :
-                       root.displayState === 15 ? 780 :
+                       root.displayState === 15 ? 560 :
                        root.displayState === 14 ? 500 :
                        root.displayState === 13 ? 460 :
                        root.displayState === 12 ? 480 :
@@ -1489,19 +1557,19 @@ Scope {
                        root.displayState === 7 ? 180 :
                        root.displayState === 6 ? 280 :
                        root.displayState === 4 ? 540 :
-                       root.displayState === 3 ? 400 :
+                       root.displayState === 3 ? 460 :
                        root.displayState === 2 ? 200 :
                        root.displayState === 1 ? (root.isExpanded ? 400 : (root.currentLyricLine !== "" ? Math.min(540, Math.max(340, lyricMeasure.implicitWidth + 90)) : Math.min(460, Math.max(280, titleMeasure.implicitWidth + 120)))) :
                        80
 
                 height: root.displayState === 23 ? 600 :
                         root.displayState === 24 ? 660 :
-                        root.displayState === 16 ? 264 :
-                        root.displayState === 15 ? 196 :
+                        root.displayState === 16 ? 260 :
+                        root.displayState === 15 ? 288 :
                         root.displayState === 14 ? 168 :
                         root.displayState === 13 ? 620 :
-                        root.displayState === 12 ? 168 :
-                        root.displayState === 11 ? 200 :
+                        root.displayState === 12 ? 308 :
+                        root.displayState === 11 ? 320 :
                         root.displayState === 10 ? 80 :
                         root.displayState === 9 ? 48 :
                         root.displayState === 8 ? 48 :
@@ -1562,8 +1630,8 @@ Scope {
                     id: pill
                     anchors.fill: parent
                     radius: root.displayState === 0 ? 16 : ((root.panelOpen || root.compactMenu) ? root.uiRadiusLg : 22)
-                    color: root.islandTheme === "liquid" ? root.liquidSurface : ((root.panelOpen || root.compactMenu) ? root.glass(0.88) : root.glass(0.9))
-                    border.color: root.islandTheme === "liquid" ? root.ink(0.188) : ((root.panelOpen || root.compactMenu) ? root.ink(0.18) : (root.isHovered && root.displayState === 1 ? root.ink(0.22) : root.ink(0.157)))
+                    color: root.islandTheme === "liquid" ? root.liquidSurface : ((root.panelOpen || root.compactMenu) ? "#E00C0C10" : "#E60D0D11")
+                    border.color: root.islandTheme === "liquid" ? "#30FFFFFF" : ((root.panelOpen || root.compactMenu) ? "#2EFFFFFF" : (root.isHovered && root.displayState === 1 ? "#38FFFFFF" : "#28FFFFFF"))
                     border.width: 1
                     clip: true
 
@@ -1577,9 +1645,9 @@ Scope {
                         opacity: root.islandTheme === "liquid" ? 0 : ((root.panelOpen || root.compactMenu) ? 0.72 : (root.displayState !== 0 ? 1 : 0))
                         Behavior on opacity { NumberAnimation { duration: 300 } }
                         gradient: Gradient {
-                            GradientStop { position: 0.0; color: root.surface(0.94) }
-                            GradientStop { position: 0.52; color: root.glass(0.94) }
-                            GradientStop { position: 1.0; color: root.glassDeep(0.94) }
+                            GradientStop { position: 0.0; color: "#F01B1B21" }
+                            GradientStop { position: 0.52; color: "#F00E0E12" }
+                            GradientStop { position: 1.0; color: "#F0060609" }
                         }
                     }
 
@@ -1591,8 +1659,8 @@ Scope {
                         radius: parent.radius
                         opacity: root.islandTheme === "liquid" ? 1 : 0.72
                         gradient: Gradient {
-                            GradientStop { position: 0.0; color: root.ink(0.071) }
-                            GradientStop { position: 0.32; color: root.ink(0.0) }
+                            GradientStop { position: 0.0; color: "#12FFFFFF" }
+                            GradientStop { position: 0.32; color: "#00FFFFFF" }
                             GradientStop { position: 0.68; color: "#00000000" }
                             GradientStop { position: 1.0; color: "#2C000000" }
                         }
@@ -1611,9 +1679,9 @@ Scope {
                         gradient: Gradient {
                             orientation: Gradient.Horizontal
                             GradientStop { position: 0.0; color: "transparent" }
-                            GradientStop { position: 0.18; color: root.ink(0.094) }
-                            GradientStop { position: 0.5; color: root.ink(0.235) }
-                            GradientStop { position: 0.82; color: root.ink(0.094) }
+                            GradientStop { position: 0.18; color: "#18FFFFFF" }
+                            GradientStop { position: 0.5; color: "#3CFFFFFF" }
+                            GradientStop { position: 0.82; color: "#18FFFFFF" }
                             GradientStop { position: 1.0; color: "transparent" }
                         }
                     }

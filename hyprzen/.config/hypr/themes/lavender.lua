@@ -27,11 +27,11 @@ rounding = 20
 
 border_size = 0
 
-gaps_in = 6
+gaps_in = 5
 
 gaps_out = 16
 
-blur_size = 8
+blur_size = 6
 
 blur_passes = 3
 

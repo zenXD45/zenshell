@@ -3,6 +3,8 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 
+// Power profile as a list of three rows. The active profile is the only one
+// with colour; the others are quiet text. No cards, no keycap boxes.
 Item {
     id: powerProfileMenu
     anchors.fill: parent
@@ -23,6 +25,18 @@ Item {
     property color themeAccent: root.currentThemeAccent || root.themeAccent
     property string activeProfile: "balanced"
     property int selectedIndex: 1
+
+    readonly property var profiles: [
+        { id: "performance", icon: "\uf135", label: "Performance", sub: "G-Mode · maximum clocks", key: "1" },
+        { id: "balanced",    icon: "\uf240", label: "Balanced",    sub: "Automatic fans · normal", key: "2" },
+        { id: "power-saver", icon: "\uf06c", label: "Power saver", sub: "Quiet · battery first",   key: "3" }
+    ]
+
+    function accentFor(id) {
+        if (id === "performance") return root.cWarning
+        if (id === "power-saver") return root.cSuccess
+        return themeAccent
+    }
 
     Process {
         id: profileProc
@@ -65,21 +79,18 @@ Item {
     }
 
     onVisibleChanged: {
-        if (visible) {
-            fetchActiveProfile.running = true
-        }
+        if (visible) fetchActiveProfile.running = true
     }
 
     FocusScope {
         anchors.fill: parent
         focus: root.displayState === 14
         Keys.onEscapePressed: { root.displayState = 0; root.updateState(); }
+        Keys.onUpPressed: (event) => { if (selectedIndex > 0) selectedIndex--; event.accepted = true; }
+        Keys.onDownPressed: (event) => { if (selectedIndex < 2) selectedIndex++; event.accepted = true; }
         Keys.onLeftPressed: (event) => { if (selectedIndex > 0) selectedIndex--; event.accepted = true; }
         Keys.onRightPressed: (event) => { if (selectedIndex < 2) selectedIndex++; event.accepted = true; }
-        Keys.onReturnPressed: {
-            var profs = ["performance", "balanced", "power-saver"];
-            setProfile(profs[selectedIndex]);
-        }
+        Keys.onReturnPressed: setProfile(profiles[selectedIndex].id)
         Keys.onPressed: (event) => {
             if (event.key === Qt.Key_1) { selectedIndex = 0; setProfile("performance"); event.accepted = true; }
             else if (event.key === Qt.Key_2) { selectedIndex = 1; setProfile("balanced"); event.accepted = true; }
@@ -89,154 +100,100 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 16
-        spacing: 12
+        anchors.margins: root.s5
+        spacing: 0
 
         MenuHeader {
-            title: "Power Profile"
-            icon: "\uf0e4"
-            hint: "esc"
-            meta: activeProfile === "performance" ? "Performance" : (activeProfile === "power-saver" ? "Power Saver" : "Balanced")
+            title: "Power profile"
         }
 
-        RowLayout {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            spacing: 12
+        Item { Layout.preferredHeight: root.s2 }
 
-            Repeater {
-                model: [
-                    { id: "performance", icon: "\uf135", label: "Performance", sub: "G-Mode • Max Speed", key: "1", accent: "#F59E0B" },
-                    { id: "balanced",    icon: "\uf240", label: "Balanced",    sub: "Auto Fans • Normal", key: "2", accent: "#838996" },
-                    { id: "power-saver", icon: "\uf06c", label: "Power Saver", sub: "Quiet • Battery",   key: "3", accent: "#34D399" }
-                ]
+        Repeater {
+            model: powerProfileMenu.profiles
 
-                Item {
-                    id: profileCard
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    Layout.minimumWidth: 120
+            Item {
+                id: profileRow
+                required property int index
+                required property var modelData
 
-                    property bool isSel: index === selectedIndex
-                    property bool isActive: activeProfile === modelData.id
-                    property bool isHov: btnArea.containsMouse
-                    property color itemAccent: modelData.id === "balanced" ? powerProfileMenu.themeAccent : modelData.accent
+                Layout.fillWidth: true
+                Layout.preferredHeight: 54
 
-                    Rectangle {
-                        id: card
-                        anchors.fill: parent
-                        radius: 16
-                        color: profileCard.isActive
-                            ? Qt.rgba(profileCard.itemAccent.r, profileCard.itemAccent.g, profileCard.itemAccent.b, 0.12)
-                            : (profileCard.isSel || profileCard.isHov ? root.ink(0.039) : root.ink(0.02))
-                        border.width: profileCard.isActive ? 1.3 : 1
-                        border.color: profileCard.isActive
-                            ? Qt.rgba(profileCard.itemAccent.r, profileCard.itemAccent.g, profileCard.itemAccent.b, 0.45)
-                            : (profileCard.isSel || profileCard.isHov ? root.ink(0.122) : root.ink(0.055))
+                readonly property bool isTarget: profileRow.index === powerProfileMenu.selectedIndex
+                readonly property bool isActive: powerProfileMenu.activeProfile === profileRow.modelData.id
+                readonly property color tone: powerProfileMenu.accentFor(profileRow.modelData.id)
 
-                        Behavior on color { ColorAnimation { duration: 160 } }
-                        Behavior on border.color { ColorAnimation { duration: 160 } }
+                Rectangle {
+                    anchors.fill: parent
+                    radius: root.rSm
+                    color: profileRow.isTarget ? root.ink(0.055)
+                        : (rowArea.containsMouse ? root.ink(0.04) : "transparent")
+                    Behavior on color { ColorAnimation { duration: root.dMicro } }
+                }
 
-                        property real press: 1.0
-                        transform: Scale {
-                            origin.x: card.width / 2
-                            origin.y: card.height / 2
-                            xScale: card.press
-                            yScale: card.press
-                        }
-                        Behavior on press { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: root.s3
+                    anchors.rightMargin: root.s3
+                    spacing: root.s4
 
-                        ColumnLayout {
-                            anchors.centerIn: parent
-                            spacing: 6
+                    Text {
+                        Layout.alignment: Qt.AlignVCenter
+                        Layout.preferredWidth: 20
+                        horizontalAlignment: Text.AlignHCenter
+                        text: profileRow.modelData.icon
+                        color: profileRow.isActive ? profileRow.tone : root.cFgMuted
+                        font.family: root.fontMono
+                        font.pixelSize: 16
+                        Behavior on color { ColorAnimation { duration: root.dMicro } }
+                    }
 
-                            Item {
-                                Layout.preferredWidth: 34
-                                Layout.preferredHeight: 34
-                                Layout.alignment: Qt.AlignHCenter
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
 
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: modelData.icon
-                                    color: profileCard.isActive
-                                        ? profileCard.itemAccent
-                                        : Qt.rgba(profileCard.itemAccent.r, profileCard.itemAccent.g, profileCard.itemAccent.b, profileCard.isSel || profileCard.isHov ? 0.85 : 0.55)
-                                    font.family: root.font
-                                    font.pixelSize: 18
-                                    Behavior on color { ColorAnimation { duration: 160 } }
-                                }
-                            }
-
-                            Text {
-                                Layout.alignment: Qt.AlignHCenter
-                                text: modelData.label
-                                color: profileCard.isActive ? root.uiFg : (profileCard.isSel || profileCard.isHov ? root.uiFg : root.uiFgDim)
-                                font.family: root.uiFont
-                                font.pixelSize: 12
-                                font.weight: profileCard.isActive ? Font.DemiBold : Font.Medium
-                                Behavior on color { ColorAnimation { duration: 160 } }
-                            }
-
-                            Text {
-                                Layout.alignment: Qt.AlignHCenter
-                                text: modelData.sub
-                                color: profileCard.isActive ? root.ink(0.651) : root.ink(0.502)
-                                font.family: root.uiFont
-                                font.pixelSize: 9
-                                font.weight: Font.Medium
-                                Behavior on color { ColorAnimation { duration: 160 } }
-                            }
+                        Text {
+                            Layout.fillWidth: true
+                            text: profileRow.modelData.label
+                            color: root.cFgPrimary
+                            font.family: root.fontSans
+                            font.pixelSize: 13
+                            font.weight: profileRow.isActive ? Font.DemiBold : Font.Medium
+                            elide: Text.ElideRight
                         }
 
-                        Rectangle {
-                            anchors.top: parent.top
-                            anchors.right: parent.right
-                            anchors.margins: 7
-                            width: 15
-                            height: 15
-                            radius: 4
-                            color: profileCard.isSel || profileCard.isActive
-                                ? Qt.rgba(profileCard.itemAccent.r, profileCard.itemAccent.g, profileCard.itemAccent.b, 0.08)
-                                : root.ink(0.024)
-                            border.width: 1
-                            border.color: profileCard.isSel || profileCard.isActive
-                                ? Qt.rgba(profileCard.itemAccent.r, profileCard.itemAccent.g, profileCard.itemAccent.b, 0.28)
-                                : root.ink(0.063)
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: modelData.key
-                                color: profileCard.isSel || profileCard.isActive ? profileCard.itemAccent : root.ink(0.439)
-                                font.family: root.font
-                                font.pixelSize: 8
-                                font.weight: Font.Medium
-                            }
-                        }
-
-                        Rectangle {
-                            anchors.bottom: parent.bottom
-                            anchors.bottomMargin: 6
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            width: profileCard.isActive ? 22 : (profileCard.isSel ? 10 : 0)
-                            height: 2
-                            radius: 1
-                            color: profileCard.itemAccent
-                            Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutQuart } }
-                        }
-
-                        MouseArea {
-                            id: btnArea
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onPressed: card.press = 0.94
-                            onReleased: card.press = 1.0
-                            onClicked: setProfile(modelData.id)
-                            onEntered: selectedIndex = index
+                        Text {
+                            Layout.fillWidth: true
+                            text: profileRow.modelData.sub
+                            color: root.cFgMuted
+                            font.family: root.fontSans
+                            font.pixelSize: 11
+                            elide: Text.ElideRight
                         }
                     }
+
+                    Text {
+                        Layout.alignment: Qt.AlignVCenter
+                        text: profileRow.isActive ? "In use" : profileRow.modelData.key
+                        color: profileRow.isActive ? profileRow.tone : root.ink(0.32)
+                        font.family: profileRow.isActive ? root.fontSans : root.fontMono
+                        font.pixelSize: 11
+                        font.weight: profileRow.isActive ? Font.Medium : Font.Normal
+                    }
+                }
+
+                MouseArea {
+                    id: rowArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onEntered: powerProfileMenu.selectedIndex = profileRow.index
+                    onClicked: powerProfileMenu.setProfile(profileRow.modelData.id)
                 }
             }
         }
+
+        Item { Layout.fillHeight: true }
     }
 }

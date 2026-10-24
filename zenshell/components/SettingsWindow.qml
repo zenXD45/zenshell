@@ -17,8 +17,8 @@ Item {
     anchors.fill: parent
 
     readonly property color accent: root.currentThemeAccent
-    readonly property string uiFont: root.uiFont
-    readonly property string iconFont: root.font
+    readonly property string uiFont: root.fontSans
+    readonly property string iconFont: root.fontMono
 
     // The window scales with the interface scale, exactly like the island
     // and every panel. The card is laid out in unscaled units and then
@@ -527,7 +527,7 @@ Item {
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
                     text: "Settings"
-                    color: root.uiFg
+                    color: root.cFgPrimary
                     font.family: win.uiFont
                     font.pixelSize: 19
                     font.weight: Font.DemiBold
@@ -551,7 +551,7 @@ Item {
                     Text {
                         anchors.centerIn: parent
                         text: win.expanded ? "\uf066" : "\uf065"
-                        color: root.uiFgDim
+                        color: root.cFgSecondary
                         font.family: win.iconFont
                         font.pixelSize: 12
                     }
@@ -577,7 +577,7 @@ Item {
                     Text {
                         anchors.centerIn: parent
                         text: "\uf00d"
-                        color: root.uiFgDim
+                        color: root.cFgSecondary
                         font.family: win.iconFont
                         font.pixelSize: 12
                     }
@@ -666,7 +666,7 @@ Item {
 
                         Text {
                             text: "Zen"
-                            color: root.uiFg
+                            color: root.cFgPrimary
                             font.family: win.uiFont
                             font.pixelSize: 14
                             font.weight: Font.DemiBold
@@ -674,7 +674,7 @@ Item {
 
                         Text {
                             text: "ZenShell · " + Quickshell.env("USER")
-                            color: root.uiFgFaint
+                            color: root.cFgMuted
                             font.family: win.uiFont
                             font.pixelSize: 11
                         }
@@ -705,7 +705,7 @@ Item {
                             anchors.leftMargin: 11
                             anchors.verticalCenter: parent.verticalCenter
                             text: "\uf002"
-                            color: root.uiFgFaint
+                            color: root.cFgMuted
                             font.family: win.iconFont
                             font.pixelSize: 11
                         }
@@ -718,7 +718,7 @@ Item {
                             anchors.rightMargin: 12
                             anchors.verticalCenter: parent.verticalCenter
                             clip: true
-                            color: root.uiFg
+                            color: root.cFgPrimary
                             font.family: win.uiFont
                             font.pixelSize: 12
                             selectionColor: Qt.rgba(win.accent.r, win.accent.g, win.accent.b, 0.45)
@@ -743,7 +743,7 @@ Item {
                                 anchors.verticalCenter: parent.verticalCenter
                                 visible: searchInput.text.length === 0
                                 text: "Search settings"
-                                color: root.uiFgFaint
+                                color: root.cFgMuted
                                 font.family: win.uiFont
                                 font.pixelSize: 12
                             }
@@ -789,7 +789,7 @@ Item {
                                     anchors.leftMargin: 10
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: categoryItem.modelData.icon
-                                    color: root.uiFgFaint
+                                    color: root.cFgMuted
                                     font.family: win.iconFont
                                     font.pixelSize: 11
                                 }
@@ -801,7 +801,7 @@ Item {
                                     anchors.rightMargin: 8
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: categoryItem.modelData.label
-                                    color: root.uiFgDim
+                                    color: root.cFgSecondary
                                     font.family: win.uiFont
                                     font.pixelSize: 11
                                     font.weight: Font.DemiBold
@@ -815,7 +815,7 @@ Item {
                                     anchors.rightMargin: 10
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: "\uf078"
-                                    color: root.uiFgFaint
+                                    color: root.cFgMuted
                                     font.family: win.iconFont
                                     font.pixelSize: 9
                                     rotation: win.expandedCategories[categoryItem.modelData.id] === false ? -90 : 0
@@ -858,7 +858,7 @@ Item {
                                         anchors.leftMargin: 30
                                         anchors.verticalCenter: parent.verticalCenter
                                         text: pageItem.modelData.icon
-                                        color: pageItem.active ? win.accent : root.uiFgFaint
+                                        color: pageItem.active ? win.accent : root.cFgMuted
                                         font.family: win.iconFont
                                         font.pixelSize: 11
                                     }
@@ -870,7 +870,7 @@ Item {
                                         anchors.rightMargin: 10
                                         anchors.verticalCenter: parent.verticalCenter
                                         text: pageItem.modelData.label
-                                        color: pageItem.active ? win.accent : root.uiFgDim
+                                        color: pageItem.active ? win.accent : root.cFgSecondary
                                         font.family: win.uiFont
                                         font.pixelSize: 12
                                         font.weight: pageItem.active ? Font.DemiBold : Font.Normal
@@ -903,7 +903,7 @@ Item {
                         anchors.rightMargin: 20
                         visible: win.filtered.length === 0
                         text: "No settings match \"" + win.query.trim() + "\""
-                        color: root.uiFgFaint
+                        color: root.cFgMuted
                         font.family: win.uiFont
                         font.pixelSize: 11
                         wrapMode: Text.WordWrap
@@ -962,7 +962,7 @@ Item {
 
                                 Text {
                                     text: win.activePageModel ? win.activePageModel.label : "Settings"
-                                    color: root.uiFg
+                                    color: root.cFgPrimary
                                     font.family: win.uiFont
                                     font.pixelSize: 17
                                     font.weight: Font.DemiBold
@@ -979,7 +979,7 @@ Item {
                                         }
                                         return cat;
                                     }
-                                    color: root.uiFgFaint
+                                    color: root.cFgMuted
                                     font.family: win.uiFont
                                     font.pixelSize: 11
                                 }
@@ -1020,7 +1020,7 @@ Item {
 
                                     Text {
                                         text: groupCard.modelData.title ? groupCard.modelData.title : ""
-                                        color: root.uiFgDim
+                                        color: root.cFgSecondary
                                         font.family: win.uiFont
                                         font.pixelSize: 11
                                         font.weight: Font.DemiBold
@@ -1034,7 +1034,7 @@ Item {
                                         width: parent.width
                                         visible: groupCard.modelData.intro !== undefined
                                         text: groupCard.modelData.intro ? groupCard.modelData.intro.label : ""
-                                        color: root.uiFg
+                                        color: root.cFgPrimary
                                         font.family: win.uiFont
                                         font.pixelSize: 13
                                         font.weight: Font.DemiBold
@@ -1044,7 +1044,7 @@ Item {
                                         width: parent.width
                                         visible: groupCard.modelData.intro !== undefined
                                         text: groupCard.modelData.intro ? groupCard.modelData.intro.desc : ""
-                                        color: root.uiFgFaint
+                                        color: root.cFgMuted
                                         font.family: win.uiFont
                                         font.pixelSize: 11
                                         wrapMode: Text.WordWrap

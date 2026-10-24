@@ -1,3 +1,4 @@
+import QtQuick.Controls
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -24,76 +25,59 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 16
-        spacing: 12
+        anchors.margins: root.s5
+        spacing: 0
 
-        // ── Toolbar: identity, search, count ────────────────────────
+        // ── Toolbar ────────────────────────────────────────────────
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 32
-            spacing: 9
-
-            Rectangle {
-                Layout.alignment: Qt.AlignVCenter
-                width: 28
-                height: 28
-                radius: 9
-                color: Qt.rgba(accent.r, accent.g, accent.b, 0.14)
-                border.width: 1
-                border.color: Qt.rgba(accent.r, accent.g, accent.b, 0.26)
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "\uf0c5"
-                    color: accent
-                    font.family: root.font
-                    font.pixelSize: 12
-                }
-            }
+            Layout.preferredHeight: 34
+            spacing: root.s4
 
             Text {
                 Layout.alignment: Qt.AlignVCenter
                 text: "Clipboard"
-                color: root.uiFg
-                font.family: root.uiFont
-                font.pixelSize: 14
+                color: root.cFgPrimary
+                font.family: root.fontSans
+                font.pixelSize: 17
                 font.weight: Font.DemiBold
-                font.letterSpacing: 0.1
+                font.letterSpacing: -0.2
             }
 
             Item { Layout.fillWidth: true }
 
-            Rectangle {
+            Item {
                 Layout.alignment: Qt.AlignVCenter
-                width: 320
-                height: 32
-                radius: 16
-                color: root.ink(0.039)
-                border.width: 1
-                border.color: clipSearchInput.activeFocus
-                    ? Qt.rgba(accent.r, accent.g, accent.b, 0.45)
-                    : root.ink(0.086)
-                Behavior on border.color { ColorAnimation { duration: 150 } }
+                Layout.preferredWidth: 260
+                Layout.preferredHeight: 30
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 10
+                    color: root.ink(0.055)
+                }
 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 13
-                    anchors.rightMargin: 13
-                    spacing: 8
+                    anchors.leftMargin: root.s3
+                    anchors.rightMargin: root.s3
+                    spacing: root.s2
 
                     Text {
+                        Layout.alignment: Qt.AlignVCenter
                         text: "\uf002"
-                        color: clipSearchInput.activeFocus ? accent : root.ink(0.502)
-                        font.family: root.font
-                        font.pixelSize: 11
-                        Behavior on color { ColorAnimation { duration: 150 } }
+                        color: clipSearchInput.activeFocus ? accent : root.ink(0.45)
+                        font.family: root.fontMono
+                        font.pixelSize: 12
+                        Behavior on color { ColorAnimation { duration: root.dMicro } }
                     }
 
                     TextInput {
                         id: clipSearchInput
                         Layout.fillWidth: true
-                        color: root.uiFg
-                        font.family: root.uiFont
+                        Layout.alignment: Qt.AlignVCenter
+                        color: root.cFgPrimary
+                        font.family: root.fontSans
                         font.pixelSize: 12
                         verticalAlignment: TextInput.AlignVCenter
                         clip: true
@@ -106,18 +90,14 @@ Item {
                         Keys.onEscapePressed: {
                             root.displayState = 0; root.updateState(); text = "";
                         }
-                        Keys.onLeftPressed: (event) => {
-                            if (clipListView.currentIndex > 0) {
-                                clipListView.currentIndex--;
-                                clipListView.positionViewAtIndex(clipListView.currentIndex, ListView.Contain);
-                            }
+                        Keys.onDownPressed: (event) => {
+                            if (clipListView.currentIndex < clipboardModel.count - 1)
+                                clipListView.currentIndex++;
                             event.accepted = true;
                         }
-                        Keys.onRightPressed: (event) => {
-                            if (clipListView.currentIndex < clipboardModel.count - 1) {
-                                clipListView.currentIndex++;
-                                clipListView.positionViewAtIndex(clipListView.currentIndex, ListView.Contain);
-                            }
+                        Keys.onUpPressed: (event) => {
+                            if (clipListView.currentIndex > 0)
+                                clipListView.currentIndex--;
                             event.accepted = true;
                         }
                         Keys.onReturnPressed: {
@@ -134,163 +114,176 @@ Item {
                         Text {
                             anchors.fill: parent
                             verticalAlignment: Text.AlignVCenter
-                            text: "Search clipboard"
-                            color: root.ink(0.502)
-                            font.family: root.uiFont
+                            text: "Search"
+                            color: root.ink(0.32)
+                            font.family: root.fontSans
                             font.pixelSize: 12
                             visible: !clipSearchInput.text
                         }
                     }
-                }
-            }
 
-            Rectangle {
-                Layout.alignment: Qt.AlignVCenter
-                height: 20
-                implicitWidth: clipCount.implicitWidth + 14
-                radius: 10
-                color: Qt.rgba(accent.r, accent.g, accent.b, 0.10)
-                border.width: 1
-                border.color: Qt.rgba(accent.r, accent.g, accent.b, 0.22)
-
-                Text {
-                    id: clipCount
-                    anchors.centerIn: parent
-                    text: clipboardModel.count + (clipboardModel.count === 1 ? " clip" : " clips")
-                    color: root.uiFgDim
-                    font.family: root.uiFont
-                    font.pixelSize: 9
-                    font.weight: Font.Medium
+                    Text {
+                        Layout.alignment: Qt.AlignVCenter
+                        text: "esc"
+                        color: root.ink(0.30)
+                        font.family: root.fontMono
+                        font.pixelSize: 10
+                    }
                 }
             }
 
             Text {
                 Layout.alignment: Qt.AlignVCenter
-                text: "esc"
-                color: root.ink(0.502)
-                font.family: root.uiFont
-                font.pixelSize: 9
-                font.weight: Font.Medium
+                text: clipboardModel.count + (clipboardModel.count === 1 ? " clip" : " clips")
+                color: root.ink(0.36)
+                font.family: root.fontSans
+                font.pixelSize: 11
             }
         }
 
-        // ── Clipboard history ───────────────────────────────────────
+        Item { Layout.preferredHeight: root.s4 }
+
+        // ── History: one inset group of rows ───────────────────────
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
+            Rectangle {
+                anchors.fill: parent
+                radius: 14
+                color: root.ink(0.055)
+            }
+
             ListView {
                 id: clipListView
                 anchors.fill: parent
-                property string hoveredItemId: ""
-                orientation: ListView.Horizontal
-                spacing: 8
+                anchors.margins: 4
+                spacing: 0
                 clip: true
                 model: clipboardModel
-                highlightMoveDuration: 200
+                boundsBehavior: Flickable.StopAtBounds
+                highlightMoveDuration: 0
 
-                delegate: Rectangle {
-                    id: clipCard
-                    width: 142
-                    height: clipListView.height - 8
-                    radius: 14
-                    opacity: Math.max(0, Math.min(1, (clipboardRoot.reveal - 0.05 - Math.min(index, 5) * 0.04) / 0.68))
-                    transform: Translate { y: (1 - clipCard.opacity) * 8 }
-                    color: clipListView.currentIndex === index
-                        ? Qt.rgba(accent.r, accent.g, accent.b, 0.10)
-                        : (clipListView.hoveredItemId === model.id ? root.ink(0.039) : root.ink(0.02))
-                    border.color: clipListView.currentIndex === index
-                        ? Qt.rgba(accent.r, accent.g, accent.b, 0.45)
-                        : (clipListView.hoveredItemId === model.id ? root.ink(0.11) : root.ink(0.055))
-                    border.width: 1
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                    Behavior on border.color { ColorAnimation { duration: 150 } }
+                ScrollBar.vertical: ScrollBar {
+                    policy: ScrollBar.AsNeeded
+                    contentItem: Rectangle { implicitWidth: 2; radius: 1; color: root.ink(0.16) }
+                }
+
+                delegate: Item {
+                    id: clipRow
+                    width: clipListView.width
+                    height: model.type === "image" ? 64 : 48
+
+                    required property var model
+                    required property int index
 
                     property bool isSel: clipListView.currentIndex === index
-                    property bool isHov: clipListView.hoveredItemId === model.id
 
-                    ColumnLayout {
+                    Rectangle {
                         anchors.fill: parent
-                        anchors.margins: 10
-                        spacing: 6
-
-                        Item {
-                            Layout.alignment: Qt.AlignHCenter
-                            Layout.preferredWidth: model.type === "image" ? 64 : 36
-                            Layout.preferredHeight: model.type === "image" ? 64 : 36
-
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: 18
-                                color: clipCard.isSel
-                                    ? Qt.rgba(accent.r, accent.g, accent.b, 0.14)
-                                    : root.ink(0.071)
-                                visible: model.type !== "image"
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "\uf0c5"
-                                    color: clipCard.isSel ? accent : root.ink(0.69)
-                                    font.family: root.font
-                                    font.pixelSize: 16
-                                }
-                            }
-
-                            Rectangle {
-                                id: maskRect
-                                anchors.fill: parent
-                                radius: 8
-                                visible: false
-                            }
-
-                            Image {
-                                anchors.fill: parent
-                                source: model.type === "image" ? ("file://" + model.image_path) : ""
-                                fillMode: Image.PreserveAspectCrop
-                                visible: model.type === "image"
-                                layer.enabled: true
-                                layer.effect: OpacityMask {
-                                    maskSource: maskRect
-                                }
-                            }
-                        }
-
-                        Text {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            text: model.type === "image" ? "Image" : model.content
-                            color: clipCard.isSel || clipCard.isHov ? root.uiFg : root.uiFgDim
-                            font.family: root.uiFont
-                            font.pixelSize: 12
-                            font.weight: Font.Medium
-                            horizontalAlignment: Text.AlignHCenter
-                            wrapMode: Text.Wrap
-                            elide: Text.ElideRight
-                            maximumLineCount: model.type === "image" ? 1 : 3
-                            Behavior on color { ColorAnimation { duration: 150 } }
-                        }
+                        anchors.margins: 2
+                        radius: 10
+                        color: clipRow.isSel
+                            ? root.ink(0.065)
+                            : (rowHover.containsMouse ? root.ink(0.04) : "transparent")
+                        Behavior on color { ColorAnimation { duration: root.dMicro } }
                     }
 
                     Rectangle {
+                        visible: index < clipListView.count - 1
+                        anchors.left: parent.left
+                        anchors.right: parent.right
                         anchors.bottom: parent.bottom
-                        anchors.bottomMargin: 6
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        width: clipCard.isSel ? 18 : 0
-                        height: 2
-                        radius: 1
-                        color: accent
-                        Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutQuart } }
+                        anchors.leftMargin: model.type === "image" ? 80 : 50
+                        anchors.rightMargin: 16
+                        height: 1
+                        color: root.ink(0.07)
+                    }
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: root.s5
+                        anchors.rightMargin: root.s5
+                        spacing: root.s3
+
+                        // Images get a real preview; text keeps a quiet glyph.
+                        Item {
+                            Layout.alignment: Qt.AlignVCenter
+                            Layout.preferredWidth: model.type === "image" ? 52 : 18
+                            Layout.preferredHeight: model.type === "image" ? 40 : 18
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: 8
+                                clip: true
+                                color: root.ink(0.06)
+                                visible: model.type === "image"
+
+                                Image {
+                                    id: thumb
+                                    anchors.fill: parent
+                                    source: model.image_path ? "file://" + model.image_path : ""
+                                    sourceSize: Qt.size(208, 160)
+                                    asynchronous: true
+                                    cache: true
+                                    fillMode: Image.PreserveAspectCrop
+                                    visible: status === Image.Ready
+                                }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    visible: thumb.status !== Image.Ready
+                                    text: "\uf03e"
+                                    color: root.ink(0.40)
+                                    font.family: root.fontMono
+                                    font.pixelSize: 14
+                                }
+                            }
+
+                            Text {
+                                anchors.centerIn: parent
+                                visible: model.type !== "image"
+                                text: "\uf0c5"
+                                color: clipRow.isSel ? root.cFgSecondary : root.ink(0.48)
+                                font.family: root.fontMono
+                                font.pixelSize: 13
+                            }
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignVCenter
+                            spacing: 2
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: model.type === "image" ? "Image" : model.content.replace(/\s+/g, " ").trim()
+                                color: root.cFgPrimary
+                                font.family: root.fontSans
+                                font.pixelSize: 13
+                                elide: Text.ElideRight
+                                maximumLineCount: 1
+                            }
+
+                            Text {
+                                Layout.fillWidth: true
+                                visible: model.type === "image"
+                                text: "Copy to clipboard"
+                                color: root.ink(0.38)
+                                font.family: root.fontSans
+                                font.pixelSize: 11
+                            }
+                        }
                     }
 
                     MouseArea {
+                        id: rowHover
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onEntered: clipListView.hoveredItemId = model.id
-                        onExited: if (clipListView.hoveredItemId === model.id) clipListView.hoveredItemId = ""
+                        onEntered: clipListView.currentIndex = index
                         onClicked: {
                             clipListView.currentIndex = index;
-                            clipSearchInput.forceActiveFocus();
                             root.displayState = 0; root.updateState();
                             runCmd.command = ["python3", Quickshell.shellDir + "/scripts/get_clipboard.py", "decode", model.id];
                             runCmd.running = true;
@@ -300,26 +293,11 @@ Item {
                 }
             }
 
-            Column {
+            EmptyState {
                 anchors.centerIn: parent
-                spacing: 8
                 visible: clipboardModel.count === 0
-
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "\uf0c5"
-                    color: root.ink(0.439)
-                    font.family: root.font
-                    font.pixelSize: 22
-                }
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: clipSearchInput.text.length > 0 ? "No matches" : "No clipboard history"
-                    color: root.uiFgDim
-                    font.family: root.uiFont
-                    font.pixelSize: 11
-                    font.weight: Font.Medium
-                }
+                title: clipSearchInput.text.length > 0 ? "No matches" : "Nothing copied yet"
+                detail: clipSearchInput.text.length > 0 ? "" : "Clips appear here as you copy"
             }
         }
     }

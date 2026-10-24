@@ -69,7 +69,7 @@
     "fg": "#c0caf5",
     "extra": "#ff5370",
     "dark": true,
-    "rounding": 4
+    "rounding": 12
   },
   {
     "id": "gruvbox",
@@ -81,7 +81,7 @@
     "fg": "#ebdbb2",
     "extra": "#fb4934",
     "dark": true,
-    "rounding": 8
+    "rounding": 12
   },
   {
     "id": "lavender",
@@ -111,13 +111,13 @@
     "id": "noir",
     "name": "Noir",
     "icon": "🌑",
-    "accent": "#838996",
+    "accent": "#9b9b9b",
     "bg": "#0f0f0f",
     "surface": "#141414",
-    "fg": "#c0c0c0",
+    "fg": "#d0d0d0",
     "extra": "#c23b3b",
     "dark": true,
-    "rounding": 0
+    "rounding": 12
   },
   {
     "id": "nord",
@@ -129,7 +129,7 @@
     "fg": "#d8dee9",
     "extra": "#bf616a",
     "dark": true,
-    "rounding": 10
+    "rounding": 12
   },
   {
     "id": "one-dark",
@@ -141,7 +141,7 @@
     "fg": "#abb2bf",
     "extra": "#e06c75",
     "dark": true,
-    "rounding": 8
+    "rounding": 12
   },
   {
     "id": "osaka-jade",

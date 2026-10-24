@@ -360,8 +360,8 @@ Item {
     // ═══════════════════════════════════════════════════════════════
 
     component SectionLabel: Text {
-        color: root.uiFgFaint
-        font.family: root.uiFont
+        color: root.cFgMuted
+        font.family: root.fontSans
         font.pixelSize: 9
         font.weight: Font.DemiBold
         font.letterSpacing: 1.1
@@ -401,8 +401,8 @@ Item {
             anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
             text: row.label
-            color: root.uiFg
-            font.family: root.uiFont
+            color: root.cFgPrimary
+            font.family: root.fontSans
             font.pixelSize: 12
             font.weight: row.strong ? Font.DemiBold : Font.Medium
             elide: Text.ElideRight
@@ -473,8 +473,8 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             width: 96
             text: srow.label
-            color: root.uiFgDim
-            font.family: root.uiFont
+            color: root.cFgSecondary
+            font.family: root.fontSans
             font.pixelSize: 11
             elide: Text.ElideRight
         }
@@ -483,8 +483,8 @@ Item {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             text: Math.round(srow.value * 100) + srow.suffix
-            color: root.uiFgFaint
-            font.family: root.uiFont
+            color: root.cFgMuted
+            font.family: root.fontSans
             font.pixelSize: 10
             font.weight: Font.Medium
         }
@@ -566,8 +566,8 @@ Item {
                     id: chipText
                     anchors.centerIn: parent
                     text: modelData.label !== undefined ? modelData.label : String(modelData.value)
-                    color: grid.current === String(modelData.value) ? root.uiFg : root.uiFgDim
-                    font.family: root.uiFont
+                    color: grid.current === String(modelData.value) ? root.cFgPrimary : root.cFgSecondary
+                    font.family: root.fontSans
                     font.pixelSize: 11
                     font.weight: grid.current === String(modelData.value) ? Font.DemiBold : Font.Medium
                 }
@@ -625,7 +625,7 @@ Item {
                     anchors.centerIn: parent
                     text: "󰄀"
                     color: cameraPanel.accent
-                    font.family: root.font
+                    font.family: root.fontMono
                     font.pixelSize: 13
                 }
             }
@@ -635,16 +635,16 @@ Item {
                 Layout.fillWidth: true
                 Text {
                     text: "Camera Effects"
-                    color: root.uiFg
-                    font.family: root.uiFont
+                    color: root.cFgPrimary
+                    font.family: root.fontSans
                     font.pixelSize: 15
                     font.weight: Font.DemiBold
                 }
                 Text {
                     Layout.fillWidth: true
                     text: cameraPanel.statusLine()
-                    color: cameraPanel.appCount > 0 ? cameraPanel.accent : root.uiFgFaint
-                    font.family: root.uiFont
+                    color: cameraPanel.appCount > 0 ? cameraPanel.accent : root.cFgMuted
+                    font.family: root.fontSans
                     font.pixelSize: 10
                     elide: Text.ElideRight
                 }
@@ -659,7 +659,7 @@ Item {
                 Text {
                     anchors.centerIn: parent
                     text: "◉"
-                    color: root.uiFgDim
+                    color: root.cFgSecondary
                     font.pixelSize: 13
                 }
                 MouseArea {
@@ -688,8 +688,8 @@ Item {
                 anchors.leftMargin: 11
                 anchors.verticalCenter: parent.verticalCenter
                 text: cameraPanel.svc && cameraPanel.svc.deviceMissing ? "Virtual camera not created yet" : "Daemon not installed"
-                color: root.uiFg
-                font.family: root.uiFont
+                color: root.cFgPrimary
+                font.family: root.fontSans
                 font.pixelSize: 11
             }
 
@@ -705,8 +705,8 @@ Item {
                     id: setupBtn
                     anchors.centerIn: parent
                     text: cameraPanel.svc && cameraPanel.svc.deviceMissing ? "Set up" : "Install"
-                    color: root.uiFg
-                    font.family: root.uiFont
+                    color: root.cFgPrimary
+                    font.family: root.fontSans
                     font.pixelSize: 10
                     font.weight: Font.DemiBold
                 }
@@ -736,8 +736,8 @@ Item {
                 anchors.margins: 6
                 text: cameraPanel.svc ? (cameraPanel.svc.busyText !== "" ? cameraPanel.svc.busyText : cameraPanel.svc.setupOutput) : ""
                 wrapMode: Text.WordWrap
-                color: root.uiFgDim
-                font.family: root.uiFont
+                color: root.cFgSecondary
+                font.family: root.fontSans
                 font.pixelSize: 10
             }
         }
@@ -777,7 +777,7 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: cameraPanel.svc && cameraPanel.svc.starting ? "󰑐" : "󰄀"
                     color: root.ink(0.314)
-                    font.family: root.font
+                    font.family: root.fontMono
                     font.pixelSize: 22
                     RotationAnimation on rotation {
                         running: cameraPanel.svc && cameraPanel.svc.starting
@@ -790,7 +790,7 @@ Item {
                     text: cameraPanel.svc && cameraPanel.svc.starting ? "Starting camera…"
                         : cameraPanel.connected ? "Camera idle" : "Not connected"
                     color: root.ink(0.439)
-                    font.family: root.uiFont
+                    font.family: root.fontSans
                     font.pixelSize: 11
                 }
             }
@@ -813,8 +813,8 @@ Item {
                     id: gestureText
                     anchors.centerIn: parent
                     text: cameraPanel.gestureLabel(cameraPanel.svc.gesture)
-                    color: root.uiFg
-                    font.family: root.uiFont
+                    color: root.cFgPrimary
+                    font.family: root.fontSans
                     font.pixelSize: 11
                 }
             }
@@ -846,7 +846,7 @@ Item {
                     anchors.centerIn: parent
                     text: "Something may be covering the lens"
                     color: root.themeFg
-                    font.family: root.uiFont
+                    font.family: root.fontSans
                     font.pixelSize: 11
                 }
             }
@@ -860,7 +860,7 @@ Item {
                     anchors.centerIn: parent
                     text: cameraPanel.snapCount
                     color: root.themeFg
-                    font.family: root.uiFont
+                    font.family: root.fontSans
                     font.pixelSize: 46
                     font.weight: Font.Bold
                 }
@@ -918,8 +918,8 @@ Item {
 
                 Text {
                     text: cameraPanel.svc ? cameraPanel.svc.micLabel : "Microphone Effects"
-                    color: root.uiFg
-                    font.family: root.uiFont
+                    color: root.cFgPrimary
+                    font.family: root.fontSans
                     font.pixelSize: 13
                     font.weight: Font.DemiBold
                 }
@@ -928,8 +928,8 @@ Item {
 
                 Text {
                     text: "BEFORE"
-                    color: root.uiFgFaint
-                    font.family: root.uiFont
+                    color: root.cFgMuted
+                    font.family: root.fontSans
                     font.pixelSize: 9
                     font.letterSpacing: 1
                 }
@@ -941,8 +941,8 @@ Item {
 
                 Text {
                     text: "AFTER"
-                    color: root.uiFgFaint
-                    font.family: root.uiFont
+                    color: root.cFgMuted
+                    font.family: root.fontSans
                     font.pixelSize: 9
                     font.letterSpacing: 1
                 }
@@ -950,14 +950,14 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 8
                     level: cameraPanel.svc ? cameraPanel.svc.micOut : 0
-                    tone: cameraPanel.svc && cameraPanel.svc.micMuted ? "#FF6B6B" : cameraPanel.accent
+                    tone: cameraPanel.svc && cameraPanel.svc.micMuted ? root.cDanger : cameraPanel.accent
                 }
 
                 Text {
                     Layout.fillWidth: true
                     text: cameraPanel.micFooter()
-                    color: root.uiFgFaint
-                    font.family: root.uiFont
+                    color: root.cFgMuted
+                    font.family: root.fontSans
                     font.pixelSize: 10
                     elide: Text.ElideRight
                 }
@@ -986,8 +986,8 @@ Item {
                         id: tabText
                         anchors.centerIn: parent
                         text: modelData.label
-                        color: cameraPanel.tab === modelData.key ? root.uiFg : root.uiFgFaint
-                        font.family: root.uiFont
+                        color: cameraPanel.tab === modelData.key ? root.cFgPrimary : root.cFgMuted
+                        font.family: root.fontSans
                         font.pixelSize: 11
                         font.weight: cameraPanel.tab === modelData.key ? Font.DemiBold : Font.Medium
                     }
@@ -1008,7 +1008,7 @@ Item {
             Rectangle {
                 visible: cameraPanel.svc && cameraPanel.svc.micMuted
                 width: 8; height: 8; radius: 4
-                color: "#FF6B6B"
+                color: root.cDanger
                 anchors.verticalCenter: parent.verticalCenter
             }
         }
@@ -1048,8 +1048,8 @@ Item {
                         Layout.fillWidth: true
                         visible: cameraPanel.activeCamPreset === "custom"
                         text: "Custom — the settings no longer match a preset"
-                        color: root.uiFgFaint
-                        font.family: root.uiFont
+                        color: root.cFgMuted
+                        font.family: root.fontSans
                         font.pixelSize: 9
                     }
 
@@ -1074,7 +1074,7 @@ Item {
                         visible: cameraPanel.multiCam && cameraPanel.svc && !cameraPanel.svc.sameForAll
                         text: "Editing " + cameraPanel.camLabel(cameraPanel.svc.camera) + " only"
                         color: cameraPanel.accent
-                        font.family: root.uiFont
+                        font.family: root.fontSans
                         font.pixelSize: 9
                         elide: Text.ElideRight
                     }
@@ -1138,8 +1138,8 @@ Item {
                         Text {
                             anchors.centerIn: parent
                             text: "Reset this camera"
-                            color: root.uiFgDim
-                            font.family: root.uiFont
+                            color: root.cFgSecondary
+                            font.family: root.fontSans
                             font.pixelSize: 11
                         }
                         MouseArea {
@@ -1185,7 +1185,7 @@ Item {
                             ? cameraPanel.svc.state.capture.width + "×" + cameraPanel.svc.state.capture.height : "the camera")
                             + " in real time"
                         color: cameraPanel.accent
-                        font.family: root.uiFont
+                        font.family: root.fontSans
                         font.pixelSize: 9
                         elide: Text.ElideRight
                     }
@@ -1254,8 +1254,8 @@ Item {
                             text: cameraPanel.s.background === "color" ? (cameraPanel.s.backgroundColor || "")
                                 : cameraPanel.s.background === "image" ? (cameraPanel.s.backgroundImage || "No image picked")
                                 : (cameraPanel.s.backgroundVideo || "No video picked")
-                            color: root.uiFgFaint
-                            font.family: root.uiFont
+                            color: root.cFgMuted
+                            font.family: root.fontSans
                             font.pixelSize: 10
                             elide: Text.ElideMiddle
                         }
@@ -1270,8 +1270,8 @@ Item {
                                 id: pickText
                                 anchors.centerIn: parent
                                 text: cameraPanel.s.background === "color" ? "Pick" : "Browse…"
-                                color: root.uiFgDim
-                                font.family: root.uiFont
+                                color: root.cFgSecondary
+                                font.family: root.fontSans
                                 font.pixelSize: 10
                             }
                             MouseArea {
@@ -1351,8 +1351,8 @@ Item {
                                     id: reactionText
                                     anchors.centerIn: parent
                                     text: modelData.label
-                                    color: root.uiFgDim
-                                    font.family: root.uiFont
+                                    color: root.cFgSecondary
+                                    font.family: root.fontSans
                                     font.pixelSize: 11
                                 }
                                 MouseArea {
@@ -1414,8 +1414,8 @@ Item {
                                 id: autoText
                                 anchors.centerIn: parent
                                 text: cameraPanel.autoGainRunning ? "Listening…" : "Auto"
-                                color: root.uiFgDim
-                                font.family: root.uiFont
+                                color: root.cFgSecondary
+                                font.family: root.fontSans
                                 font.pixelSize: 10
                             }
                             MouseArea {
@@ -1429,8 +1429,8 @@ Item {
                         Layout.fillWidth: true
                         visible: cameraPanel.autoGainNote !== ""
                         text: cameraPanel.autoGainNote
-                        color: root.uiFgFaint
-                        font.family: root.uiFont
+                        color: root.cFgMuted
+                        font.family: root.fontSans
                         font.pixelSize: 10
                     }
 
@@ -1570,8 +1570,8 @@ Item {
                         Layout.fillWidth: true
                         text: "Hiding the raw camera changes udev rules, so the system asks for your password. It is a courtesy boundary, not protection from malware."
                         wrapMode: Text.WordWrap
-                        color: root.uiFgFaint
-                        font.family: root.uiFont
+                        color: root.cFgMuted
+                        font.family: root.fontSans
                         font.pixelSize: 10
                     }
                 }
@@ -1586,8 +1586,8 @@ Item {
             Text {
                 Layout.fillWidth: true
                 text: cameraPanel.footerLine()
-                color: root.uiFgFaint
-                font.family: root.uiFont
+                color: root.cFgMuted
+                font.family: root.fontSans
                 font.pixelSize: 10
                 elide: Text.ElideRight
             }
@@ -1595,8 +1595,8 @@ Item {
             Text {
                 visible: cameraPanel.svc && cameraPanel.svc.loopback !== ""
                 text: cameraPanel.svc ? cameraPanel.svc.loopback : ""
-                color: root.uiFgFaint
-                font.family: root.font
+                color: root.cFgMuted
+                font.family: root.fontMono
                 font.pixelSize: 9
             }
         }

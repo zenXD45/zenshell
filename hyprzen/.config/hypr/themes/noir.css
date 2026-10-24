@@ -3,11 +3,11 @@
 @define-color bg_base       #0f0f0f;
 @define-color bg_surface    rgba(20, 20, 20, 0.88);
 @define-color bg_overlay    rgba(26, 26, 26, 0.75);
-@define-color accent        #838996;
-@define-color accent_soft   rgba(131, 137, 150, 0.18);
-@define-color accent_glow   rgba(131, 137, 150, 0.35);
-@define-color secondary     #838996;
-@define-color text          #c0c0c0;
-@define-color subtext       #8a8a8a;
-@define-color border_color  rgba(131, 137, 150, 0.2);
+@define-color accent        #9b9b9b;
+@define-color accent_soft   rgba(155, 155, 155, 0.18);
+@define-color accent_glow   rgba(155, 155, 155, 0.35);
+@define-color secondary     #9b9b9b;
+@define-color text          #d0d0d0;
+@define-color subtext       #9a9a9a;
+@define-color border_color  rgba(155, 155, 155, 0.2);
 @define-color urgent        #c23b3b;

@@ -75,7 +75,12 @@ def parse_installed() -> set[str]:
     for array in ("OFFICIAL_PKGS", "AUR_PKGS"):
         match = re.search(rf"{array}=\((.*?)\n\)", text, re.S)
         if match:
-            pkgs |= set(re.findall(r"[a-z0-9][a-z0-9._+-]*", match.group(1)))
+            # Comments inside the arrays name binaries too ("the binary is
+            # helium-browser"). Without stripping them the checker would treat
+            # every word in prose as an installed package and stop catching
+            # genuine omissions.
+            body = re.sub(r"#[^\n]*", "", match.group(1))
+            pkgs |= set(re.findall(r"[a-z0-9][a-z0-9._+-]*", body))
     return pkgs
 
 

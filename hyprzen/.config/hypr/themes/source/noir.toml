@@ -1,5 +1,4 @@
-# Noir — sharp, square, zero-gap. The most minimal theme in the set.
-# Corners and gaps are the identity here, so this theme deliberately goes to 0.
+# Noir — sharp but with subtle definition. Borders/gaps restored so window rules remain visible.
 
 [meta]
 name = "Noir"
@@ -11,27 +10,27 @@ dark  = true
 bg      = "#0f0f0f"
 surface = "#141414"
 overlay = "#1a1a1a"
-accent  = "#838996"
-fg      = "#c0c0c0"
-subfg   = "#8a8a8a"
+accent  = "#9b9b9b"
+fg      = "#d0d0d0"
+subfg   = "#9a9a9a"
 urgent  = "#c23b3b"
 
 [geometry]
-rounding = 0
+rounding = 12
 border_size = 0
-gaps_in = 0
-gaps_out = 0
-blur_size = 2
-blur_passes = 2
-inactive_opacity = 0.85
-shadow_color = "rgba(00000000)"
+gaps_in = 5
+gaps_out = 12
+blur_size = 6
+blur_passes = 3
+inactive_opacity = 0.92
+shadow_color = "rgba(00000080)"
 
 [palette]
 black   = "#1a1a1a"
 red     = "#c23b3b"
 green   = "#7f9f7f"
 yellow  = "#c9b458"
-blue    = "#6c7a99"
+blue    = "#7a859c"
 magenta = "#9b7fa8"
 cyan    = "#6f9a9a"
 white   = "#c0c0c0"
@@ -39,7 +38,7 @@ bright_black   = "#4a4a4a"
 bright_red     = "#e05555"
 bright_green   = "#9fbf9f"
 bright_yellow  = "#e0cf7a"
-bright_blue    = "#8b9bc0"
+bright_blue    = "#9aa3c0"
 bright_magenta = "#c2a0cf"
 bright_cyan    = "#8fc0c0"
 bright_white   = "#e8e8e8"

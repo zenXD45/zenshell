@@ -239,8 +239,8 @@ Scope {
                                     Text {
                                         anchors.centerIn: parent
                                         text: modelData.name !== "" ? modelData.name : modelData.id
-                                        color: modelData.focused ? barScope.accent : (workspaceMouse.containsMouse ? root.uiFg : root.uiFgDim)
-                                        font.family: root.uiFont
+                                        color: modelData.focused ? barScope.accent : (workspaceMouse.containsMouse ? root.cFgPrimary : root.cFgSecondary)
+                                        font.family: root.fontSans
                                         font.pixelSize: 10
                                         font.weight: modelData.focused ? Font.DemiBold : Font.Medium
                                     }
@@ -273,8 +273,8 @@ Scope {
                             width: Math.min(190, implicitWidth)
                             anchors.verticalCenter: parent.verticalCenter
                             text: barScope.windowTitle
-                            color: root.uiFgDim
-                            font.family: root.uiFont
+                            color: root.cFgSecondary
+                            font.family: root.fontSans
                             font.pixelSize: 12
                             font.weight: Font.Medium
                             elide: Text.ElideRight
@@ -316,7 +316,7 @@ Scope {
                                                 width: 2
                                                 height: root.isPlaying ? [4, 9, 6][index] : 3
                                                 radius: 1
-                                                color: root.isPlaying ? barScope.accent : root.uiFgFaint
+                                                color: root.isPlaying ? barScope.accent : root.cFgMuted
                                             }
                                         }
                                     }
@@ -330,8 +330,8 @@ Scope {
                                     Text {
                                         width: parent.width
                                         text: root.trackTitle || "Now playing"
-                                        color: root.uiFg
-                                        font.family: root.uiFont
+                                        color: root.cFgPrimary
+                                        font.family: root.fontSans
                                         font.pixelSize: 12
                                         font.weight: Font.DemiBold
                                         elide: Text.ElideRight
@@ -341,7 +341,7 @@ Scope {
                                         width: parent.width
                                         text: root.trackArtist || "Unknown artist"
                                         color: barScope.barMeta
-                                        font.family: root.uiFont
+                                        font.family: root.fontSans
                                         font.pixelSize: 10
                                         font.weight: Font.Medium
                                         elide: Text.ElideRight
@@ -351,8 +351,8 @@ Scope {
                                 Text {
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: root.isPlaying ? "\uf04c" : "\uf04b"
-                                    color: root.uiFgDim
-                                    font.family: root.font
+                                    color: root.cFgSecondary
+                                    font.family: root.fontMono
                                     font.pixelSize: 10
                                 }
                             }
@@ -376,8 +376,8 @@ Scope {
                                 width: parent.width
                                 horizontalAlignment: Text.AlignHCenter
                                 text: barScope.clockTime
-                                color: root.uiFg
-                                font.family: root.uiFont
+                                color: root.cFgPrimary
+                                font.family: root.fontSans
                                 font.pixelSize: 15
                                 font.weight: Font.DemiBold
                                 font.features: { "tnum": 1 }
@@ -388,7 +388,7 @@ Scope {
                                 horizontalAlignment: Text.AlignHCenter
                                 text: barScope.clockDate
                                 color: barScope.barMeta
-                                font.family: root.uiFont
+                                font.family: root.fontSans
                                 font.pixelSize: 10
                                 font.weight: Font.Medium
                             }
@@ -420,16 +420,16 @@ Scope {
                                     width: 15
                                     horizontalAlignment: Text.AlignHCenter
                                     text: root.weatherIcon
-                                    color: root.uiFgDim
-                                    font.family: root.font
+                                    color: root.cFgSecondary
+                                    font.family: root.fontMono
                                     font.pixelSize: 13
                                 }
 
                                 Text {
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: root.weatherTemp
-                                    color: root.uiFgDim
-                                    font.family: root.uiFont
+                                    color: root.cFgSecondary
+                                    font.family: root.fontSans
                                     font.pixelSize: 11
                                     font.weight: Font.Medium
                                 }
@@ -465,16 +465,16 @@ Scope {
                                 text: barScope.networkOnline
                                     ? (Networking.wifiEnabled ? "\uf1eb" : "\uf0e8")
                                     : "\uf072"
-                                color: barScope.networkOnline ? root.uiFgDim : root.ink(0.439)
-                                font.family: root.font
+                                color: barScope.networkOnline ? root.cFgSecondary : root.ink(0.439)
+                                font.family: root.fontMono
                                 font.pixelSize: 12
                             }
 
                             Text {
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: barScope.volumeGlyph()
-                                color: barScope.muted ? root.ink(0.439) : root.uiFgDim
-                                font.family: root.font
+                                color: barScope.muted ? root.ink(0.439) : root.cFgSecondary
+                                font.family: root.fontMono
                                 font.pixelSize: 12
                             }
 
@@ -486,8 +486,8 @@ Scope {
                                 Text {
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: barScope.batteryGlyph()
-                                    color: barScope.batteryCharging ? barScope.accent : root.uiFgDim
-                                    font.family: root.font
+                                    color: barScope.batteryCharging ? barScope.accent : root.cFgSecondary
+                                    font.family: root.fontMono
                                     font.pixelSize: 13
                                 }
 
@@ -495,7 +495,7 @@ Scope {
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: barScope.battery ? Math.round(barScope.batteryLevel) + "%" : ""
                                     color: barScope.barMeta
-                                    font.family: root.uiFont
+                                    font.family: root.fontSans
                                     font.pixelSize: 10
                                     font.weight: Font.Medium
                                 }

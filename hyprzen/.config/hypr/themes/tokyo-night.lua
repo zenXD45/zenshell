@@ -31,7 +31,7 @@ gaps_in = 5
 
 gaps_out = 12
 
-blur_size = 5
+blur_size = 6
 
 blur_passes = 3
 

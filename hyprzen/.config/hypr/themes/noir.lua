@@ -11,30 +11,30 @@ surface = "141414"
 
 overlay = "1a1a1a"
 
-accent = "838996"
+accent = "9b9b9b"
 
-text = "c0c0c0"
+text = "d0d0d0"
 
-subtext = "8a8a8a"
+subtext = "9a9a9a"
 
 urgent = "c23b3b"
 
-border_active = "rgba(838996ff)"
+border_active = "rgba(9b9b9bff)"
 
 border_inactive = "rgba(141414a6)"
 
-rounding = 0
+rounding = 12
 
 border_size = 0
 
-gaps_in = 0
+gaps_in = 5
 
-gaps_out = 0
+gaps_out = 12
 
-blur_size = 2
+blur_size = 6
 
-blur_passes = 2
+blur_passes = 3
 
-inactive_opacity = 0.85
+inactive_opacity = 0.92
 
-shadow_color = "rgba(00000000)"
+shadow_color = "rgba(00000080)"

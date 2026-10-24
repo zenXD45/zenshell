@@ -101,8 +101,8 @@ Item {
                     id: chipLabel
                     anchors.centerIn: parent
                     text: chip.modelData.label
-                    color: chip.selected ? row.accent : root.uiFgDim
-                    font.family: root.uiFont
+                    color: chip.selected ? row.accent : root.cFgSecondary
+                    font.family: root.fontSans
                     font.pixelSize: 11
                     font.weight: Font.Medium
                 }
@@ -199,8 +199,8 @@ Item {
             var suffix = row.spec && row.spec.unit !== undefined ? row.spec.unit : "";
             return (Math.round(row.value * 100) / 100) + suffix;
         }
-        color: root.uiFgDim
-        font.family: root.uiFont
+        color: root.cFgSecondary
+        font.family: root.fontSans
         font.pixelSize: 11
         font.weight: Font.Medium
     }
@@ -261,7 +261,7 @@ Item {
                             visible: optionBox.checked
                             text: "\uf00c"
                             color: row.accent
-                            font.family: root.font
+                            font.family: root.fontMono
                             font.pixelSize: 8
                         }
                     }
@@ -270,8 +270,8 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         width: Math.min(implicitWidth, 104)
                         text: optionBox.modelData.label
-                        color: optionBox.checked ? root.uiFg : root.uiFgDim
-                        font.family: root.uiFont
+                        color: optionBox.checked ? root.cFgPrimary : root.cFgSecondary
+                        font.family: root.fontSans
                         font.pixelSize: 11
                         font.weight: Font.Medium
                         elide: Text.ElideRight
@@ -341,8 +341,8 @@ Item {
                 anchors.rightMargin: 8
                 anchors.verticalCenter: parent.verticalCenter
                 text: dropdown.currentLabel
-                color: root.uiFg
-                font.family: root.uiFont
+                color: root.cFgPrimary
+                font.family: root.fontSans
                 font.pixelSize: 11
                 font.weight: Font.Medium
                 elide: Text.ElideRight
@@ -354,8 +354,8 @@ Item {
                 anchors.rightMargin: 10
                 anchors.verticalCenter: parent.verticalCenter
                 text: "\uf078"
-                color: root.uiFgDim
-                font.family: root.font
+                color: root.cFgSecondary
+                font.family: root.fontMono
                 font.pixelSize: 9
             }
 
@@ -408,8 +408,8 @@ Item {
                         anchors.leftMargin: 10
                         anchors.verticalCenter: parent.verticalCenter
                         text: dropItem.modelData.label
-                        color: dropItem.selected ? row.accent : root.uiFg
-                        font.family: root.uiFont
+                        color: dropItem.selected ? row.accent : root.cFgPrimary
+                        font.family: root.fontSans
                         font.pixelSize: 11
                         font.weight: Font.Medium
                     }
@@ -421,7 +421,7 @@ Item {
                         visible: dropItem.selected
                         text: "\uf00c"
                         color: row.accent
-                        font.family: root.font
+                        font.family: root.fontMono
                         font.pixelSize: 9
                     }
 
@@ -461,7 +461,7 @@ Item {
             anchors.centerIn: parent
             text: row.spec && row.spec.actionLabel ? row.spec.actionLabel : "Open"
             color: row.accent
-            font.family: root.uiFont
+            font.family: root.fontSans
             font.pixelSize: 11
             font.weight: Font.DemiBold
         }
@@ -489,8 +489,8 @@ Item {
         Text {
             width: parent.width
             text: row.spec && row.spec.label ? row.spec.label : ""
-            color: root.uiFg
-            font.family: root.uiFont
+            color: root.cFgPrimary
+            font.family: root.fontSans
             font.pixelSize: 13
             font.weight: Font.DemiBold
             elide: Text.ElideRight
@@ -500,8 +500,8 @@ Item {
             width: parent.width
             visible: row.hasDesc
             text: row.spec && row.spec.desc ? row.spec.desc : ""
-            color: root.uiFgFaint
-            font.family: root.uiFont
+            color: root.cFgMuted
+            font.family: root.fontSans
             font.pixelSize: 11
             font.weight: Font.Normal
             elide: Text.ElideRight

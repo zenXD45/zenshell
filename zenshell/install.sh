@@ -1,16 +1,32 @@
 #!/bin/bash
 # Zen Shell - One-Click Installation Script
 # Part of the HyprZen monorepo (https://github.com/zenXD45/zenshell)
+#
+# Usage:
+#   bash install.sh                 # install / update ZenShell
+#   bash install.sh --with-camera   # + Camera Effects daemon and virtual camera
+#   bash install.sh --help
+#
+# Re-running is safe: the code is refreshed, but shell_settings.json and the
+# dock's pinned apps are preserved. When this script is run from the deployed
+# directory itself, it updates in place instead of moving its own cwd away.
 
 set -e
 
-# --with-camera also installs the Camera Effects daemon and its dependencies
-# (OpenCV, onnxruntime and the v4l2loopback module: ~140 MB). It is opt-in
-# because most installs never touch the virtual camera.
 WITH_CAMERA=0
-if [ "${1:-}" == "--with-camera" ]; then
-    WITH_CAMERA=1
-fi
+for arg in "$@"; do
+    case "$arg" in
+        --with-camera) WITH_CAMERA=1 ;;
+        -h|--help)
+            sed -n '2,13p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $arg" >&2
+            exit 2
+            ;;
+    esac
+done
 
 # --- Colors and Formatting ---
 RED='\033[0;31m'
@@ -32,23 +48,50 @@ echo "          Zen Shell Installer"
 echo "=========================================="
 echo -e "${NC}"
 
-# --- Check AUR Helper ---
-if command -v yay &> /dev/null; then
-    AUR_HELPER="yay"
-elif command -v paru &> /dev/null; then
-    AUR_HELPER="paru"
-else
-    print_error "Neither 'yay' nor 'paru' was found. Please install one first."
+if [ "$(id -u)" -eq 0 ]; then
+    print_error "Do not run as root. Run as your normal user; sudo is used internally."
+fi
+if ! command -v pacman &> /dev/null; then
+    print_error "This installer targets Arch-based distributions (pacman not found)."
 fi
 
-print_info "Using AUR helper: ${BOLD}$AUR_HELPER${NC}"
+# --- AUR Helper ---
+# ZenShell itself is all official packages. A helper is still bootstrapped
+# (when possible) because the repo's other installers and the camera setup may
+# need AUR builds; a missing helper must not stop a shell-only install.
+AUR_HELPER=""
+if command -v paru &> /dev/null; then
+    AUR_HELPER="paru"
+elif command -v yay &> /dev/null; then
+    AUR_HELPER="yay"
+else
+    print_info "No AUR helper found — bootstrapping paru-bin..."
+    sudo -v || true
+    PARU_BUILD="$(mktemp -d "${TMPDIR:-/tmp}/zenshell-paru.XXXXXX")"
+    if command -v git &> /dev/null && command -v makepkg &> /dev/null \
+        && git clone --depth=1 https://aur.archlinux.org/paru-bin.git "$PARU_BUILD/paru-bin" &> /tmp/zenshell-paru-clone.log \
+        && ( cd "$PARU_BUILD/paru-bin" && makepkg -si --noconfirm &> /tmp/zenshell-paru-build.log ); then
+        AUR_HELPER="paru"
+        print_success "paru installed."
+    else
+        print_warn "Could not bootstrap paru (logs: /tmp/zenshell-paru-*.log). Continuing without AUR."
+    fi
+    rm -rf "$PARU_BUILD"
+fi
+if [ -n "$AUR_HELPER" ]; then
+    print_info "Using AUR helper: ${BOLD}$AUR_HELPER${NC}"
+fi
 
 # --- Dependencies ---
+# quickshell is in the official extra repo. quickshell-git (the old entry) is
+# AUR-only and, on CachyOS, used to pull in Noctalia's fork instead of upstream.
 DEPENDENCIES=(
     "git"
     "python"
     "python-dbus"
     "python-gobject"
+    "quickshell"
+    "qt6-5compat"
     "playerctl"
     "wl-clipboard"
     "cliphist"
@@ -58,29 +101,25 @@ DEPENDENCIES=(
     "hyprlock"
     "socat"
     "jq"
-)
-
-AUR_DEPENDENCIES=(
-    "quickshell-git"
+    "awww"
+    "matugen"
+    "imagemagick"
+    "libnotify"
+    "upower"
+    "brightnessctl"
+    "hyprshot"
+    "satty"
+    "curl"
 )
 
 print_info "Checking system dependencies..."
 for pkg in "${DEPENDENCIES[@]}"; do
-    if pacman -Qs "^${pkg}$" &> /dev/null; then
+    # pacman -T also succeeds when another package provides this name.
+    if pacman -T "$pkg" &> /dev/null; then
         print_success "$pkg is already installed."
     else
         print_info "Installing $pkg..."
-        sudo pacman -S --noconfirm "$pkg"
-    fi
-done
-
-print_info "Checking AUR dependencies..."
-for pkg in "${AUR_DEPENDENCIES[@]}"; do
-    if pacman -Qs "^${pkg}$" &> /dev/null || pacman -Qm "^${pkg}$" &> /dev/null; then
-        print_success "$pkg is already installed."
-    else
-        print_info "Installing $pkg from AUR..."
-        $AUR_HELPER -S --noconfirm "$pkg"
+        sudo pacman -S --needed --noconfirm "$pkg"
     fi
 done
 
@@ -109,8 +148,28 @@ fi
 
 # --- Setup Directories & Backup ---
 INSTALL_DIR="$HOME/.config/quickshell/dynamic-island"
+SETTINGS_FILE="$HOME/.config/quickshell/shell_settings.json"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+SCRIPT_DIR="$(readlink -f "$SCRIPT_DIR")"
 
-if [ -d "$INSTALL_DIR" ]; then
+# Running from the deployed directory is the common `cd dynamic-island &&
+# ./install.sh` case. Moving that directory into a backup would delete the
+# script's own cwd and leave no install behind, so update in place instead.
+IN_PLACE=0
+if [ "$SCRIPT_DIR" = "$(readlink -f "$INSTALL_DIR" 2> /dev/null || echo "$INSTALL_DIR")" ]; then
+    IN_PLACE=1
+    print_success "Running from the install directory — updating in place."
+fi
+
+# The dock stores its pins inside the install tree. Preserve them across the
+# refresh; otherwise every reinstall resets the user's dock.
+PINNED_BAK=""
+if [ "$IN_PLACE" -eq 0 ] && [ -f "$INSTALL_DIR/modules/dock/pinned_apps.json" ]; then
+    PINNED_BAK="$(mktemp "${TMPDIR:-/tmp}/zenshell-pins.XXXXXX")"
+    cp "$INSTALL_DIR/modules/dock/pinned_apps.json" "$PINNED_BAK"
+fi
+
+if [ "$IN_PLACE" -eq 0 ] && { [ -d "$INSTALL_DIR" ] || [ -L "$INSTALL_DIR" ]; }; then
     BACKUP_DIR="${INSTALL_DIR}_backup_$(date +%Y%m%d_%H%M%S)"
     print_warn "Existing Zen Shell installation found at $INSTALL_DIR"
     print_info "Backing up to $BACKUP_DIR..."
@@ -118,22 +177,18 @@ if [ -d "$INSTALL_DIR" ]; then
     print_success "Backup complete."
 fi
 
-# --- Clone Repository ---
+# --- Copy / Clone the Shell ---
 REPO_URL="https://github.com/zenXD45/zenshell.git"
-print_info "Cloning HyprZen monorepo..."
 TMP_CLONE="$HOME/.cache/hyprzen-install-zen"
 
-# If the script is already inside the downloaded repo, we just copy it.
-# Otherwise, we clone the monorepo (containing zenshell/).
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
-
-if [ -f "$SCRIPT_DIR/shell.qml" ] && [ "$SCRIPT_DIR" != "$INSTALL_DIR" ]; then
+if [ "$IN_PLACE" -eq 1 ]; then
+    print_success "Files already in place."
+elif [ -f "$SCRIPT_DIR/shell.qml" ]; then
     print_info "Local repository detected. Copying files to $INSTALL_DIR..."
-    mkdir -p "$HOME/.config/quickshell"
-    cp -r "$SCRIPT_DIR" "$INSTALL_DIR"
-elif [ "$SCRIPT_DIR" == "$INSTALL_DIR" ]; then
-    print_success "Already running from the install directory!"
+    mkdir -p "$INSTALL_DIR"
+    cp -r "$SCRIPT_DIR/." "$INSTALL_DIR"
 else
+    print_info "Cloning HyprZen monorepo..."
     mkdir -p "$HOME/.config/quickshell"
     rm -rf "$TMP_CLONE"
     git clone --depth 1 "$REPO_URL" "$TMP_CLONE"
@@ -141,26 +196,56 @@ else
     rm -rf "$TMP_CLONE"
 fi
 
+if [ -n "$PINNED_BAK" ]; then
+    cp "$PINNED_BAK" "$INSTALL_DIR/modules/dock/pinned_apps.json"
+    rm -f "$PINNED_BAK"
+    print_success "Dock pins preserved."
+fi
+
+# Never ship stale bytecode: the repo may contain __pycache__ from local runs.
+find "$INSTALL_DIR" -type d -name __pycache__ -prune -exec rm -rf {} + 2> /dev/null || true
+find "$INSTALL_DIR" -type f -name '*.pyc' -delete 2> /dev/null || true
+
 # Ensure scripts are executable
 chmod +x "$INSTALL_DIR"/*.sh
-chmod +x "$INSTALL_DIR"/scripts/*.sh 2>/dev/null || true
-chmod +x "$INSTALL_DIR"/scripts/*.py 2>/dev/null || true
-find "$INSTALL_DIR"/modules -type f \( -name "*.sh" -o -name "*.py" \) -exec chmod +x {} + 2>/dev/null || true
+chmod +x "$INSTALL_DIR"/scripts/*.sh 2> /dev/null || true
+chmod +x "$INSTALL_DIR"/scripts/*.py 2> /dev/null || true
+find "$INSTALL_DIR"/modules -type f \( -name '*.sh' -o -name '*.py' \) -exec chmod +x {} + 2> /dev/null || true
+
+# shell_settings.json lives one level above the install dir. Seeding it turns
+# the compiled defaults into real persisted settings; re-seeding it would undo
+# the user's UI scale, motion and profile choices, so only create it once.
+if [ -f "$SETTINGS_FILE" ]; then
+    print_success "shell_settings.json already present — keeping your settings."
+else
+    mkdir -p "$(dirname "$SETTINGS_FILE")"
+    cp "$INSTALL_DIR/shell_settings.json" "$SETTINGS_FILE"
+    print_success "Seeded $SETTINGS_FILE"
+fi
 
 # --- Camera Effects (optional) ---
-if [ "$WITH_CAMERA" == "1" ]; then
+if [ "$WITH_CAMERA" -eq 1 ]; then
     print_info "Installing Camera Effects dependencies..."
-    CAMERA_DEPS=("opencv" "onnxruntime-cpu" "v4l2loopback-dkms" "v4l2loopback-utils" "dkms")
+    CAMERA_DEPS=("opencv" "onnxruntime-cpu" "v4l2loopback-dkms" "v4l2loopback-utils" "dkms" "ffmpeg" "easyeffects")
     for pkg in "${CAMERA_DEPS[@]}"; do
-        pacman -Qs "^${pkg}$" &> /dev/null || sudo pacman -S --noconfirm "$pkg"
+        if pacman -T "$pkg" &> /dev/null; then
+            print_success "$pkg is already installed."
+        elif pacman -Si "$pkg" &> /dev/null; then
+            sudo pacman -S --needed --noconfirm "$pkg" \
+                || print_warn "$pkg failed to install — the camera panel may not work."
+        else
+            print_warn "$pkg is not in the configured repos — skipping."
+        fi
     done
     print_info "Building the camera-effects daemon..."
     "$INSTALL_DIR"/scripts/camera_effects_install.sh || print_warn "Camera Effects build failed; the panel can retry it."
-    print_info "Creating the virtual camera (asks for your password)..."
-    pkexec "$HOME/.local/lib/camera-effects/camera-effects-setup" install \
-        "$HOME/.local/lib/camera-effects/camera-effects-server" \
-        "$HOME/.local/lib/camera-effects/camera-effects-setup" \
-        || print_warn "Could not create the virtual camera yet; the panel can retry it."
+    if [ -x "$HOME/.local/lib/camera-effects/camera-effects-setup" ] && command -v pkexec &> /dev/null; then
+        print_info "Creating the virtual camera (asks for your password)..."
+        pkexec "$HOME/.local/lib/camera-effects/camera-effects-setup" install \
+            "$HOME/.local/lib/camera-effects/camera-effects-server" \
+            "$HOME/.local/lib/camera-effects/camera-effects-setup" \
+            || print_warn "Could not create the virtual camera yet; the panel can retry it."
+    fi
 fi
 
 print_success "Zen Shell installed successfully!"

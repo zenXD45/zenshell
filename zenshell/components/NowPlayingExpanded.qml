@@ -29,8 +29,8 @@ Item {
 
     RowLayout {
         anchors.fill: parent
-        anchors.margins: 18
-        spacing: 18
+        anchors.margins: root.s5
+        spacing: root.s5
 
         // ── Vinyl ────────────────────────────────────────────────
         Item {
@@ -48,7 +48,7 @@ Item {
             Rectangle {
                 anchors.fill: parent
                 radius: width / 2
-                color: root.themeBg
+                color: root.cBgPrimary
                 border.color: root.ink(0.149)
                 border.width: 1
             }
@@ -95,7 +95,7 @@ Item {
                 anchors.centerIn: parent
                 text: "\uf001"
                 color: root.ink(0.4)
-                font.family: root.font
+                font.family: root.fontMono
                 font.pixelSize: 18
                 visible: artImg.status !== Image.Ready
             }
@@ -117,35 +117,36 @@ Item {
             Text {
                 Layout.fillWidth: true
                 text: root.trackTitle || "Nothing Playing"
-                color: root.themeFg
-                font.family: root.uiFont
-                font.pixelSize: 18
-                font.bold: true
+                color: root.cFgPrimary
+                font.family: root.fontSans
+                font.pixelSize: root.tH2[0]
+                font.weight: root.tH2[2]
+                font.letterSpacing: root.tH2[3]
                 elide: Text.ElideRight
             }
 
             Text {
                 Layout.fillWidth: true
                 text: root.trackArtist || "Unknown"
-                color: root.ink(0.6)
-                font.family: root.uiFont
-                font.pixelSize: 14
+                color: root.cFgMuted
+                font.family: root.fontSans
+                font.pixelSize: root.tBody[0]
                 elide: Text.ElideRight
             }
 
             RowLayout {
                 Layout.fillWidth: true
-                Layout.topMargin: 14
-                spacing: 16
+                Layout.topMargin: root.s4
+                spacing: root.s5
 
                 Rectangle {
                     id: prevBtn
                     width: 38; height: 38; radius: 19
-                    color: prevArea.containsMouse ? root.ink(0.133) : "transparent"
+                    color: prevArea.containsMouse ? root.ink(0.08) : "transparent"
                     property real btnScale: 1.0
                     transform: Scale { origin.x: 19; origin.y: 19; xScale: prevBtn.btnScale; yScale: prevBtn.btnScale }
-                    Behavior on btnScale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
-                    Text { anchors.centerIn: parent; text: "\uf04a"; color: root.themeFg; font.family: root.font; font.pixelSize: 18 }
+                    Behavior on btnScale { NumberAnimation { duration: root.dFast; easing.type: Easing.OutBack } }
+                    Text { anchors.centerIn: parent; text: "\uf04a"; color: root.cFgPrimary; font.family: root.fontMono; font.pixelSize: 18 }
                     MouseArea {
                         id: prevArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                         onPressed: prevBtn.btnScale = 0.88; onReleased: prevBtn.btnScale = 1.0; onClicked: root.prevTrack()
@@ -155,11 +156,11 @@ Item {
                 Rectangle {
                     id: playBtn
                     width: 48; height: 48; radius: 24
-                    color: root.themeFg
+                    color: root.cFgPrimary
                     property real btnScale: 1.0
                     transform: Scale { origin.x: 24; origin.y: 24; xScale: playBtn.btnScale; yScale: playBtn.btnScale }
-                    Behavior on btnScale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
-                    Text { anchors.centerIn: parent; text: root.isPlaying ? "\uf04c" : "\uf04b"; color: root.onAccent(); font.family: root.font; font.pixelSize: 20 }
+                    Behavior on btnScale { NumberAnimation { duration: root.dFast; easing.type: Easing.OutBack } }
+                    Text { anchors.centerIn: parent; text: root.isPlaying ? "\uf04c" : "\uf04b"; color: root.onAccent(); font.family: root.fontMono; font.pixelSize: 20 }
                     MouseArea {
                         anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                         onPressed: playBtn.btnScale = 0.88; onReleased: playBtn.btnScale = 1.0; onClicked: root.playPause()
@@ -169,11 +170,11 @@ Item {
                 Rectangle {
                     id: nextBtn
                     width: 38; height: 38; radius: 19
-                    color: nextArea.containsMouse ? root.ink(0.133) : "transparent"
+                    color: nextArea.containsMouse ? root.ink(0.08) : "transparent"
                     property real btnScale: 1.0
                     transform: Scale { origin.x: 19; origin.y: 19; xScale: nextBtn.btnScale; yScale: nextBtn.btnScale }
-                    Behavior on btnScale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
-                    Text { anchors.centerIn: parent; text: "\uf04e"; color: root.themeFg; font.family: root.font; font.pixelSize: 18 }
+                    Behavior on btnScale { NumberAnimation { duration: root.dFast; easing.type: Easing.OutBack } }
+                    Text { anchors.centerIn: parent; text: "\uf04e"; color: root.cFgPrimary; font.family: root.fontMono; font.pixelSize: 18 }
                     MouseArea {
                         id: nextArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                         onPressed: nextBtn.btnScale = 0.88; onReleased: nextBtn.btnScale = 1.0; onClicked: root.nextTrack()

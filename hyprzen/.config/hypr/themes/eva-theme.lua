@@ -23,17 +23,17 @@ border_active = "rgba(9ece6aff)"
 
 border_inactive = "rgba(26004da6)"
 
-rounding = 4
+rounding = 12
 
 border_size = 0
 
-gaps_in = 4
+gaps_in = 5
 
-gaps_out = 8
+gaps_out = 12
 
-blur_size = 4
+blur_size = 6
 
-blur_passes = 2
+blur_passes = 3
 
 inactive_opacity = 0.92
 

@@ -63,28 +63,28 @@ Item {
             id: titleText
             anchors.fill: parent
             text: root.trackTitle || "Nothing Playing"
-            color: root.uiFg
-            font.family: root.uiFont
-            font.pixelSize: 14
-            font.weight: Font.DemiBold
-            font.letterSpacing: 0.2
+            color: root.cFgPrimary
+            font.family: root.fontSans
+            font.pixelSize: root.tH3[0]
+            font.weight: root.tH3[2]
+            font.letterSpacing: root.tH3[3]
             elide: Text.ElideRight
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             opacity: compact.hasLyric ? 0 : 1
             visible: opacity > 0
-            Behavior on opacity { NumberAnimation { duration: compact.hasLyric ? 150 : 220; easing.type: Easing.OutCubic } }
+            Behavior on opacity { NumberAnimation { duration: compact.hasLyric ? root.dFast : root.dNormal; easing.type: Easing.OutCubic } }
         }
 
         Text {
             id: primaryText
             anchors.fill: parent
             text: stage.primaryLine
-            color: root.uiFg
-            font.family: root.uiFont
-            font.pixelSize: 14
-            font.weight: Font.DemiBold
-            font.letterSpacing: 0.2
+            color: root.cFgPrimary
+            font.family: root.fontSans
+            font.pixelSize: root.tH3[0]
+            font.weight: root.tH3[2]
+            font.letterSpacing: root.tH3[3]
             elide: Text.ElideRight
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
@@ -93,22 +93,22 @@ Item {
             transformOrigin: Item.Center
             Behavior on opacity {
                 NumberAnimation {
-                    duration: compact.hasLyric && stage.showPrimary ? 220 : 150
+                    duration: compact.hasLyric && stage.showPrimary ? root.dNormal : root.dFast
                     easing.type: Easing.OutCubic
                 }
             }
-            Behavior on scale { NumberAnimation { duration: 220; easing.type: Easing.OutExpo } }
+            Behavior on scale { NumberAnimation { duration: root.dNormal; easing.type: Easing.OutExpo } }
         }
 
         Text {
             id: secondaryText
             anchors.fill: parent
             text: stage.secondaryLine
-            color: root.uiFg
-            font.family: root.uiFont
-            font.pixelSize: 14
-            font.weight: Font.DemiBold
-            font.letterSpacing: 0.2
+            color: root.cFgPrimary
+            font.family: root.fontSans
+            font.pixelSize: root.tH3[0]
+            font.weight: root.tH3[2]
+            font.letterSpacing: root.tH3[3]
             elide: Text.ElideRight
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
@@ -117,11 +117,11 @@ Item {
             transformOrigin: Item.Center
             Behavior on opacity {
                 NumberAnimation {
-                    duration: compact.hasLyric && !stage.showPrimary ? 220 : 150
+                    duration: compact.hasLyric && !stage.showPrimary ? root.dNormal : root.dFast
                     easing.type: Easing.OutCubic
                 }
             }
-            Behavior on scale { NumberAnimation { duration: 220; easing.type: Easing.OutExpo } }
+            Behavior on scale { NumberAnimation { duration: root.dNormal; easing.type: Easing.OutExpo } }
         }
     }
 
@@ -130,13 +130,13 @@ Item {
     Item {
         id: equalizer
         anchors.right: parent.right
-        anchors.rightMargin: 12
+        anchors.rightMargin: root.s4
         anchors.verticalCenter: parent.verticalCenter
         width: 18
         height: 16
         visible: root.isPlaying
         opacity: root.isHovered ? 1 : 0.82
-        Behavior on opacity { NumberAnimation { duration: 160 } }
+        Behavior on opacity { NumberAnimation { duration: root.dFast } }
 
         Row {
             anchors.centerIn: parent

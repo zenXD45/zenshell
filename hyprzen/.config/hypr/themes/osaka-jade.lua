@@ -31,10 +31,10 @@ gaps_in = 5
 
 gaps_out = 12
 
-blur_size = 5
+blur_size = 6
 
 blur_passes = 3
 
-inactive_opacity = 0.93
+inactive_opacity = 0.92
 
 shadow_color = "rgba(00000080)"

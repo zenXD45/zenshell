@@ -26,7 +26,7 @@ Item {
     property color themeAccent: root.currentThemeAccent || root.themeAccent
 
     // ── View Navigation ────────────────────────────────────────────
-    property string currentView: "main" // "main" | "network" | "bt"
+    property string currentView: "main"
 
     // ── Header / meta ──────────────────────────────────────────────
     property string panelClock: ""
@@ -53,7 +53,7 @@ Item {
     property bool caffeineEnabled: false
     property bool nightLightEnabled: false
     property bool micMuted: false
-    property string recorderMode: "none" // "ui" | "gsr" | "none"
+    property string recorderMode: "none"
     property bool recordingActive: false
 
     // ── Sliders ────────────────────────────────────────────────────
@@ -67,7 +67,7 @@ Item {
 
     // ════════════════════════════════════════════════════════════════
     // │ Core process + action helpers
-    // ════════════════════════════════════════════════════════════════
+    // ═════════════════════════════════════════════════════════════════
     Process { id: execCmd; command: [] }
 
     function runShell(cmd) {
@@ -218,11 +218,6 @@ Item {
     }
 
     // ── Toggles ────────────────────────────────────────────────────
-    // Caffeine, night light and Do Not Disturb are settings, not panel-local
-    // state. They go through root.setValue() so the store, the live effect
-    // and the persisted file stay in step — the control centre and the
-    // settings window are then two views of the same thing instead of two
-    // switches that quietly undo each other.
     function toggleCaffeine() {
         var next = !root.values.caffeine;
         root.setValue("caffeine", next);
@@ -350,14 +345,12 @@ Item {
         stdout: SplitParser { onRead: data => { recordingActive = (data.trim() === "1") } }
     }
 
-    // hypridle absent/stopped == Caffeine is ON (no idle, dim or lock).
     Process {
         id: checkCaffeine
         command: ["bash", "-c", "pgrep -x hypridle >/dev/null 2>&1 && echo 0 || echo 1"]
         stdout: SplitParser { onRead: data => { caffeineEnabled = (data.trim() === "1") } }
     }
 
-    // Toggle the mic and report the real resulting state, not an assumption.
     Process {
         id: micToggle
         command: ["bash", "-c", "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle; wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | grep -q MUTED && echo muted || echo live"]
@@ -397,16 +390,16 @@ Item {
     }
 
     // ════════════════════════════════════════════════════════════════
-    // │ MAIN VIEW
+    // │ MAIN VIEW — inset groups, hairline rows, real switches
     // ════════════════════════════════════════════════════════════════
     ColumnLayout {
         id: mainView
         anchors.fill: parent
-        anchors.margins: 18
-        spacing: 10
+        anchors.margins: root.s5
+        spacing: 0
         opacity: currentView === "main" ? 1 : 0
         visible: opacity > 0
-        transform: Translate { y: currentView === "main" ? (1 - mainView.opacity) * 8 : -mainView.opacity * 8 }
+        transform: Translate { y: currentView === "main" ? (1 - mainView.opacity) * 6 : -mainView.opacity * 6 }
         Behavior on opacity {
             NumberAnimation {
                 duration: currentView === "main" ? root.motionBase : root.motionExit
@@ -414,1075 +407,213 @@ Item {
             }
         }
 
-        // ── Header (compact) ─────────────────────────────────────
+        // ── Header ─────────────────────────────────────────────────
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 28
-            spacing: 9
-
-            Rectangle {
-                width: 28; height: 28; radius: 9
-                color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14)
-                border.width: 1
-                border.color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.24)
-                Text {
-                    anchors.centerIn: parent
-                    text: "\uf013"
-                    color: themeAccent
-                    font.family: root.font
-                    font.pixelSize: 12
-                }
-            }
+            Layout.preferredHeight: 34
+            spacing: root.s2
 
             Text {
+                Layout.alignment: Qt.AlignVCenter
                 text: "Control Center"
-                color: root.uiFg
-                font.family: root.uiFont
-                font.pixelSize: 15
+                color: root.cFgPrimary
+                font.family: root.fontSans
+                font.pixelSize: 17
                 font.weight: Font.DemiBold
+                font.letterSpacing: -0.2
             }
 
             Item { Layout.fillWidth: true }
 
             Text {
+                Layout.alignment: Qt.AlignVCenter
                 text: panelClock
-                color: root.uiFgFaint
-                font.family: root.uiFont
-                font.pixelSize: 10
-                font.weight: Font.Medium
+                color: root.ink(0.40)
+                font.family: root.fontMono
+                font.pixelSize: 11
             }
 
-            // Settings. The full settings window lives on its own overlay
-            // surface, so the panel closes first — two surfaces asking for
-            // exclusive keyboard focus at once is how the compositor ends up
-            // with a dead keyboard.
-            Rectangle {
-                id: settingsChip
-                height: 22
-                width: 22
-                radius: 11
-                color: settingsChipMouse.containsMouse
-                    ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.18)
-                    : "transparent"
-                border.width: 1
-                border.color: settingsChipMouse.containsMouse
-                    ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.34)
-                    : "transparent"
-                Behavior on color { ColorAnimation { duration: 140 } }
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "\uf013"
-                    color: settingsChipMouse.containsMouse ? themeAccent : root.uiFgDim
-                    font.family: root.font
-                    font.pixelSize: 11
-                }
-
-                MouseArea {
-                    id: settingsChipMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        root.displayState = 0;
-                        root.updateState();
-                        root.openSettings();
-                    }
-                }
-            }
-
-            // Shell profile switcher. The 01/02 glyph reads as a miniature
-            // island over a dock (01) or a single command rail (02).
-            Rectangle {
-                height: 22
-                implicitWidth: profileChipRow.implicitWidth + 16
-                radius: 11
-                color: profileChipMouse.containsMouse ? root.ink(0.078) : root.ink(0.039)
-                border.width: 1
-                border.color: profileChipMouse.containsMouse ? root.ink(0.141) : root.ink(0.078)
-                Behavior on color { ColorAnimation { duration: 140 } }
-                Behavior on border.color { ColorAnimation { duration: 140 } }
-
-                RowLayout {
-                    id: profileChipRow
-                    anchors.centerIn: parent
-                    spacing: 5
-
-                    Item {
-                        width: 12
-                        height: 10
-                        Rectangle {
-                            width: 8
-                            height: 3
-                            radius: 1.5
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            anchors.top: parent.top
-                            color: themeAccent
-                        }
-                        Rectangle {
-                            width: 12
-                            height: 2
-                            radius: 1
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            anchors.bottom: parent.bottom
-                            color: root.uiFg
-                            opacity: 0.5
-                        }
-                    }
-
-                    Text {
-                        text: "PROFILE " + root.activeProfileLabel
-                        color: root.uiFgDim
-                        font.family: root.uiFont
-                        font.pixelSize: 8
-                        font.weight: Font.DemiBold
-                        font.letterSpacing: 0.7
-                    }
-                }
-
-                MouseArea {
-                    id: profileChipMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.displayState = 16
-                }
-            }
-
-            Rectangle {
-                height: 22
-                implicitWidth: badgeRow.implicitWidth + 16
-                radius: 11
-                color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.12)
-                border.width: 1
-                border.color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.28)
-
-                RowLayout {
-                    id: badgeRow
-                    anchors.centerIn: parent
-                    spacing: 4
-                    Text {
-                        text: activeType === "wired" ? "󰈀" : (wifiActive ? "\uf1eb" : "\uf072")
-                        color: themeAccent
-                        font.family: root.font
-                        font.pixelSize: 9
-                    }
-                    Text {
-                        id: badgeText
-                        text: activeType === "wired" ? "Wired" : (wifiActive ? (wifiConn || "Wi-Fi") : "Offline")
-                        color: root.uiFg
-                        font.family: root.uiFont
-                        font.pixelSize: 9
-                        font.weight: Font.Medium
-                    }
+            IconButton {
+                Layout.alignment: Qt.AlignVCenter
+                icon: "\uf013"
+                onClicked: {
+                    root.displayState = 0;
+                    root.updateState();
+                    root.openSettings();
                 }
             }
         }
 
-        // ── Connectivity (compact) ───────────────────────────────
-        RowLayout {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 54
-            Layout.minimumHeight: 54
-            Layout.maximumHeight: 54
-            spacing: 10
+        Item { Layout.preferredHeight: root.s3 }
 
-            // Network
-            Rectangle {
-                id: netTile
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                radius: 14
-                color: netArea.containsMouse ? root.ink(0.063) : root.uiCard
-                border.width: 1
-                border.color: netArea.containsMouse ? root.uiBorderStrong : root.uiBorder
-                Behavior on color { ColorAnimation { duration: 130 } }
+        // ── Connections ────────────────────────────────────────────
+        Group {
+            GroupRow {
+                icon: activeType === "wired" ? "\uf0a0" : "\uf1eb"
+                label: "Network"
+                value: activeType === "wired"
+                    ? (wiredConn || "Wired")
+                    : (wifiActive ? (wifiConn || "Wi-Fi") : "Offline")
+                chevron: true
+                onActivated: { currentView = "network"; refreshNetwork() }
+            }
 
-                property real press: 1.0
-                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: netTile.press; yScale: netTile.press }
-                Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
+            GroupRow {
+                icon: "\uf293"
+                label: "Bluetooth"
+                value: btPowered ? "On" : "Off"
+                chevron: true
+                onActivated: { currentView = "bt"; refreshBluetooth() }
+            }
 
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 10
-                    anchors.rightMargin: 8
-                    spacing: 9
-
-                    Rectangle {
-                        width: 30; height: 30; radius: 9
-                        color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.13)
-                        Text {
-                            anchors.centerIn: parent
-                            text: activeType === "wired" ? "󰈀" : "\uf1eb"
-                            color: themeAccent
-                            font.family: root.font
-                            font.pixelSize: 13
-                        }
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 0
-
-                        Text {
-                            text: "Network"
-                            color: root.uiFg
-                            font.family: root.uiFont
-                            font.pixelSize: 12
-                            font.weight: Font.Medium
-                        }
-                        Text {
-                            Layout.fillWidth: true
-                            text: activeType === "wired"
-                                ? (wiredConn || "Wired")
-                                : (wifiActive ? (wifiConn || "Wi-Fi") : "Disconnected")
-                            color: root.uiFgFaint
-                            font.family: root.uiFont
-                            font.pixelSize: 10
-                            elide: Text.ElideRight
-                        }
-                    }
-
-                    Text {
-                        text: "\uf054"
-                        color: root.uiFgFaint
-                        font.family: root.font
-                        font.pixelSize: 8
-                    }
-                }
-
-                MouseArea {
-                    id: netArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onPressed: parent.press = 0.98
-                    onReleased: parent.press = 1.0
-                    onClicked: { currentView = "network"; refreshNetwork() }
+            GroupRow {
+                icon: "\uf030"
+                label: "Camera"
+                value: !root.cameraService ? "Not installed"
+                    : root.cameraService.block ? "Blocked"
+                    : root.cameraService.consumers > 0 ? "In use"
+                    : root.cameraService.running ? "Live"
+                    : "Idle"
+                chevron: true
+                last: recorderMode === "none"
+                onActivated: {
+                    root.displayState = 24;
+                    root.updateState();
                 }
             }
 
-            // Bluetooth
-            Rectangle {
-                id: btTile
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                radius: 14
-                color: btArea.containsMouse ? root.ink(0.063) : root.uiCard
-                border.width: 1
-                border.color: btArea.containsMouse ? root.uiBorderStrong : root.uiBorder
-                Behavior on color { ColorAnimation { duration: 130 } }
-
-                property real press: 1.0
-                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: btTile.press; yScale: btTile.press }
-                Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 10
-                    anchors.rightMargin: 8
-                    spacing: 9
-
-                    Rectangle {
-                        width: 30; height: 30; radius: 9
-                        color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.13)
-                        Text {
-                            anchors.centerIn: parent
-                            text: "\uf293"
-                            color: themeAccent
-                            font.family: root.font
-                            font.pixelSize: 13
-                        }
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 0
-
-                        Text {
-                            text: "Bluetooth"
-                            color: root.uiFg
-                            font.family: root.uiFont
-                            font.pixelSize: 12
-                            font.weight: Font.Medium
-                        }
-                        Text {
-                            text: btPowered ? "On" : "Off"
-                            color: root.uiFgFaint
-                            font.family: root.uiFont
-                            font.pixelSize: 10
-                        }
-                    }
-
-                    Text {
-                        text: "\uf054"
-                        color: root.uiFgFaint
-                        font.family: root.font
-                        font.pixelSize: 8
-                    }
-                }
-
-                MouseArea {
-                    id: btArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onPressed: parent.press = 0.98
-                    onReleased: parent.press = 1.0
-                    onClicked: { currentView = "bt"; refreshBluetooth() }
-                }
-            }
-
-            // Camera — the ported camera-effects plugin. The tile is the
-            // entry point; the panel itself lives in the island.
-            Rectangle {
-                id: camTile
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                radius: 14
-                color: camArea.containsMouse ? root.ink(0.063) : root.uiCard
-                border.width: 1
-                border.color: camArea.containsMouse ? root.uiBorderStrong : root.uiBorder
-                Behavior on color { ColorAnimation { duration: 130 } }
-
-                property real press: 1.0
-                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: camTile.press; yScale: camTile.press }
-                Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
-
-                readonly property var svc: root.cameraService
-                readonly property bool live: svc ? (svc.consumers > 0 || svc.running) : false
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 10
-                    anchors.rightMargin: 8
-                    spacing: 9
-
-                    Rectangle {
-                        width: 30; height: 30; radius: 9
-                        color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, camTile.live ? 0.24 : 0.13)
-                        border.width: 1
-                        border.color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, camTile.live ? 0.5 : 0.24)
-                        Text {
-                            anchors.centerIn: parent
-                            text: "󰄀"
-                            color: themeAccent
-                            font.family: root.font
-                            font.pixelSize: 13
-                        }
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 0
-
-                        Text {
-                            text: "Camera"
-                            color: root.uiFg
-                            font.family: root.uiFont
-                            font.pixelSize: 12
-                            font.weight: Font.Medium
-                        }
-                        Text {
-                            Layout.fillWidth: true
-                            text: !camTile.svc ? "Not installed"
-                                : camTile.svc.block ? "Blocked"
-                                : camTile.svc.consumers > 0 ? "In use"
-                                : camTile.svc.running ? "Live"
-                                : "Idle"
-                            color: camTile.live ? themeAccent : root.uiFgFaint
-                            font.family: root.uiFont
-                            font.pixelSize: 10
-                            elide: Text.ElideRight
-                        }
-                    }
-
-                    Text {
-                        text: ""
-                        color: root.uiFgFaint
-                        font.family: root.font
-                        font.pixelSize: 8
-                    }
-                }
-
-                MouseArea {
-                    id: camArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onPressed: parent.press = 0.98
-                    onReleased: parent.press = 1.0
-                    onClicked: {
-                        root.displayState = 24;
-                        root.updateState();
-                    }
-                }
+            GroupRow {
+                visible: recorderMode !== "none"
+                icon: recordingActive ? "\uf111" : "\uf03d"
+                label: "Screen recording"
+                value: recordingActive ? "Recording" : "Idle"
+                destructive: recordingActive
+                last: true
+                onActivated: toggleRecord()
             }
         }
 
-        // ── Quick toggles (compact) ──────────────────────────────
-        RowLayout {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 44
-            Layout.minimumHeight: 44
-            Layout.maximumHeight: 44
-            spacing: 8
+        Item { Layout.preferredHeight: root.s3 }
 
-            // Caffeine
-            Rectangle {
-                id: caffeineTile
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                radius: 12
-                color: caffeineEnabled
-                    ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.16)
-                    : (caffArea.containsMouse ? root.ink(0.063) : root.uiCard)
-                border.width: 1
-                border.color: caffeineEnabled
-                    ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.38)
-                    : root.uiBorder
-                Behavior on color { ColorAnimation { duration: 140 } }
-
-                property real press: 1.0
-                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: caffeineTile.press; yScale: caffeineTile.press }
-                Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
-
-                ColumnLayout {
-                    anchors.centerIn: parent
-                    spacing: 1
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: "\uf0f4"
-                        color: caffeineEnabled ? themeAccent : root.uiFgFaint
-                        font.family: root.font
-                        font.pixelSize: 13
-                    }
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: "Caffeine"
-                        color: caffeineEnabled ? root.uiFg : root.uiFgDim
-                        font.family: root.uiFont
-                        font.pixelSize: 9
-                        font.weight: caffeineEnabled ? Font.DemiBold : Font.Medium
-                    }
-                }
-
-                MouseArea {
-                    id: caffArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onPressed: parent.press = 0.96
-                    onReleased: parent.press = 1.0
-                    onClicked: toggleCaffeine()
-                }
+        // ── Output ─────────────────────────────────────────────────
+        Group {
+            SliderRow {
+                width: parent.width
+                height: 40
+                icon: "\uf185"
+                value: brightnessValue
+                min: 0
+                max: 100
+                accentColor: themeAccent
+                valueSuffix: "%"
+                onMoved: setBrightness(value)
             }
 
-            // Night Light
-            Rectangle {
-                id: nightLightTile
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                radius: 12
-                color: nightLightEnabled
-                    ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.16)
-                    : (nightArea.containsMouse ? root.ink(0.063) : root.uiCard)
-                border.width: 1
-                border.color: nightLightEnabled
-                    ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.38)
-                    : root.uiBorder
-                Behavior on color { ColorAnimation { duration: 140 } }
-
-                property real press: 1.0
-                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: nightLightTile.press; yScale: nightLightTile.press }
-                Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
-
-                ColumnLayout {
-                    anchors.centerIn: parent
-                    spacing: 1
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: "\uf186"
-                        color: nightLightEnabled ? themeAccent : root.uiFgFaint
-                        font.family: root.font
-                        font.pixelSize: 13
-                    }
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: "Night Light"
-                        color: nightLightEnabled ? root.uiFg : root.uiFgDim
-                        font.family: root.uiFont
-                        font.pixelSize: 9
-                        font.weight: nightLightEnabled ? Font.DemiBold : Font.Medium
-                    }
-                }
-
-                MouseArea {
-                    id: nightArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onPressed: parent.press = 0.96
-                    onReleased: parent.press = 1.0
-                    onClicked: toggleNightLight()
-                }
-            }
-
-            // Do Not Disturb
-            Rectangle {
-                id: dndTile
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                radius: 12
-                color: root.dndEnabled
-                    ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.16)
-                    : (dndArea.containsMouse ? root.ink(0.063) : root.uiCard)
-                border.width: 1
-                border.color: root.dndEnabled
-                    ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.38)
-                    : root.uiBorder
-                Behavior on color { ColorAnimation { duration: 140 } }
-
-                property real press: 1.0
-                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: dndTile.press; yScale: dndTile.press }
-                Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
-
-                ColumnLayout {
-                    anchors.centerIn: parent
-                    spacing: 1
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: "\uf0f3"
-                        color: root.dndEnabled ? themeAccent : root.uiFgFaint
-                        font.family: root.font
-                        font.pixelSize: 13
-                    }
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: "Do Not Disturb"
-                        color: root.dndEnabled ? root.uiFg : root.uiFgDim
-                        font.family: root.uiFont
-                        font.pixelSize: 9
-                        font.weight: root.dndEnabled ? Font.DemiBold : Font.Medium
-                    }
-                }
-
-                MouseArea {
-                    id: dndArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onPressed: parent.press = 0.96
-                    onReleased: parent.press = 1.0
-                    onClicked: toggleDnd()
-                }
-            }
-
-            // Mic
-            Rectangle {
-                id: micTile
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                radius: 12
-                color: micMuted
-                    ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.16)
-                    : (micArea.containsMouse ? root.ink(0.063) : root.uiCard)
-                border.width: 1
-                border.color: micMuted
-                    ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.38)
-                    : root.uiBorder
-                Behavior on color { ColorAnimation { duration: 140 } }
-
-                property real press: 1.0
-                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: micTile.press; yScale: micTile.press }
-                Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
-
-                ColumnLayout {
-                    anchors.centerIn: parent
-                    spacing: 1
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: micMuted ? "\uf131" : "\uf130"
-                        color: micMuted ? themeAccent : root.uiFgFaint
-                        font.family: root.font
-                        font.pixelSize: 13
-                    }
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: micMuted ? "Muted" : "Mic"
-                        color: micMuted ? root.uiFg : root.uiFgDim
-                        font.family: root.uiFont
-                        font.pixelSize: 9
-                        font.weight: micMuted ? Font.DemiBold : Font.Medium
-                    }
-                }
-
-                MouseArea {
-                    id: micArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onPressed: parent.press = 0.96
-                    onReleased: parent.press = 1.0
-                    onClicked: toggleMic()
-                }
+            SliderRow {
+                width: parent.width
+                height: 40
+                icon: "\uf028"
+                value: volumeValue
+                min: 0
+                max: 100
+                accentColor: themeAccent
+                valueSuffix: "%"
+                onMoved: setVolume(value)
             }
         }
 
-        // ── Sliders (compact) ────────────────────────────────────
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 76
-            radius: 14
-            color: root.uiCard
-            border.width: 1
-            border.color: root.uiBorder
+        Item { Layout.preferredHeight: root.s3 }
 
-            ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: 10
-                spacing: 8
+        // ── Quick switches ─────────────────────────────────────────
+        Group {
+            GroupRow {
+                icon: "\uf0f4"
+                label: "Caffeine"
+                showSwitch: true
+                switchOn: caffeineEnabled
+                onToggled: toggleCaffeine()
+            }
 
-                // Brightness
-                RowLayout {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    spacing: 9
+            GroupRow {
+                icon: "\uf186"
+                label: "Night light"
+                showSwitch: true
+                switchOn: nightLightEnabled
+                onToggled: toggleNightLight()
+            }
 
-                    Text {
-                        text: "\uf185"
-                        color: root.uiFgDim
-                        font.family: root.font
-                        font.pixelSize: 12
-                        Layout.preferredWidth: 14
-                        horizontalAlignment: Text.AlignHCenter
-                    }
+            GroupRow {
+                icon: "\uf0f3"
+                label: "Silence"
+                showSwitch: true
+                switchOn: root.dndEnabled
+                onToggled: toggleDnd()
+            }
 
-                    Item {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-
-                        Rectangle {
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: parent.width
-                            height: 4; radius: 2
-                            color: root.ink(0.102)
-                        }
-
-                        Rectangle {
-                            anchors.verticalCenter: parent.verticalCenter
-                            height: 4; radius: 2
-                            width: (parent.width - 12) * (brightnessValue / 100)
-                            color: themeAccent
-                        }
-
-                        Rectangle {
-                            anchors.verticalCenter: parent.verticalCenter
-                            x: Math.max(0, Math.min(parent.width - width, (parent.width - 12) * (brightnessValue / 100)))
-                            width: brightDrag.pressed ? 14 : 12
-                            height: width; radius: width / 2
-                            color: root.themeFg
-                            Behavior on width { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
-                        }
-
-                        MouseArea {
-                            id: brightDrag
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            property bool dragging: false
-                            onPressed: (mouse) => { dragging = true; setBrightness((mouse.x / parent.width) * 100) }
-                            onReleased: dragging = false
-                            onPositionChanged: (mouse) => { if (dragging) setBrightness((mouse.x / parent.width) * 100) }
-                        }
-                    }
-
-                    Rectangle {
-                        width: 36; height: 20; radius: 6
-                        color: root.ink(0.063)
-                        border.width: 1
-                        border.color: root.ink(0.094)
-                        Text {
-                            anchors.centerIn: parent
-                            text: Math.round(brightnessValue) + "%"
-                            color: root.uiFgDim
-                            font.family: root.uiFont
-                            font.pixelSize: 9
-                            font.weight: Font.Medium
-                        }
-                    }
-                }
-
-                // Volume
-                RowLayout {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    spacing: 9
-
-                    Text {
-                        text: "\uf028"
-                        color: root.uiFgDim
-                        font.family: root.font
-                        font.pixelSize: 12
-                        Layout.preferredWidth: 14
-                        horizontalAlignment: Text.AlignHCenter
-                    }
-
-                    Item {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-
-                        Rectangle {
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: parent.width
-                            height: 4; radius: 2
-                            color: root.ink(0.102)
-                        }
-
-                        Rectangle {
-                            anchors.verticalCenter: parent.verticalCenter
-                            height: 4; radius: 2
-                            width: (parent.width - 12) * (volumeValue / 100)
-                            color: themeAccent
-                        }
-
-                        Rectangle {
-                            anchors.verticalCenter: parent.verticalCenter
-                            x: Math.max(0, Math.min(parent.width - width, (parent.width - 12) * (volumeValue / 100)))
-                            width: volDrag.pressed ? 14 : 12
-                            height: width; radius: width / 2
-                            color: root.themeFg
-                            Behavior on width { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
-                        }
-
-                        MouseArea {
-                            id: volDrag
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            property bool dragging: false
-                            onPressed: (mouse) => { dragging = true; setVolume((mouse.x / parent.width) * 100) }
-                            onReleased: dragging = false
-                            onPositionChanged: (mouse) => { if (dragging) setVolume((mouse.x / parent.width) * 100) }
-                        }
-                    }
-
-                    Rectangle {
-                        width: 36; height: 20; radius: 6
-                        color: root.ink(0.063)
-                        border.width: 1
-                        border.color: root.ink(0.094)
-                        Text {
-                            anchors.centerIn: parent
-                            text: Math.round(volumeValue) + "%"
-                            color: root.uiFgDim
-                            font.family: root.uiFont
-                            font.pixelSize: 9
-                            font.weight: Font.Medium
-                        }
-                    }
-                }
+            GroupRow {
+                icon: micMuted ? "\uf131" : "\uf130"
+                label: "Microphone"
+                showSwitch: true
+                switchOn: !micMuted
+                last: true
+                onToggled: toggleMic()
             }
         }
 
-        // ── Screen record (only while a recorder is available) ───
-        Rectangle {
-            id: recordTile
-            Layout.fillWidth: true
-            Layout.preferredHeight: 32
-            radius: 11
-            visible: recorderMode !== "none"
-            color: recArea.containsMouse ? root.ink(0.063) : root.uiCard
-            border.width: 1
-            border.color: recordingActive
-                ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.35)
-                : root.uiBorder
-            property real press: 1.0
-            transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: recordTile.press; yScale: recordTile.press }
-            Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
+        Item { Layout.preferredHeight: root.s3 }
 
-            RowLayout {
-                anchors.fill: parent
-                anchors.leftMargin: 12
-                anchors.rightMargin: 10
-                spacing: 8
-
-                Text {
-                    text: recordingActive ? "\uf111" : "\uf03d"
-                    color: recordingActive ? "#EF4444" : root.uiFgFaint
-                    font.family: root.font
-                    font.pixelSize: 11
-                }
-                Text {
-                    text: recordingActive ? "Recording in progress" : "Screen Record"
-                    color: recordingActive ? root.uiFg : root.uiFgDim
-                    font.family: root.uiFont
-                    font.pixelSize: 10
-                    font.weight: recordingActive ? Font.DemiBold : Font.Medium
-                    Layout.fillWidth: true
-                }
-            }
-
-            MouseArea {
-                id: recArea
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onPressed: parent.press = 0.98
-                onReleased: parent.press = 1.0
-                onClicked: toggleRecord()
-            }
+        // ── Notifications ──────────────────────────────────────────
+        GroupHeader {
+            title: "Notifications"
+            action: root.notificationList.length > 0 ? "Clear" : ""
+            onActionClicked: clearAllNotifications()
         }
 
-        // ── Notification shade (the main event) ──────────────────
-        Rectangle {
+        Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            radius: root.uiRadiusMd
-            color: root.ink(0.027)
-            border.width: 1
-            border.color: root.ink(0.071)
 
-            ColumnLayout {
+            ListView {
                 anchors.fill: parent
-                anchors.margins: 12
-                spacing: 8
+                clip: true
+                spacing: 0
+                boundsBehavior: Flickable.StopAtBounds
+                model: root.notificationList
 
-                RowLayout {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 20
-                    spacing: 6
-
-                    Text {
-                        text: "\uf0f3"
-                        color: themeAccent
-                        font.family: root.font
-                        font.pixelSize: 11
-                    }
-                    Text {
-                        text: "Notifications"
-                        color: root.uiFg
-                        font.family: root.uiFont
-                        font.pixelSize: 12
-                        font.weight: Font.DemiBold
-                    }
-
-                    Rectangle {
-                        visible: root.notificationList.length > 0
-                        height: 16
-                        implicitWidth: countText.implicitWidth + 10
-                        radius: 8
-                        color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14)
-                        Text {
-                            id: countText
-                            anchors.centerIn: parent
-                            text: root.notificationList.length
-                            color: themeAccent
-                            font.family: root.uiFont
-                            font.pixelSize: 9
-                            font.weight: Font.DemiBold
-                        }
-                    }
-
-                    Item { Layout.fillWidth: true }
-
-                    Text {
-                        visible: root.notificationList.length > 0
-                        text: "Clear all"
-                        color: clearArea.containsMouse ? "#FF8A8A" : root.uiFgFaint
-                        font.family: root.uiFont
-                        font.pixelSize: 10
-                        font.weight: Font.Medium
-                        Behavior on color { ColorAnimation { duration: 120 } }
-
-                        MouseArea {
-                            id: clearArea
-                            anchors.fill: parent
-                            anchors.margins: -4
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.clearAllNotifications()
-                        }
-                    }
+                delegate: NotificationItem {
+                    width: ListView.view.width
+                    height: 56
+                    showDivider: index < ListView.view.count - 1
+                    appName: modelData.app
+                    summary: modelData.summary
+                    body: modelData.body
+                    time: modelData.time
+                    accentColor: themeAccent
+                    onDismissed: clearNotification(modelData.id)
                 }
+            }
 
-                Item {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-
-                    // Empty state
-                    ColumnLayout {
-                        anchors.centerIn: parent
-                        spacing: 4
-                        visible: root.notificationList.length === 0
-
-                        Text {
-                            Layout.alignment: Qt.AlignHCenter
-                            text: "\uf0f3"
-                            color: root.ink(0.125)
-                            font.family: root.font
-                            font.pixelSize: 18
-                        }
-                        Text {
-                            Layout.alignment: Qt.AlignHCenter
-                            text: "You\u2019re all caught up"
-                            color: root.uiFgDim
-                            font.family: root.uiFont
-                            font.pixelSize: 12
-                            font.weight: Font.Medium
-                        }
-                        Text {
-                            Layout.alignment: Qt.AlignHCenter
-                            text: "New notifications will appear here"
-                            color: root.uiFgFaint
-                            font.family: root.uiFont
-                            font.pixelSize: 10
-                        }
-                    }
-
-                    // The shade list: always fills the space it is given and
-                    // scrolls once the history is longer than the viewport.
-                    ListView {
-                        id: notifList
-                        anchors.fill: parent
-                        anchors.rightMargin: 8
-                        visible: root.notificationList.length > 0
-                        model: root.notificationList.length
-                        spacing: 6
-                        clip: true
-                        boundsBehavior: Flickable.StopAtBounds
-
-                        ScrollBar.vertical: ScrollBar {
-                            // AsNeeded can leave a full-height thumb when the list
-                            // happens to fit; drive visibility from the actual geometry.
-                            policy: notifList.contentHeight > notifList.height + 1
-                                    ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
-                            contentItem: Rectangle {
-                                implicitWidth: 3
-                                radius: 1.5
-                                color: root.ink(0.251)
-                            }
-                        }
-
-                        delegate: Rectangle {
-                            width: ListView.view.width
-                            height: 68
-                            radius: 12
-                            color: notifHover.hovered ? root.ink(0.071) : root.ink(0.039)
-                            border.width: 1
-                            border.color: notifHover.hovered ? root.ink(0.125) : root.ink(0.071)
-
-                            property var notif: root.notificationList[index] || {}
-
-                            HoverHandler { id: notifHover }
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.leftMargin: 10
-                                anchors.rightMargin: 8
-                                anchors.topMargin: 8
-                                anchors.bottomMargin: 8
-                                spacing: 10
-
-                                Rectangle {
-                                    width: 30; height: 30; radius: 9
-                                    Layout.alignment: Qt.AlignTop
-                                    color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.12)
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "\uf1d7"
-                                        color: themeAccent
-                                        font.family: root.font
-                                        font.pixelSize: 12
-                                    }
-                                }
-
-                                ColumnLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 0
-
-                                    RowLayout {
-                                        Layout.fillWidth: true
-                                        spacing: 6
-
-                                        Text {
-                                            Layout.fillWidth: true
-                                            text: notif.app || "Notification"
-                                            color: themeAccent
-                                            font.family: root.uiFont
-                                            font.pixelSize: 9
-                                            font.weight: Font.DemiBold
-                                            elide: Text.ElideRight
-                                        }
-                                        Text {
-                                            text: notif.time ? Qt.formatTime(notif.time, "HH:mm") : ""
-                                            color: root.uiFgFaint
-                                            font.family: root.uiFont
-                                            font.pixelSize: 9
-                                        }
-                                    }
-
-                                    Text {
-                                        Layout.fillWidth: true
-                                        text: notif.summary || ""
-                                        color: root.uiFg
-                                        font.family: root.uiFont
-                                        font.pixelSize: 12
-                                        font.weight: Font.DemiBold
-                                        elide: Text.ElideRight
-                                        maximumLineCount: 1
-                                    }
-
-                                    Text {
-                                        Layout.fillWidth: true
-                                        text: notif.body || ""
-                                        color: root.uiFgDim
-                                        font.family: root.uiFont
-                                        font.pixelSize: 10
-                                        wrapMode: Text.Wrap
-                                        maximumLineCount: 2
-                                        elide: Text.ElideRight
-                                    }
-                                }
-
-                                Rectangle {
-                                    width: 22; height: 22; radius: 7
-                                    Layout.alignment: Qt.AlignTop
-                                    color: dismissArea.containsMouse ? "#22EF4444" : "transparent"
-                                    Behavior on color { ColorAnimation { duration: 120 } }
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "\uf00d"
-                                        color: dismissArea.containsMouse ? "#EF4444" : root.uiFgFaint
-                                        font.family: root.font
-                                        font.pixelSize: 8
-                                    }
-                                    MouseArea {
-                                        id: dismissArea
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.clearNotification(notif.id)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+            EmptyState {
+                anchors.centerIn: parent
+                width: parent.width - root.s6
+                visible: root.notificationList.length === 0
+                title: "No notifications"
+                detail: root.dndEnabled ? "Do Not Disturb is on" : ""
             }
         }
     }
 
-
     // ════════════════════════════════════════════════════════════════
-    // │ NETWORK & WI-FI SUB-VIEW
+    // │ NETWORK VIEW
     // ════════════════════════════════════════════════════════════════
     ColumnLayout {
         id: networkView
         anchors.fill: parent
-        anchors.margins: 16
-        spacing: 8
+        anchors.margins: root.s5
+        spacing: 0
         opacity: currentView === "network" ? 1 : 0
         visible: opacity > 0
-        transform: Translate { y: currentView === "network" ? (1 - networkView.opacity) * 8 : -networkView.opacity * 8 }
+        transform: Translate { y: currentView === "network" ? (1 - networkView.opacity) * 6 : -networkView.opacity * 6 }
         Behavior on opacity {
             NumberAnimation {
                 duration: currentView === "network" ? root.motionBase : root.motionExit
@@ -1490,304 +621,209 @@ Item {
             }
         }
 
-        // Sub-view header
-        RowLayout {
+        MenuHeader {
+            title: "Network"
+            meta: ipAddress
+            back: true
+            onBackClicked: currentView = "main"
+        }
+
+        Item { Layout.preferredHeight: root.s3 }
+
+        ColumnLayout {
             Layout.fillWidth: true
-            spacing: 8
+            spacing: 0
 
-            Rectangle {
-                width: 28; height: 28; radius: 10
-                color: backNetArea.containsMouse ? root.ink(0.102) : root.ink(0.039)
-                Text { anchors.centerIn: parent; text: "\uf060"; color: root.themeFg; font.family: root.font; font.pixelSize: 12 }
-                MouseArea {
-                    id: backNetArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: currentView = "main"
-                }
+            ListRow {
+                icon: "\uf1eb"
+                label: "Wi-Fi"
+                detail: wifiActive ? (wifiConn || "Connected") : (wifiRadio ? "Radio on" : "Radio off")
+                value: wifiActive ? "Connected" : (wifiRadio ? "On" : "Off")
+                active: wifiActive
+                showDivider: true
+                onClicked: wifiRadio ? switchWifi() : toggleWifiRadio()
             }
 
-            Text { text: "Network & Wi-Fi"; color: root.themeFg; font.family: root.uiFont; font.pixelSize: 14; font.weight: Font.Bold }
-
-            Item { Layout.fillWidth: true }
-
-            Rectangle {
-                width: 28; height: 28; radius: 10
-                color: openNmArea.containsMouse ? root.ink(0.102) : root.ink(0.039)
-                Text { anchors.centerIn: parent; text: "\uf013"; color: root.ink(0.52); font.family: root.font; font.pixelSize: 12 }
-                MouseArea {
-                    id: openNmArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: runShell("command -v nm-connection-editor >/dev/null 2>&1 && nm-connection-editor & || (command -v nmtui >/dev/null 2>&1 && kitty -e nmtui &)")
-                }
+            ListRow {
+                icon: "󰈀"
+                label: "Wired"
+                value: wiredActive ? "Connected" : "—"
+                active: wiredActive
+                showDivider: true
+                onClicked: switchWired()
             }
 
-            Rectangle {
-                width: 28; height: 28; radius: 10
-                color: refNetArea.containsMouse ? root.ink(0.102) : root.ink(0.039)
-                Text { anchors.centerIn: parent; text: "\uf021"; color: themeAccent; font.family: root.font; font.pixelSize: 12 }
-                MouseArea {
-                    id: refNetArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: refreshNetwork()
-                }
+            ListRow {
+                icon: wifiRadio ? "\uf1eb" : "\uf072"
+                label: "Wi-Fi radio"
+                value: wifiRadio ? "On" : "Off"
+                chevron: false
+                onClicked: toggleWifiRadio()
             }
         }
 
-        // Switchers: wired + wifi radio
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 8
+        Item { Layout.preferredHeight: root.s5 }
 
-            Rectangle {
-id: wiredTile
-                Layout.fillWidth: true
-                Layout.preferredHeight: 52
-                radius: 14
-                color: wiredActive ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14) : root.ink(0.031)
-                border.color: wiredActive ? themeAccent : root.ink(0.063)
-                border.width: 1
-                property real press: 1.0
-                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: wiredTile.press; yScale: wiredTile.press }
-                Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 12
-                    anchors.rightMargin: 12
-                    spacing: 10
-
-                    Text {
-                        text: "󰈀"
-                        color: wiredActive ? themeAccent : root.ink(0.45)
-                        font.family: root.font
-                        font.pixelSize: 16
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 1
-                        Text {
-                            text: "Ethernet"
-                            color: root.themeFg
-                            font.family: root.uiFont
-                            font.pixelSize: 11
-                            font.weight: Font.Bold
-                        }
-                        Text {
-                            text: wiredActive ? (wiredConn || "Connected") : "Tap to connect"
-                            color: wiredActive ? root.ink(0.55) : root.ink(0.45)
-                            font.family: root.uiFont
-                            font.pixelSize: 9
-                        }
-                    }
-
-                    Rectangle {
-                        width: 12; height: 12; radius: 6
-                        color: wiredActive ? themeAccent : root.ink(0.24)
-                        Behavior on color { ColorAnimation { duration: 150 } }
-                    }
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onPressed: parent.press = 0.97
-                    onReleased: parent.press = 1.0
-                    onClicked: switchWired()
-                }
-            }
-
-            Rectangle {
-id: wifiTile
-                Layout.fillWidth: true
-                Layout.preferredHeight: 52
-                radius: 14
-                color: wifiRadio ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14) : root.ink(0.031)
-                border.color: wifiRadio ? themeAccent : root.ink(0.063)
-                border.width: 1
-                property real press: 1.0
-                transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: wifiTile.press; yScale: wifiTile.press }
-                Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 12
-                    anchors.rightMargin: 10
-                    spacing: 10
-
-                    Text {
-                        text: "\uf1eb"
-                        color: wifiRadio ? themeAccent : root.ink(0.45)
-                        font.family: root.font
-                        font.pixelSize: 16
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 1
-                        Text {
-                            text: "Wi-Fi"
-                            color: root.themeFg
-                            font.family: root.uiFont
-                            font.pixelSize: 11
-                            font.weight: Font.Bold
-                        }
-                        Text {
-                            text: wifiRadio ? "Radio on" : "Radio off"
-                            color: wifiRadio ? root.ink(0.55) : root.ink(0.45)
-                            font.family: root.uiFont
-                            font.pixelSize: 9
-                        }
-                    }
-
-                    // Toggle switch
-                    Rectangle {
-                        width: 34; height: 20; radius: 10
-                        color: wifiRadio ? themeAccent : root.ink(0.17)
-                        Behavior on color { ColorAnimation { duration: 150 } }
-                        Rectangle {
-                            width: 16; height: 16; radius: 8
-                            x: wifiRadio ? 16 : 2
-                            anchors.verticalCenter: parent.verticalCenter
-                            color: root.themeFg
-                            Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-                        }
-                    }
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onPressed: parent.press = 0.97
-                    onReleased: parent.press = 1.0
-                    onClicked: toggleWifiRadio()
-                }
-            }
+        GroupHeader {
+            title: wifiLoading ? "Scanning…" : "Available networks"
+            action: wifiLoading ? "" : "Scan"
+            onActionClicked: refreshNetwork()
         }
 
-        RowLayout {
-            Layout.fillWidth: true
-            Text {
-                text: "AVAILABLE NETWORKS"
-                color: root.ink(0.36)
-                font.family: root.uiFont
-                font.pixelSize: 9
-                font.weight: Font.Bold
-            }
-            Item { Layout.fillWidth: true }
-            Text {
-                text: ipAddress || ""
-                color: root.ink(0.45)
-                font.family: root.uiFont
-                font.pixelSize: 9
-            }
-        }
-
-        ListView {
+        Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            model: (wifiNetworks && wifiNetworks.length) ? wifiNetworks.length : 0
-            spacing: 5
-            clip: true
-            boundsBehavior: Flickable.StopAtBounds
 
-            delegate: Rectangle {
-                width: ListView.view.width
-                height: 42
-                radius: 12
-                color: itemNet.in_use ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14) : (netItemArea.containsMouse ? root.ink(0.063) : root.ink(0.024))
-                border.color: itemNet.in_use ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.45) : root.ink(0.071)
-                border.width: 1
+            ListView {
+                anchors.fill: parent
+                visible: !wifiLoading
+                clip: true
+                spacing: 0
+                boundsBehavior: Flickable.StopAtBounds
+                model: wifiNetworks
 
-                property var itemNet: wifiNetworks[index] || {}
-                property bool isConnecting: connectingSsid === itemNet.ssid
+                delegate: Item {
+                    id: netRow
+                    width: ListView.view.width
+                    height: 52
+                    property var net: wifiNetworks[index]
+                    property int strength: net && net.signal !== undefined ? net.signal : 0
 
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 12
-                    anchors.rightMargin: 12
-                    spacing: 10
-
-                    Text {
-                        text: "\uf1eb"
-                        color: itemNet.in_use ? themeAccent : root.ink(0.6)
-                        font.family: root.font
-                        font.pixelSize: 13
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: root.rSm
+                        color: netRowArea.containsMouse ? root.ink(0.045) : "transparent"
+                        Behavior on color { ColorAnimation { duration: root.dMicro } }
                     }
 
-                    Text {
-                        text: itemNet.ssid || "Hidden Network"
-                        color: itemNet.in_use ? root.themeFg : root.ink(0.85)
-                        font.family: root.uiFont
-                        font.pixelSize: 11
-                        font.weight: itemNet.in_use ? Font.DemiBold : Font.Normal
-                        elide: Text.ElideRight
-                        Layout.fillWidth: true
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: root.s3
+                        anchors.rightMargin: root.s3
+                        spacing: root.s3
+
+                        Item {
+                            Layout.preferredWidth: 18
+                            Layout.preferredHeight: 14
+                            Layout.alignment: Qt.AlignVCenter
+
+                            Row {
+                                anchors.right: parent.right
+                                anchors.bottom: parent.bottom
+                                spacing: 2
+
+                                Repeater {
+                                    model: 4
+
+                                    Rectangle {
+                                        width: 2.5
+                                        height: 4 + index * 3
+                                        radius: 1
+                                        anchors.bottom: parent.bottom
+                                        color: index < netRow.strength ? themeAccent : root.ink(0.14)
+                                    }
+                                }
+                            }
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 0
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: netRow.net && netRow.net.ssid ? netRow.net.ssid : "Unknown"
+                                color: root.cFgPrimary
+                                font.family: root.fontSans
+                                font.pixelSize: 13
+                                font.weight: Font.Medium
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: netRow.net && netRow.net.security ? "Secured" : "Open"
+                                color: root.cFgMuted
+                                font.family: root.fontSans
+                                font.pixelSize: 11
+                            }
+                        }
+
+                        Text {
+                            Layout.alignment: Qt.AlignVCenter
+                            text: connectingSsid === (netRow.net ? netRow.net.ssid : "")
+                                ? "Connecting…"
+                                : (netRow.net && netRow.net.active ? "Connected" : "Connect")
+                            color: connectingSsid === (netRow.net ? netRow.net.ssid : "") || (netRow.net && netRow.net.active)
+                                ? themeAccent
+                                : root.cFgMuted
+                            font.family: root.fontSans
+                            font.pixelSize: 12
+                            font.weight: Font.Medium
+                        }
                     }
 
-                    // Signal bars
-                    Text {
-                        text: itemNet.signal >= 75 ? "▂▄▆█" : (itemNet.signal >= 50 ? "▂▄▆" : "▂▄")
-                        color: itemNet.in_use ? themeAccent : root.ink(0.45)
-                        font.pixelSize: 9
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        height: 1
+                        color: root.ink(0.055)
                     }
 
-                    Text {
-                        text: isConnecting ? "Connecting…" : (itemNet.security ? "" : "Open")
-                        color: isConnecting ? themeAccent : root.ink(0.3)
-                        font.family: root.uiFont
-                        font.pixelSize: 9
+                    MouseArea {
+                        id: netRowArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: connectWifi(netRow.net ? netRow.net.ssid : "")
                     }
-
-                    Text {
-                        text: "\uf00c"
-                        color: themeAccent
-                        font.family: root.font
-                        font.pixelSize: 11
-                        visible: itemNet.in_use
-                    }
-                }
-
-                MouseArea {
-                    id: netItemArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: connectWifi(itemNet.ssid)
                 }
             }
-        }
 
-        // Loading / empty footer for the list
-        Text {
-            Layout.alignment: Qt.AlignHCenter
-            Layout.bottomMargin: 2
-            text: wifiLoading ? "Scanning…" : (wifiNetworks.length === 0 ? "No networks found" : wifiNetworks.length + " networks")
-            color: root.ink(0.36)
-            font.family: root.uiFont
-            font.pixelSize: 9
+            ColumnLayout {
+                anchors.centerIn: parent
+                spacing: root.s2
+                visible: !wifiLoading && wifiNetworks.length === 0
+
+                EmptyState {
+                    Layout.alignment: Qt.AlignHCenter
+                    title: "No networks found"
+                    detail: wifiRadio ? "Move closer to the router and scan again" : "Turn the Wi-Fi radio on"
+                }
+
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: "Scan again"
+                    color: scanArea.containsMouse ? root.cFgPrimary : themeAccent
+                    font.family: root.fontSans
+                    font.pixelSize: 12
+                    font.weight: Font.Medium
+
+                    MouseArea {
+                        id: scanArea
+                        anchors.fill: parent
+                        anchors.margins: -8
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: refreshNetwork()
+                    }
+                }
+            }
         }
     }
 
     // ════════════════════════════════════════════════════════════════
-    // │ BLUETOOTH SUB-VIEW
+    // │ BLUETOOTH VIEW
     // ════════════════════════════════════════════════════════════════
     ColumnLayout {
         id: btView
         anchors.fill: parent
-        anchors.margins: 16
-        spacing: 8
+        anchors.margins: root.s5
+        spacing: 0
         opacity: currentView === "bt" ? 1 : 0
         visible: opacity > 0
-        transform: Translate { y: currentView === "bt" ? (1 - btView.opacity) * 8 : -btView.opacity * 8 }
+        transform: Translate { y: currentView === "bt" ? (1 - btView.opacity) * 6 : -btView.opacity * 6 }
         Behavior on opacity {
             NumberAnimation {
                 duration: currentView === "bt" ? root.motionBase : root.motionExit
@@ -1795,290 +831,197 @@ id: wifiTile
             }
         }
 
-        RowLayout {
+        MenuHeader {
+            title: "Bluetooth"
+            meta: btPowered ? btDevices.length + (btDevices.length === 1 ? " device" : " devices") : "Off"
+            back: true
+            onBackClicked: currentView = "main"
+        }
+
+        Item { Layout.preferredHeight: root.s3 }
+
+        ListRow {
+            icon: "\uf293"
+            label: "Bluetooth"
+            value: btPowered ? "On" : "Off"
+            onClicked: toggleBluetooth()
+        }
+
+        Item { Layout.preferredHeight: root.s5 }
+
+        GroupHeader {
+            title: btLoading ? "Searching…" : "Devices"
+            action: btLoading ? "" : "Scan"
+            onActionClicked: refreshBluetooth()
+        }
+
+        Item {
             Layout.fillWidth: true
-            spacing: 8
+            Layout.fillHeight: true
 
-            Rectangle {
-                width: 28; height: 28; radius: 10
-                color: backBtArea.containsMouse ? root.ink(0.102) : root.ink(0.039)
-                Text { anchors.centerIn: parent; text: "\uf060"; color: root.themeFg; font.family: root.font; font.pixelSize: 12 }
-                MouseArea {
-                    id: backBtArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: currentView = "main"
+            ListView {
+                anchors.fill: parent
+                visible: !btLoading
+                clip: true
+                spacing: 0
+                boundsBehavior: Flickable.StopAtBounds
+                model: btDevices
+
+                delegate: Item {
+                    id: btRow
+                    width: ListView.view.width
+                    height: 54
+                    property var device: btDevices[index]
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: root.rSm
+                        color: btRowArea.containsMouse ? root.ink(0.045) : "transparent"
+                        Behavior on color { ColorAnimation { duration: root.dMicro } }
+                    }
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: root.s3
+                        anchors.rightMargin: root.s3
+                        spacing: root.s3
+
+                        Text {
+                            Layout.preferredWidth: 20
+                            Layout.alignment: Qt.AlignVCenter
+                            horizontalAlignment: Text.AlignHCenter
+                            text: getDeviceIcon(btRow.device ? btRow.device.type : "")
+                            color: btRow.device && btRow.device.connected ? themeAccent : root.cFgSecondary
+                            font.family: root.fontMono
+                            font.pixelSize: 15
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 0
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: btRow.device && btRow.device.name ? btRow.device.name : "Unknown device"
+                                color: root.cFgPrimary
+                                font.family: root.fontSans
+                                font.pixelSize: 13
+                                font.weight: Font.Medium
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: btRow.device && btRow.device.connected ? "Connected"
+                                    : (btRow.device && btRow.device.paired ? "Paired" : "Available")
+                                color: btRow.device && btRow.device.connected ? themeAccent : root.cFgMuted
+                                font.family: root.fontSans
+                                font.pixelSize: 11
+                            }
+                        }
+
+                        Text {
+                            Layout.alignment: Qt.AlignVCenter
+                            text: connectingMac !== "" && btRow.device && connectingMac === btRow.device.mac
+                                ? "Connecting…"
+                                : (btRow.device && btRow.device.connected ? "Disconnect" : "Connect")
+                            color: root.cFgMuted
+                            font.family: root.fontSans
+                            font.pixelSize: 12
+                            font.weight: Font.Medium
+                            opacity: btRowArea.containsMouse ? 1 : 0.55
+                            Behavior on opacity { NumberAnimation { duration: root.dMicro } }
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        height: 1
+                        color: root.ink(0.055)
+                    }
+
+                    MouseArea {
+                        id: btRowArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: if (btRow.device && btRow.device.mac) connectBtDevice(btRow.device.mac)
+                    }
                 }
             }
 
-            Text { text: "Bluetooth Devices"; color: root.themeFg; font.family: root.uiFont; font.pixelSize: 14; font.weight: Font.Bold }
-
-            Item { Layout.fillWidth: true }
-
-            Rectangle {
-                width: 28; height: 28; radius: 10
-                color: openBtArea.containsMouse ? root.ink(0.102) : root.ink(0.039)
-                Text { anchors.centerIn: parent; text: "\uf013"; color: root.ink(0.52); font.family: root.font; font.pixelSize: 12 }
-                MouseArea {
-                    id: openBtArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: runShell("blueman-manager &")
-                }
+            EmptyState {
+                anchors.centerIn: parent
+                width: parent.width - root.s6
+                visible: !btLoading && btDevices.length === 0
+                title: btPowered ? "No devices found" : "Bluetooth is off"
+                detail: btPowered ? "Put the device in pairing mode" : "Turn Bluetooth on to connect"
             }
+        }
+    }
 
-            Rectangle {
-                width: 28; height: 28; radius: 10
-                color: refBtArea.containsMouse ? root.ink(0.102) : root.ink(0.039)
-                Text { anchors.centerIn: parent; text: "\uf021"; color: themeAccent; font.family: root.font; font.pixelSize: 12 }
-                MouseArea {
-                    id: refBtArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: refreshBluetooth()
-                }
+    // ── Action toast ───────────────────────────────────────────────
+    Item {
+        id: actionToast
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: root.s5
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: parent.width - root.s7
+        height: 40
+        opacity: actionVisible ? 1 : 0
+        visible: opacity > 0
+        transform: Translate { y: (1 - actionToast.opacity) * 8 }
+        Behavior on opacity {
+            NumberAnimation {
+                duration: actionVisible ? root.motionBase : root.motionExit
+                easing.type: actionVisible ? Easing.OutExpo : Easing.OutCubic
             }
         }
 
-        // Power toggle card
         Rectangle {
-id: powerTile
-            Layout.fillWidth: true
-            Layout.preferredHeight: 48
-            radius: 14
-            color: btPowered ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14) : root.ink(0.031)
-            border.color: btPowered ? themeAccent : root.ink(0.063)
+            anchors.fill: parent
+            radius: root.rMd
+            color: Qt.rgba(root.cBgElevated.r, root.cBgElevated.g, root.cBgElevated.b, 0.96)
             border.width: 1
-            property real press: 1.0
-            transform: Scale { origin.x: width / 2; origin.y: height / 2; xScale: powerTile.press; yScale: powerTile.press }
-            Behavior on press { NumberAnimation { duration: 110; easing.type: Easing.OutBack } }
+            border.color: root.ink(0.08)
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 12
-                anchors.rightMargin: 10
-                spacing: 10
+                anchors.leftMargin: root.s4
+                anchors.rightMargin: root.s4
+                spacing: root.s3
 
                 Text {
-                    text: "\uf293"
-                    color: btPowered ? themeAccent : root.ink(0.45)
-                    font.family: root.font
-                    font.pixelSize: 15
-                }
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 1
-                    Text {
-                        text: "Bluetooth Adapter"
-                        color: root.themeFg
-                        font.family: root.uiFont
-                        font.pixelSize: 11
-                        font.weight: Font.Bold
-                    }
-                    Text {
-                        text: btPowered ? "On" : "Off"
-                        color: btPowered ? root.ink(0.55) : root.ink(0.45)
-                        font.family: root.uiFont
-                        font.pixelSize: 9
-                    }
-                }
-
-                Rectangle {
-                    width: 36; height: 20; radius: 10
-                    color: btPowered ? themeAccent : root.ink(0.17)
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                    Rectangle {
-                        width: 16; height: 16; radius: 8
-                        x: btPowered ? 18 : 2
-                        anchors.verticalCenter: parent.verticalCenter
-                        color: root.themeFg
-                        Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-                    }
-                }
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onPressed: parent.press = 0.97
-                onReleased: parent.press = 1.0
-                onClicked: toggleBluetooth()
-            }
-        }
-
-        Text {
-            text: "DEVICES"
-            color: root.ink(0.36)
-            font.family: root.uiFont
-            font.pixelSize: 9
-            font.weight: Font.Bold
-        }
-
-        ListView {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            model: (btDevices && btDevices.length) ? btDevices.length : 0
-            spacing: 5
-            clip: true
-            boundsBehavior: Flickable.StopAtBounds
-
-            delegate: Rectangle {
-                width: ListView.view.width
-                height: 46
-                radius: 12
-                color: itemBt.connected ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.14) : (btItemArea.containsMouse ? root.ink(0.063) : root.ink(0.024))
-                border.color: itemBt.connected ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.45) : root.ink(0.071)
-                border.width: 1
-
-                property var itemBt: btDevices[index] || {}
-                property bool isConnecting: connectingMac === itemBt.mac
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 12
-                    anchors.rightMargin: 8
-                    spacing: 10
-
-                    Text {
-                        text: itemBt.icon === "phone" ? "\uf10b" : (itemBt.icon === "audio-headset" ? "\uf025" : "\uf293")
-                        color: itemBt.connected ? themeAccent : root.ink(0.6)
-                        font.family: root.font
-                        font.pixelSize: 14
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 1
-                        Text {
-                            text: itemBt.name || "Bluetooth Device"
-                            color: itemBt.connected ? root.themeFg : root.ink(0.85)
-                            font.family: root.uiFont
-                            font.pixelSize: 11
-                            font.weight: itemBt.connected ? Font.DemiBold : Font.Normal
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                        }
-                        Text {
-                            text: itemBt.paired ? "Paired" : "Not paired"
-                            color: root.ink(0.45)
-                            font.family: root.uiFont
-                            font.pixelSize: 9
-                        }
-                    }
-
-                    Rectangle {
-                        height: 22
-                        implicitWidth: btStateText.implicitWidth + 14
-                        radius: 11
-                        color: itemBt.connected ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.25) : root.ink(0.063)
-                        border.color: itemBt.connected ? Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.4) : "transparent"
-                        border.width: itemBt.connected ? 1 : 0
-                        Text {
-                            id: btStateText
-                            anchors.centerIn: parent
-                            text: isConnecting ? "Working…" : (itemBt.connected ? "Disconnect" : "Connect")
-                            color: itemBt.connected ? root.themeFg : root.ink(0.7)
-                            font.family: root.uiFont
-                            font.pixelSize: 9
-                            font.weight: itemBt.connected ? Font.Bold : Font.Medium
-                        }
-                    }
-                }
-
-                MouseArea {
-                    id: btItemArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: connectBtDevice(itemBt.mac)
-                }
-            }
-        }
-
-        Text {
-            Layout.alignment: Qt.AlignHCenter
-            Layout.bottomMargin: 2
-            text: btLoading ? "Scanning…" : (btPowered ? (btDevices.length + " devices") : "Bluetooth is off")
-            color: root.ink(0.36)
-            font.family: root.uiFont
-            font.pixelSize: 9
-        }
-    }
-
-    // ── In-island action confirmation ──────────────────────────
-    // Stays inside the open control center (unlike the notification
-    // toast, which would replace the panel), so multiple toggles can be
-    // flipped without reopening the shade.
-    Rectangle {
-        id: actionToast
-        z: 100
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 18
-        width: actionRow.implicitWidth + 26
-        height: 36
-        radius: 12
-        color: root.glass(0.95)
-        border.width: 1
-        border.color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.45)
-        opacity: controlPanel.actionVisible ? 1 : 0
-        visible: opacity > 0
-        transform: Translate { y: (1 - actionToast.opacity) * 6 }
-        Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-
-        RowLayout {
-            id: actionRow
-            anchors.centerIn: parent
-            spacing: 8
-
-            Rectangle {
-                width: 20; height: 20; radius: 7
-                color: Qt.rgba(themeAccent.r, themeAccent.g, themeAccent.b, 0.16)
-                Text {
-                    anchors.centerIn: parent
-                    text: "\uf00c"
-                    color: themeAccent
-                    font.family: root.font
-                    font.pixelSize: 9
-                }
-            }
-
-            ColumnLayout {
-                spacing: 0
-
-                Text {
-                    text: controlPanel.actionTitle
-                    color: root.uiFg
-                    font.family: root.uiFont
-                    font.pixelSize: 11
+                    text: actionTitle
+                    color: root.cFgPrimary
+                    font.family: root.fontSans
+                    font.pixelSize: 13
                     font.weight: Font.DemiBold
                 }
+
                 Text {
-                    visible: text.length > 0
-                    text: controlPanel.actionSub
-                    color: root.uiFgFaint
-                    font.family: root.uiFont
-                    font.pixelSize: 9
+                    Layout.fillWidth: true
+                    text: actionSub
+                    color: root.cFgMuted
+                    font.family: root.fontSans
+                    font.pixelSize: 12
+                    elide: Text.ElideRight
                 }
             }
         }
     }
 
-    // Small IPC surface so scripts/keybinds can use the same toggles.
-    IpcHandler {
-        target: "control"
-
-        function toggleCaffeine() { controlPanel.toggleCaffeine() }
-        function toggleNightLight() { controlPanel.toggleNightLight() }
-        function toggleDnd() { controlPanel.toggleDnd() }
-        function toggleMic() { controlPanel.toggleMic() }
-        function clearNotifications() { root.clearAllNotifications() }
-        function showNetwork() { controlPanel.currentView = "network"; controlPanel.refreshNetwork() }
-        function showBluetooth() { controlPanel.currentView = "bt"; controlPanel.refreshBluetooth() }
-        function showMain() { controlPanel.currentView = "main" }
+    function getDeviceIcon(type) {
+        switch (type) {
+            case "headphones": return "\uf025"
+            case "keyboard": return "\uf11c"
+            case "mouse": return "\uf2c5"
+            case "phone": return "\uf3e0"
+            case "computer": return "\uf108"
+            case "speaker": return "\uf028"
+            default: return "\uf293"
+        }
     }
 }

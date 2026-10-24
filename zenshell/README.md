@@ -201,12 +201,14 @@ Standalone:
 ```bash
 git clone https://github.com/zenXD45/zenshell.git
 ./zenshell/install.sh
+./zenshell/install.sh --with-camera   # optional: virtual camera daemon
 ```
 
 The installer backs up anything already at
-`~/.config/quickshell/dynamic-island`, resolves dependencies through `paru` or
-`yay`, and marks the helper scripts executable. A password prompt is normal —
-it's your AUR helper fetching `socat`, `playerctl` and friends.
+`~/.config/quickshell/dynamic-island`, bootstraps `paru-bin` when no AUR helper
+is present, and marks the helper scripts executable. Re-running it refreshes the
+code but keeps `shell_settings.json` and the dock's pinned apps. A password
+prompt is normal — packages are installed with `pacman`.
 
 ZenShell reads themes from `~/scripts/theme-switch.sh` and wallpapers from
 `~/wallpapers`, both provided by [HyprZen](../hyprzen/README.md), so install

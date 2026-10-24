@@ -1,79 +1,92 @@
 import QtQuick
 import QtQuick.Layouts
 
-// Shared header for the compact island menus. Keeps the icon tile, title,
-// keyboard hint and count badge on one baseline so every menu reads as part
-// of the same surface rather than four separate widgets.
+// Shared header for island menus. Title carries the weight; everything else is
+// quiet. No icon tile, no badge, no pill — a header is a title and at most one
+// piece of right-aligned metadata.
 RowLayout {
     id: header
+
     property string title: ""
     property string icon: ""
     property string hint: ""
     property string meta: ""
+    property bool back: false
     property color accent: root.currentThemeAccent || root.themeAccent
 
-    Layout.fillWidth: true
-    Layout.preferredHeight: 28
-    spacing: 9
+    signal backClicked()
 
-    Rectangle {
+    Layout.fillWidth: true
+    Layout.preferredHeight: 34
+    spacing: root.s2
+
+    Item {
         Layout.alignment: Qt.AlignVCenter
-        width: 28
-        height: 28
-        radius: 9
-        visible: header.icon !== ""
-        color: Qt.rgba(header.accent.r, header.accent.g, header.accent.b, 0.14)
-        border.width: 1
-        border.color: Qt.rgba(header.accent.r, header.accent.g, header.accent.b, 0.26)
+        Layout.preferredWidth: header.back ? 26 : 0
+        Layout.preferredHeight: 26
+        visible: header.back
+
+        Rectangle {
+            anchors.fill: parent
+            radius: root.rSm
+            color: backArea.containsMouse ? root.ink(0.06) : "transparent"
+            Behavior on color { ColorAnimation { duration: root.dMicro } }
+        }
 
         Text {
             anchors.centerIn: parent
-            text: header.icon
-            color: header.accent
-            font.family: root.font
-            font.pixelSize: 12
+            text: "\uf060"
+            color: backArea.containsMouse ? root.cFgPrimary : root.cFgMuted
+            font.family: root.fontMono
+            font.pixelSize: 11
+        }
+
+        MouseArea {
+            id: backArea
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: header.backClicked()
         }
     }
 
     Text {
         Layout.alignment: Qt.AlignVCenter
+        visible: header.icon !== ""
+        text: header.icon
+        color: root.cFgMuted
+        font.family: root.fontMono
+        font.pixelSize: 14
+    }
+
+    Text {
+        Layout.alignment: Qt.AlignVCenter
         text: header.title
-        color: root.uiFg
-        font.family: root.uiFont
-        font.pixelSize: 15
+        color: root.cFgPrimary
+        font.family: root.fontSans
+        font.pixelSize: 17
         font.weight: Font.DemiBold
+        font.letterSpacing: -0.2
     }
 
     Item { Layout.fillWidth: true }
 
     Text {
         Layout.alignment: Qt.AlignVCenter
-        visible: header.hint !== ""
-        text: header.hint
-        color: root.ink(0.6)
-        font.family: root.uiFont
-        font.pixelSize: 10
-        font.weight: Font.Normal
+        visible: header.meta !== ""
+        text: header.meta
+        color: root.ink(0.50)
+        font.family: root.fontMono
+        font.pixelSize: 11
     }
 
-    Rectangle {
+    Text {
         Layout.alignment: Qt.AlignVCenter
-        visible: header.meta !== ""
-        height: 20
-        implicitWidth: metaText.implicitWidth + 14
-        radius: 10
-        color: Qt.rgba(header.accent.r, header.accent.g, header.accent.b, 0.10)
-        border.width: 1
-        border.color: Qt.rgba(header.accent.r, header.accent.g, header.accent.b, 0.22)
-
-        Text {
-            id: metaText
-            anchors.centerIn: parent
-            text: header.meta
-            color: root.uiFgDim
-            font.family: root.uiFont
-            font.pixelSize: 10
-            font.weight: Font.Medium
-        }
+        visible: header.hint !== ""
+        Layout.leftMargin: 12
+        text: header.hint
+        color: root.ink(0.42)
+        font.family: root.fontMono
+        font.pixelSize: 11
     }
 }

@@ -58,7 +58,7 @@ The split is the whole point: HyprZen owns *behaviour and colour*, ZenShell owns
 | **Theme-aware geometry** | Gaps, borders, rounding, blur and shadow opacity are read from the theme, not hardcoded. |
 | **No dead keybinds** | `scripts/check_keybinds.py` parses `keybinds.lua` and fails CI if a bound binary isn't installed by `install.sh`. |
 | **Media keys built in** | Volume, mic, brightness and playback go straight to `wpctl` / `brightnessctl` — no OSD daemon required. |
-| **Fonts handled** | GeistMono Nerd for terminal/icon glyphs, humanist [Fira Sans](https://fonts.google.com/specimen/Fira+Sans) for the UI. Installed by the installer. |
+| **Fonts handled** | JetBrainsMono Nerd for terminal/icon glyphs and [Google Sans Flex](https://fonts.google.com/specimen/Google+Sans+Flex) for the UI. JetBrainsMono comes from the official repos; Google Sans Flex is downloaded and cached by the installer. |
 | **Portable** | Every path resolves through `$HOME` / `Qt.homePath()`. Clone it anywhere; no edits needed. |
 
 ## Structure
@@ -72,7 +72,7 @@ scripts/     repo-level tooling (CI checks)
 
 ## Installation
 
-> Built for a from-scratch or existing **Arch Linux** install. Tested on Arch + `Hyprland` session; the installer is also safe to re-run and skips what is already in place.
+> Built for a from-scratch or existing **Arch Linux** install. Tested on Arch + `Hyprland` session; the installer is safe to re-run and skips what is already in place. A re-run refreshes the code but keeps your current theme, `shell_settings.json` and dock pins.
 
 ```bash
 git clone https://github.com/zenXD45/zenshell.git
@@ -80,19 +80,26 @@ cd zenshell
 ./install.sh
 ```
 
+Optional: build the virtual camera as part of the same run.
+
+```bash
+./install.sh --with-camera   # + OpenCV, onnxruntime, ffmpeg, EasyEffects, v4l2loopback
+./install.sh --theme noir    # force a theme instead of keeping the current one
+```
+
 Then log into the `Hyprland` session (or `hyprctl reload`). ZenShell autostarts from `exec.lua` → `start_all.sh`; there is no manual `exec-once` line.
 
 What `install.sh` does:
 
-1. Installs official packages — Hyprland, kitty, pipewire, `firefox`, `thunar`, `vscodium`, the toolchain and more. **No waybar, no rofi, no swaync**; the island, dock and optional command bar are the UI.
-2. Installs an AUR helper (`paru`, falling back to `yay`) and the AUR-only packages: `hyprswitch`, `bibata-cursor-theme`, `pywal`. Everything else the theme pipeline needs — `quickshell`, `matugen`, `wlogout`, `satty`, `hyprshot`, `waypaper`, `adw-gtk-theme`, `awww` — is in the official repos. **Failures warn, they don't abort.**
-3. Installs **Fira Sans** for UI text and downloads/caches **GeistMono Nerd Font** for terminal and icon glyphs.
+1. Installs official packages — Hyprland, kitty, pipewire, `firefox`, `nautilus`, the toolchain and more. **No waybar, no rofi, no swaync**; the island, dock and optional command bar are the UI.
+2. Bootstraps `paru-bin` when no AUR helper exists, then installs the AUR-only packages: `hyprswitch`, `bibata-cursor-theme`, `waypaper`, `wlogout`, `helium-browser-bin`, `vscodium-bin`, and pywal (`python-pywal16`, falling back to `python-pywal`). Everything else the theme pipeline needs — `quickshell`, `matugen`, `satty`, `hyprshot`, `adw-gtk-theme`, `awww`, `qt6ct` — is in the official repos. **Failures warn, they don't abort.**
+3. Installs **JetBrainsMono Nerd Font** for terminal and icon glyphs, and downloads/caches **Google Sans Flex** for UI text.
 4. Adds and enables the **scroll-overview** `hyprpm` plugin.
 5. Detects NVIDIA and installs `nvidia-dkms` / `nvidia-utils`.
 6. Configures **zsh**: Oh My Zsh + Powerlevel10k, plus `eza` / `bat` / `fzf` aliases, and offers `chsh`.
-7. Runs `hyprzen/install.sh` to symlink configs into `~/.config`, link `~/scripts`, and copy wallpapers into `~/wallpapers`.
-8. Installs ZenShell to `~/.config/quickshell/dynamic-island`, backing up anything already there.
-9. Applies the default theme (`catppuccin`) and a matching wallpaper.
+7. Runs `hyprzen/install.sh` to symlink configs into `~/.config`, link `~/scripts`, and copy wallpapers into `~/wallpapers`. Existing real config dirs are backed up with a timestamp, never deleted; an existing `~/.zshrc` / `~/.p10k.zsh` is kept.
+8. Installs ZenShell to `~/.config/quickshell/dynamic-island`, backing up anything already there while preserving `shell_settings.json` and the dock's pinned apps.
+9. Applies the default theme (`catppuccin`) and a matching wallpaper on a fresh install; re-runs keep the current theme and wallpaper.
 10. Enables NetworkManager, bluetooth and power-profiles-daemon.
 11. **Verifies** the result — key binaries, configs, fonts and the ZenShell Python helpers — and warns about anything missing.
 

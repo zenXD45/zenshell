@@ -5,9 +5,9 @@
     "exec": "kitty"
   },
   {
-    "id": "librewolf",
-    "iconName": "librewolf",
-    "exec": "librewolf"
+    "id": "helium",
+    "iconName": "helium-browser",
+    "exec": "helium-browser"
   },
   {
     "id": "codium",
@@ -15,18 +15,13 @@
     "exec": "codium"
   },
   {
-    "id": "antigravity",
-    "iconName": "antigravity",
-    "exec": "antigravity"
-  },
-  {
     "id": "org.gnome.Nautilus",
     "iconName": "org.gnome.Nautilus",
     "exec": "org.gnome.nautilus"
   },
   {
-    "id": "spotify",
-    "iconName": "spotify",
-    "exec": "spotify"
+    "id": "firefox",
+    "iconName": "firefox",
+    "exec": "firefox"
   }
 ]

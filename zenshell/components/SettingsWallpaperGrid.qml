@@ -110,7 +110,7 @@ GridLayout {
                 anchors.bottomMargin: 6
                 text: tile.modelData.filename || tile.modelData.name
                 color: root.ink(0.949)
-                font.family: root.uiFont
+                font.family: root.fontSans
                 font.pixelSize: 9
                 font.weight: Font.Medium
                 elide: Text.ElideMiddle
@@ -130,7 +130,7 @@ GridLayout {
                     anchors.centerIn: parent
                     text: "\uf00c"
                     color: root.onAccent()
-                    font.family: root.font
+                    font.family: root.fontMono
                     font.pixelSize: 8
                 }
             }
@@ -150,8 +150,8 @@ GridLayout {
         text: grid.filter
             ? "No wallpaper matches \"" + grid.filter + "\""
             : "No wallpapers found in ~/wallpapers or ~/Pictures/Wallpapers"
-        color: root.uiFgFaint
-        font.family: root.uiFont
+        color: root.cFgMuted
+        font.family: root.fontSans
         font.pixelSize: 11
     }
 }

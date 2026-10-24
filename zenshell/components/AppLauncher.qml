@@ -22,15 +22,12 @@ Item {
     }
 
     // ── Selection copy ───────────────────────────────────────────
-    // Enter opens an app, but copies a calculator result. Keep the footer
-    // honest as the highlighted row changes.
     property string selectedAction: "open"
 
-    // The palette sizes to its content: six rows is the ceiling, and a
-    // single filtered result keeps the whole surface small.
     readonly property int maxVisibleRows: 6
-    readonly property int visibleRows: searchModel.count === 0 ? 2 : Math.min(maxVisibleRows, searchModel.count)
-    readonly property int panelHeight: 96 + visibleRows * 40 + (visibleRows - 1) * 2
+    readonly property int visibleRows: searchModel.count === 0 ? 3 : Math.min(maxVisibleRows, searchModel.count)
+    // 16 top + 40 field + 12 + (rows * 44 + 8) + 8 + 18 footer + 16 bottom
+    readonly property int panelHeight: 118 + visibleRows * 44
 
     function syncSelectedAction() {
         if (resultList.currentIndex >= 0 && resultList.currentIndex < searchModel.count) {
@@ -106,56 +103,55 @@ Item {
             syncSelectedAction();
         }
     }
-
     // ── Layout ───────────────────────────────────────────────────
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 12
-        spacing: 8
+        anchors.margins: root.s5
+        spacing: 0
 
-        // ── Search strip ─────────────────────────────────────────
-        Rectangle {
-            id: searchShell
+        // ── Search field: one inset rounded field ──────────────────
+        Item {
             Layout.fillWidth: true
             Layout.preferredHeight: 40
-            radius: 12
-            color: searchInput.activeFocus ? root.ink(0.063) : root.ink(0.031)
-            clip: true
 
-            Behavior on color { ColorAnimation { duration: 160 } }
+            Rectangle {
+                anchors.fill: parent
+                radius: 12
+                color: root.ink(0.055)
+            }
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 12
-                anchors.rightMargin: 9
-                spacing: 8
+                anchors.leftMargin: root.s4
+                anchors.rightMargin: root.s4
+                spacing: root.s3
 
                 Text {
+                    Layout.alignment: Qt.AlignVCenter
                     text: "\uf002"
-                    color: searchInput.activeFocus ? root.currentThemeAccent : root.uiFgDim
-                    font.family: root.font
+                    color: searchInput.activeFocus ? root.currentThemeAccent : root.ink(0.45)
+                    font.family: root.fontMono
                     font.pixelSize: 13
-                    Behavior on color { ColorAnimation { duration: 160 } }
+                    Behavior on color { ColorAnimation { duration: root.dMicro } }
                 }
 
                 TextInput {
                     id: searchInput
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignVCenter
-                    color: root.uiFg
-                    font.family: root.uiFont
-                    font.pixelSize: 13
-                    font.weight: Font.Medium
+                    color: root.cFgPrimary
+                    font.family: root.fontSans
+                    font.pixelSize: 14
                     verticalAlignment: TextInput.AlignVCenter
                     padding: 0
                     clip: true
                     focus: root.displayState === 3
                     focusPolicy: Qt.StrongFocus
                     selectByMouse: true
-                    selectionColor: Qt.rgba(root.themeAccent.r, root.themeAccent.g, root.themeAccent.b, 0.30)
+                    selectionColor: Qt.rgba(root.currentThemeAccent.r, root.currentThemeAccent.g, root.currentThemeAccent.b, 0.28)
                     cursorDelegate: Rectangle {
                         width: 1.5
-                        height: 15
+                        height: 16
                         radius: 0.75
                         color: root.currentThemeAccent
                     }
@@ -203,57 +199,42 @@ Item {
                     Text {
                         anchors.fill: parent
                         verticalAlignment: Text.AlignVCenter
-                        text: "Search apps or calculate\u2026"
-                        color: root.uiFgDim
-                        font.family: root.uiFont
-                        font.pixelSize: 13
-                        font.weight: Font.Normal
+                        text: "Search apps or calculate"
+                        color: root.ink(0.32)
+                        font.family: root.fontSans
+                        font.pixelSize: 14
                         visible: searchInput.text.length === 0
                     }
                 }
 
-                Rectangle {
+                Text {
                     Layout.alignment: Qt.AlignVCenter
-                    width: 25; height: 17; radius: 5
-                    color: root.ink(0.063)
-                    border.color: root.ink(0.125)
-                    border.width: 1
-                    Text {
-                        anchors.centerIn: parent
-                        text: "esc"
-                        color: root.uiFgDim
-                        font.family: root.font
-                        font.pixelSize: 8
-                    }
+                    text: "esc"
+                    color: root.ink(0.30)
+                    font.family: root.fontMono
+                    font.pixelSize: 10
                 }
-            }
-
-            // The search field is borderless; focus is carried by this fine
-            // accent line, the caret, and the search glyph.
-            Rectangle {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                anchors.leftMargin: 12
-                anchors.rightMargin: 12
-                height: 1
-                radius: 0.5
-                color: searchInput.activeFocus ? root.currentThemeAccent : root.ink(0.086)
-                opacity: searchInput.activeFocus ? 0.62 : 0.55
-                Behavior on color { ColorAnimation { duration: 160 } }
-                Behavior on opacity { NumberAnimation { duration: 160 } }
             }
         }
 
-        // ── Results ──────────────────────────────────────────────
+        Item { Layout.preferredHeight: root.s4 }
+
+        // ── Results: one inset group ───────────────────────────────
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
+            Rectangle {
+                anchors.fill: parent
+                radius: 14
+                color: root.ink(0.055)
+            }
+
             ListView {
                 id: resultList
                 anchors.fill: parent
-                spacing: 2
+                anchors.margins: 4
+                spacing: 0
                 clip: true
                 model: searchModel
                 boundsBehavior: Flickable.StopAtBounds
@@ -266,62 +247,59 @@ Item {
                     contentItem: Rectangle {
                         implicitWidth: 2
                         radius: 1
-                        color: root.ink(0.239)
+                        color: root.ink(0.16)
                     }
                 }
 
                 delegate: Item {
                     id: resultRow
                     width: resultList.width
-                    height: 40
-                    opacity: Math.max(0, Math.min(1, (launcherRoot.reveal - 0.05 - index * 0.035) / 0.70))
-                    transform: Translate { y: (1 - resultRow.opacity) * 6 }
+                    height: 44
+                    opacity: Math.max(0, Math.min(1, (launcherRoot.reveal - 0.05 - index * 0.03) / 0.72))
 
                     required property int index
                     required property var model
 
                     property bool isSel: index === resultList.currentIndex
-                    property bool isHov: rowArea.containsMouse
                     property color accent: root.currentThemeAccent
 
                     Rectangle {
                         anchors.fill: parent
+                        anchors.margins: 2
                         radius: 10
                         color: isSel
-                            ? Qt.rgba(accent.r, accent.g, accent.b, 0.10)
-                            : (isHov ? root.ink(0.055) : "transparent")
-                        border.width: 1
-                        border.color: isSel
-                            ? Qt.rgba(accent.r, accent.g, accent.b, 0.30)
-                            : "transparent"
-                        Behavior on color { ColorAnimation { duration: 120 } }
-                        Behavior on border.color { ColorAnimation { duration: 120 } }
+                            ? root.ink(0.065)
+                            : (rowArea.containsMouse ? root.ink(0.04) : "transparent")
+                        Behavior on color { ColorAnimation { duration: root.dMicro } }
+                    }
+
+                    Rectangle {
+                        visible: index < resultList.count - 1
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        anchors.leftMargin: 46
+                        anchors.rightMargin: 12
+                        height: 1
+                        color: root.ink(0.07)
                     }
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: 10
-                        anchors.rightMargin: 10
-                        spacing: 10
+                        anchors.leftMargin: root.s3
+                        anchors.rightMargin: root.s4
+                        spacing: root.s4
 
-                        // Compact icon tile. The border carries selection; no
-                        // heavy row chrome.
-                        Rectangle {
+                        Item {
                             Layout.alignment: Qt.AlignVCenter
-                            width: 26; height: 26; radius: 8
-                            color: isSel
-                                ? Qt.rgba(accent.r, accent.g, accent.b, 0.12)
-                                : root.ink(0.055)
-                            border.width: 1
-                            border.color: isSel
-                                ? Qt.rgba(accent.r, accent.g, accent.b, 0.22)
-                                : "transparent"
-                            Behavior on color { ColorAnimation { duration: 120 } }
+                            Layout.preferredWidth: 22
+                            Layout.preferredHeight: 22
 
                             Image {
                                 id: rowIcon
                                 anchors.centerIn: parent
-                                width: 18; height: 18
+                                width: 20
+                                height: 20
                                 source: (model.icon && model.icon.startsWith("/"))
                                     ? "file://" + encodeURI(model.icon)
                                     : (model.icon ? "image://icon/" + model.icon : "")
@@ -337,10 +315,10 @@ Item {
                                 text: model.kind === "calc"
                                     ? "\uf1ec"
                                     : (model.name ? model.name.charAt(0).toUpperCase() : "?")
-                                color: isSel ? accent : root.uiFgDim
-                                font.family: root.font
+                                color: root.cFgMuted
+                                font.family: root.fontMono
                                 font.pixelSize: model.kind === "app" ? 12 : 13
-                                font.weight: Font.DemiBold
+                                font.weight: Font.Medium
                                 visible: model.kind === "calc" || model.icon === ""
                                     || rowIcon.status === Image.Error
                             }
@@ -349,32 +327,21 @@ Item {
                         Text {
                             Layout.fillWidth: true
                             text: model.name
-                            color: isSel ? root.themeFg : root.uiFg
-                            font.family: root.uiFont
-                            font.pixelSize: 13
-                            font.weight: isSel ? Font.DemiBold : Font.Medium
+                            color: root.cFgPrimary
+                            font.family: root.fontSans
+                            font.pixelSize: 14
+                            font.weight: resultRow.isSel ? Font.DemiBold : Font.Normal
                             elide: Text.ElideRight
                             maximumLineCount: 1
                         }
 
-                        // A quiet enter chip appears only on the active row.
-                        Rectangle {
+                        Text {
                             Layout.alignment: Qt.AlignVCenter
-                            width: 18; height: 18; radius: 5
-                            color: Qt.rgba(accent.r, accent.g, accent.b, 0.14)
-                            border.width: 1
-                            border.color: Qt.rgba(accent.r, accent.g, accent.b, 0.24)
-                            opacity: isSel ? 1 : 0
-                            scale: isSel ? 1 : 0.9
-                            Behavior on opacity { NumberAnimation { duration: 120 } }
-                            Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
-                            Text {
-                                anchors.centerIn: parent
-                                text: "\u21b5"
-                                color: accent
-                                font.family: root.font
-                                font.pixelSize: 9
-                            }
+                            visible: resultRow.isSel || model.kind === "calc"
+                            text: model.kind === "calc" ? "copy result" : "\u21b5"
+                            color: model.kind === "calc" ? root.ink(0.50) : root.ink(0.30)
+                            font.family: model.kind === "calc" ? root.fontSans : root.fontMono
+                            font.pixelSize: 11
                         }
                     }
 
@@ -389,99 +356,38 @@ Item {
                 }
             }
 
-            // Empty state
-            ColumnLayout {
+            EmptyState {
                 anchors.centerIn: parent
-                width: parent.width - 36
-                spacing: 4
+                width: parent.width - root.s6
                 visible: searchModel.count === 0
-
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    text: "\uf002"
-                    color: root.ink(0.133)
-                    font.family: root.font
-                    font.pixelSize: 18
-                }
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    text: "No matches"
-                    color: root.uiFgDim
-                    font.family: root.uiFont
-                    font.pixelSize: 13
-                    font.weight: Font.DemiBold
-                }
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    text: "Try an app name or 12*8"
-                    color: root.uiFgDim
-                    font.family: root.uiFont
-                    font.pixelSize: 10
-                }
+                title: "No matches"
+                detail: "Try an app name or 12*8"
             }
         }
 
-        // ── Status footer ────────────────────────────────────────
+        Item { Layout.preferredHeight: root.s3 }
+
+        // ── Footer: one quiet line ─────────────────────────────────
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 16
-            spacing: 6
+            Layout.preferredHeight: 18
+            spacing: root.s4
 
-            Rectangle {
+            Text {
+                Layout.fillWidth: true
+                text: searchModel.count + (searchModel.count === 1 ? " result" : " results")
+                color: root.ink(0.34)
+                font.family: root.fontSans
+                font.pixelSize: 11
+                elide: Text.ElideRight
+            }
+
+            Text {
                 Layout.alignment: Qt.AlignVCenter
-                width: 18; height: 14; radius: 4
-                color: root.ink(0.047)
-                border.color: root.ink(0.094)
-                border.width: 1
-                Text {
-                    anchors.centerIn: parent
-                    text: "\u2191\u2193"
-                    color: root.uiFgDim
-                    font.family: root.font
-                    font.pixelSize: 8
-                }
-            }
-
-            Text {
-                text: "move"
-                color: root.uiFgDim
-                font.family: root.uiFont
-                font.pixelSize: 9
-            }
-
-            Item { Layout.preferredWidth: 4 }
-
-            Rectangle {
-                Layout.alignment: Qt.AlignVCenter
-                width: 14; height: 14; radius: 4
-                color: root.ink(0.047)
-                border.color: root.ink(0.094)
-                border.width: 1
-                Text {
-                    anchors.centerIn: parent
-                    text: "\u21b5"
-                    color: root.uiFgDim
-                    font.family: root.font
-                    font.pixelSize: 8
-                }
-            }
-
-            Text {
-                text: selectedAction
-                color: root.uiFgDim
-                font.family: root.uiFont
-                font.pixelSize: 9
-            }
-
-            Item { Layout.fillWidth: true }
-
-            Text {
-                text: searchModel.count + (searchModel.count === 1 ? " RESULT" : " RESULTS")
-                color: root.uiFgDim
-                font.family: root.uiFont
-                font.pixelSize: 8
-                font.weight: Font.DemiBold
-                font.letterSpacing: 1.1
+                text: "\u2191\u2193 move   \u21b5 " + selectedAction + "   esc close"
+                color: root.ink(0.30)
+                font.family: root.fontMono
+                font.pixelSize: 10
             }
         }
     }

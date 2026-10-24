@@ -32,15 +32,15 @@ RowLayout {
         
         Text {
             text: "Connected"
-            color: "#34C759" // iOS Green
-            font.family: root.uiFont
+            color: root.cSuccess // iOS Green
+            font.family: root.fontSans
             font.pixelSize: 13
             font.weight: Font.Medium
         }
         Text {
             text: root.bluetoothDeviceName
             color: root.themeFg
-            font.family: root.uiFont
+            font.family: root.fontSans
             font.pixelSize: 16
             font.weight: Font.Bold
             elide: Text.ElideRight

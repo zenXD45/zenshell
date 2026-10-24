@@ -89,77 +89,79 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 18
-        spacing: 14
+        anchors.margins: root.s5
+        spacing: 0
 
         // ── Header ───────────────────────────────────────────────
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 40
-            spacing: 14
+            Layout.preferredHeight: 34
+            spacing: root.s2
 
-            ColumnLayout {
+            Text {
                 Layout.alignment: Qt.AlignVCenter
-                spacing: 1
+                text: "Keybinds"
+                color: root.cFgPrimary
+                font.family: root.fontSans
+                font.pixelSize: 15
+                font.weight: Font.DemiBold
+                font.letterSpacing: -0.1
+            }
 
-                Text {
-                    text: "Keybinds"
-                    color: root.uiFg
-                    font.family: root.uiFont
-                    font.pixelSize: 18
-                    font.weight: Font.DemiBold
-                }
-                Text {
-                    text: visibleCount + (visibleCount === 1 ? " shortcut" : " shortcuts")
-                    color: root.uiFgFaint
-                    font.family: root.uiFont
-                    font.pixelSize: 11
-                }
+            Text {
+                Layout.alignment: Qt.AlignVCenter
+                Layout.leftMargin: root.s2
+                text: visibleCount + (visibleCount === 1 ? " shortcut" : " shortcuts")
+                color: root.ink(0.36)
+                font.family: root.fontSans
+                font.pixelSize: 11
             }
 
             Item { Layout.fillWidth: true }
 
-            Rectangle {
+            Item {
                 Layout.alignment: Qt.AlignVCenter
-                Layout.preferredWidth: 250
-                Layout.preferredHeight: 38
-                radius: 12
-                color: root.uiCard
-                border.width: 1
-                border.color: searchInput.activeFocus
-                    ? Qt.rgba(root.themeAccent.r, root.themeAccent.g, root.themeAccent.b, 0.42)
-                    : root.uiBorder
-                Behavior on border.color { ColorAnimation { duration: 140 } }
+                Layout.preferredWidth: 260
+                Layout.preferredHeight: 30
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: root.rSm
+                    color: root.ink(0.05)
+                    border.width: searchInput.activeFocus ? 1 : 0
+                    border.color: Qt.rgba(root.currentThemeAccent.r, root.currentThemeAccent.g, root.currentThemeAccent.b, 0.45)
+                    Behavior on border.color { ColorAnimation { duration: root.dMicro } }
+                }
 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 12
-                    anchors.rightMargin: 8
-                    spacing: 8
+                    anchors.leftMargin: root.s3
+                    anchors.rightMargin: root.s3
+                    spacing: root.s2
 
                     Text {
+                        Layout.alignment: Qt.AlignVCenter
                         text: "\uf002"
-                        color: searchInput.activeFocus ? root.currentThemeAccent : root.uiFgFaint
-                        font.family: root.font
+                        color: searchInput.activeFocus ? root.currentThemeAccent : root.ink(0.45)
+                        font.family: root.fontMono
                         font.pixelSize: 12
-                        Behavior on color { ColorAnimation { duration: 140 } }
+                        Behavior on color { ColorAnimation { duration: root.dMicro } }
                     }
 
                     TextInput {
                         id: searchInput
                         Layout.fillWidth: true
                         Layout.alignment: Qt.AlignVCenter
-                        color: root.uiFg
-                        font.family: root.uiFont
-                        font.pixelSize: 13
-                        font.weight: Font.Medium
+                        color: root.cFgPrimary
+                        font.family: root.fontSans
+                        font.pixelSize: 12
                         verticalAlignment: TextInput.AlignVCenter
                         padding: 0
                         clip: true
                         focus: root.displayState === 23
                         focusPolicy: Qt.StrongFocus
                         selectByMouse: true
-                        selectionColor: Qt.rgba(root.themeAccent.r, root.themeAccent.g, root.themeAccent.b, 0.30)
+                        selectionColor: Qt.rgba(root.currentThemeAccent.r, root.currentThemeAccent.g, root.currentThemeAccent.b, 0.30)
 
                         onTextChanged: filterBinds(text)
 
@@ -181,31 +183,26 @@ Item {
                         Text {
                             anchors.fill: parent
                             verticalAlignment: Text.AlignVCenter
-                            text: "Filter shortcuts\u2026"
-                            color: root.uiFgFaint
-                            font.family: root.uiFont
-                            font.pixelSize: 13
+                            text: "Filter shortcuts"
+                            color: root.ink(0.32)
+                            font.family: root.fontSans
+                            font.pixelSize: 12
                             visible: searchInput.text.length === 0
                         }
                     }
 
-                    Rectangle {
+                    Text {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 26; height: 18; radius: 5
-                        color: root.ink(0.071)
-                        border.color: root.ink(0.102)
-                        border.width: 1
-                        Text {
-                            anchors.centerIn: parent
-                            text: "esc"
-                            color: root.uiFgFaint
-                            font.family: "JetBrainsMono Nerd Font"
-                            font.pixelSize: 8
-                        }
+                        text: "esc"
+                        color: root.ink(0.30)
+                        font.family: root.fontMono
+                        font.pixelSize: 10
                     }
                 }
             }
         }
+
+        Item { Layout.preferredHeight: root.s4 }
 
         // ── Two-column reference ─────────────────────────────────
         Item {
@@ -219,25 +216,24 @@ Item {
                 contentWidth: width
                 contentHeight: cols.implicitHeight
                 boundsBehavior: Flickable.StopAtBounds
-
                 ScrollBar.vertical: ScrollBar {
                     policy: ScrollBar.AsNeeded
                     contentItem: Rectangle {
-                        implicitWidth: 3
-                        radius: 1.5
-                        color: root.ink(0.188)
+                        implicitWidth: 2
+                        radius: 1
+                        color: root.ink(0.16)
                     }
                 }
 
                 RowLayout {
                     id: cols
                     width: flick.width
-                    spacing: 12
+                    spacing: root.s8
 
                     ColumnLayout {
                         Layout.fillWidth: true
                         Layout.alignment: Qt.AlignTop
-                        spacing: 12
+                        spacing: root.s5
 
                         Repeater {
                             model: leftCats
@@ -248,7 +244,7 @@ Item {
                     ColumnLayout {
                         Layout.fillWidth: true
                         Layout.alignment: Qt.AlignTop
-                        spacing: 12
+                        spacing: root.s5
 
                         Repeater {
                             model: rightCats
@@ -258,26 +254,11 @@ Item {
                 }
             }
 
-            ColumnLayout {
+            EmptyState {
                 anchors.centerIn: parent
-                spacing: 5
                 visible: visibleCount === 0
-
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    text: "\uf002"
-                    color: root.ink(0.133)
-                    font.family: root.font
-                    font.pixelSize: 20
-                }
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    text: "No shortcuts match"
-                    color: root.uiFgDim
-                    font.family: root.uiFont
-                    font.pixelSize: 13
-                    font.weight: Font.Medium
-                }
+                title: "No shortcuts match"
+                detail: "Try another filter"
             }
         }
     }
@@ -286,94 +267,34 @@ Item {
     Component {
         id: categoryCard
 
-        Rectangle {
+        ColumnLayout {
             id: categoryRoot
             Layout.fillWidth: true
-            implicitHeight: cardCol.implicitHeight + 28
+            spacing: root.s2
             opacity: Math.max(0, Math.min(1, (cheatsheetRoot.reveal - 0.04 - Math.min(index, 5) * 0.045) / 0.68))
-            transform: Translate { y: (1 - categoryRoot.opacity) * 10 }
-            radius: root.uiRadiusMd
-            color: root.ink(0.031)
-            border.width: 1
-            border.color: root.uiBorder
 
-            Column {
-                id: cardCol
-                anchors.fill: parent
-                anchors.margins: 14
-                spacing: 6
+            SectionLabel {
+                Layout.fillWidth: true
+                text: modelData.name
+                Layout.preferredHeight: 20
+                bottomPadding: 2
+            }
 
-                RowLayout {
-                    width: parent.width
-                    height: 18
-                    spacing: 7
-
-                    Rectangle {
-                        Layout.alignment: Qt.AlignVCenter
-                        width: 5; height: 5; radius: 2.5
-                        color: root.currentThemeAccent
-                    }
-
-                    Text {
-                        Layout.alignment: Qt.AlignVCenter
-                        text: modelData.name
-                        color: root.uiFgFaint
-                        font.family: root.uiFont
-                        font.pixelSize: 10
-                        font.weight: Font.DemiBold
-                        font.letterSpacing: 1.1
-                        font.capitalization: Font.AllUppercase
-                    }
-
-                    Item { Layout.fillWidth: true }
-
-                    Text {
-                        Layout.alignment: Qt.AlignVCenter
-                        text: modelData.binds.length
-                        color: root.ink(0.239)
-                        font.family: root.uiFont
-                        font.pixelSize: 10
-                    }
-                }
-
+            Group {
                 Repeater {
+                    id: bindRepeater
                     model: modelData.binds
 
-                    delegate: RowLayout {
-                        width: cardCol.width
-                        height: 28
-                        spacing: 8
+                    GroupRow {
+                        required property int index
+                        required property var modelData
 
-                        Rectangle {
-                            Layout.alignment: Qt.AlignVCenter
-                            height: 21
-                            width: keyLabel.implicitWidth + 14
-                            radius: 6
-                            color: root.ink(0.063)
-                            border.width: 1
-                            border.color: root.ink(0.11)
-
-                            Text {
-                                id: keyLabel
-                                anchors.centerIn: parent
-                                text: modelData.key
-                                color: root.ink(0.851)
-                                font.family: "JetBrainsMono Nerd Font"
-                                font.pixelSize: 10
-                                font.weight: Font.Medium
-                            }
-                        }
-
-                        Text {
-                            Layout.fillWidth: true
-                            Layout.alignment: Qt.AlignVCenter
-                            text: modelData.action
-                            color: root.uiFgDim
-                            font.family: root.uiFont
-                            font.pixelSize: 12
-                            elide: Text.ElideRight
-                            maximumLineCount: 1
-                        }
+                        rowHeight: 30
+                        labelSize: 12
+                        valueSize: 11
+                        label: modelData.action
+                        value: modelData.key
+                        last: index === bindRepeater.count - 1
                     }
                 }
             }

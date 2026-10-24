@@ -27,8 +27,8 @@ Rectangle {
     Text {
         anchors.centerIn: parent
         text: button.glyph
-        color: button.active ? button.accent : (pointer.containsMouse ? root.uiFg : root.uiFgDim)
-        font.family: root.font
+        color: button.active ? button.accent : (pointer.containsMouse ? root.cFgPrimary : root.cFgSecondary)
+        font.family: root.fontMono
         font.pixelSize: 13
     }
 
