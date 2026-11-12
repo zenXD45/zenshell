@@ -6,16 +6,16 @@ import QtQuick.Layouts
 Item {
     id: osdRoot
     anchors.fill: parent
-    property real reveal: root.displayState === 2 ? 1 : 0
+    property bool entered: false
+    property real reveal: (root.displayState === 2 && entered) ? 1 : 0
     opacity: reveal
     visible: opacity > 0
-    clip: true
-    transform: Translate { y: (1 - osdRoot.reveal) * 5 }
+    transform: Translate { y: (1 - osdRoot.reveal) * 4 }
 
     Behavior on reveal {
         NumberAnimation {
             duration: root.displayState === 2 ? root.motionBase : root.motionExit
-            easing.type: root.displayState === 2 ? Easing.OutExpo : Easing.OutCubic
+            easing.type: Easing.OutCubic
         }
     }
 

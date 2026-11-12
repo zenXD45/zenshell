@@ -26,12 +26,13 @@ Item {
     readonly property int appCount: svc ? svc.consumers : 0
     readonly property bool blocked: svc ? svc.block : false
 
-    opacity: root.displayState === 24 ? 1 : 0
+    property bool entered: false
+    opacity: (root.displayState === 24 && entered) ? 1 : 0
     visible: opacity > 0
     Behavior on opacity {
         NumberAnimation {
             duration: root.displayState === 24 ? root.motionPanel : root.motionExit
-            easing.type: root.displayState === 24 ? Easing.OutExpo : Easing.OutCubic
+            easing.type: Easing.OutCubic
         }
     }
 

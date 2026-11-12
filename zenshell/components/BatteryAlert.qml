@@ -4,16 +4,16 @@ import QtQuick.Layouts
 Item {
     id: batteryRoot
     anchors.fill: parent
-    property real reveal: root.displayState === 8 ? 1 : 0
+    property bool entered: false
+    property real reveal: (root.displayState === 8 && entered) ? 1 : 0
     opacity: reveal
     visible: opacity > 0
-    clip: true
-    transform: Translate { y: (1 - batteryRoot.reveal) * 5 }
+    transform: Translate { y: (1 - batteryRoot.reveal) * 4 }
 
     Behavior on reveal {
         NumberAnimation {
             duration: root.displayState === 8 ? root.motionBase : root.motionExit
-            easing.type: root.displayState === 8 ? Easing.OutExpo : Easing.OutCubic
+            easing.type: Easing.OutCubic
         }
     }
 

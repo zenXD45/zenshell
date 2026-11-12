@@ -25,9 +25,29 @@ launch() {
     echo "[Zen Shell] $name launched."
 }
 
+# The settings window can turn the dock off. Respect that here as well, so a
+# fresh login does not resurrect a dock the user deliberately disabled.
+dock_enabled() {
+    python3 - <<'PY' 2>/dev/null || echo true
+import json
+from pathlib import Path
+
+path = Path.home() / ".config" / "quickshell" / "shell_settings.json"
+try:
+    value = json.loads(path.read_text(encoding="utf-8")).get("dock_enabled", True)
+except (OSError, ValueError):
+    value = True
+print("true" if value is not False else "false")
+PY
+}
+
 launch "Dynamic Island"  "$SCRIPT_DIR"
-launch "Dock"            "$SCRIPT_DIR/modules/dock"
-launch "Desktop Widgets" "$SCRIPT_DIR/modules/desktop-widgets"
-launch "Spotlight"       "$SCRIPT_DIR/modules/spotlight"
+if [ "$(dock_enabled)" = "false" ]; then
+    echo "[Zen Shell] Dock is disabled in settings; skipping it."
+else
+    launch "Dock"         "$SCRIPT_DIR/modules/dock"
+fi
+# launch "Desktop Widgets" "$SCRIPT_DIR/modules/desktop-widgets"
+# launch "Spotlight"       "$SCRIPT_DIR/modules/spotlight"
 
 echo "[Zen Shell] Started all desktop shell components."

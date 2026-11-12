@@ -1,42 +1,57 @@
 import QtQuick
 import QtQuick.Layouts
 
-// Empty state for menus. Two lines and an optional quiet glyph — never a
-// centred illustration block with a title, a subtitle and a decorative icon.
+// Quiet empty state styled with system theme tokens.
 ColumnLayout {
     id: emptyState
 
     property string icon: ""
+    property string iconFont: root.fontIcon
     property string title: ""
     property string detail: ""
 
-    spacing: root.s1
+    spacing: 8
+    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
 
-    Text {
+    // Muted icon container
+    Rectangle {
         Layout.alignment: Qt.AlignHCenter
-        visible: emptyState.icon !== ""
-        text: emptyState.icon
-        color: root.ink(0.22)
-        font.family: root.fontMono
-        font.pixelSize: 18
-        Layout.bottomMargin: 2
+        Layout.preferredWidth: 44
+        Layout.preferredHeight: 44
+        radius: 22
+        color: root.cSurfaceContainerHigh
+        border.width: 1
+        border.color: root.cOutlineVariant
+
+        Text {
+            anchors.centerIn: parent
+            text: emptyState.icon
+            color: root.cOnSurfaceVariant
+            opacity: 0.80
+            font.family: emptyState.iconFont
+            font.pixelSize: 20
+        }
     }
+
+    Item { Layout.preferredHeight: 2 }
 
     Text {
         Layout.alignment: Qt.AlignHCenter
         text: emptyState.title
-        color: root.cFgSecondary
+        color: root.cOnSurface
         font.family: root.fontSans
-        font.pixelSize: 12
-        font.weight: Font.Medium
+        font.pixelSize: 14
+        font.weight: Font.DemiBold
     }
 
     Text {
         Layout.alignment: Qt.AlignHCenter
         visible: emptyState.detail !== ""
         text: emptyState.detail
-        color: root.ink(0.38)
+        color: root.cOnSurfaceVariant
+        opacity: 0.65
         font.family: root.fontSans
-        font.pixelSize: 11
+        font.pixelSize: 12
+        horizontalAlignment: Text.AlignHCenter
     }
 }

@@ -64,6 +64,8 @@ material.
 - **Profile 02 command bar** — a floating or edge-mounted rail with workspaces,
   window title, now playing, clock, weather, system status and tray. Layout,
   position and individual widgets are live-configurable from its gear button.
+- **Profile 03 status island** — the same pill, with workspace dots and battery
+  percentage beside the clock while idle.
 - **Spotlight search** — centre-screen fuzzy app finder (`SUPER + SHIFT + M`).
 - **Desktop widgets** — wallpaper-integrated clock, weather and system stats
   (`SUPER + D`).
@@ -86,20 +88,22 @@ material.
 
 ## Profiles
 
-ZenShell has two shell profiles. Both share the same Quickshell process, theme,
+ZenShell has three shell profiles. All share the same Quickshell process, theme,
 media state, weather, launcher and notification stack, so switching is immediate.
 
 | Profile | Surface |
 | :--- | :--- |
 | **01 · Island** | Dynamic island, dock and desktop widgets. |
 | **02 · Bar** | Floating or edge-mounted command rail with toggleable widgets. The dock and desktop widgets hide while this profile is active. |
+| **03 · Status** | The same island pill, with workspace dots and battery percentage beside the clock while idle. |
 
-Switch with `SUPER + Alt + P`, from the control center's `PROFILE 01/02` chip,
+Switch with `SUPER + Alt + P`, from the control center's profile chip,
 or directly:
 
 ```bash
 ~/.config/quickshell/dynamic-island/island_ctl.sh profiles      # open the switcher
 ~/.config/quickshell/dynamic-island/island_ctl.sh bar           # go to Profile 02
+~/.config/quickshell/dynamic-island/island_ctl.sh status        # go to Profile 03
 ~/.config/quickshell/dynamic-island/island_ctl.sh island        # go to Profile 01
 ~/.config/quickshell/dynamic-island/island_ctl.sh bar-settings  # open bar layout settings
 ~/.config/quickshell/dynamic-island/island_ctl.sh dock          # toggle dock auto-hide

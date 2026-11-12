@@ -5,16 +5,16 @@ import Qt5Compat.GraphicalEffects
 Item {
     id: expandedRoot
     anchors.fill: parent
-    property real reveal: (root.displayState === 1 && root.isExpanded) ? 1 : 0
+    property bool entered: false
+    property real reveal: (root.displayState === 1 && root.isExpanded && entered) ? 1 : 0
     opacity: reveal
     visible: opacity > 0
-    scale: 0.994 + reveal * 0.006
     transform: Translate { y: (1 - expandedRoot.reveal) * 6 }
 
     Behavior on reveal {
         NumberAnimation {
             duration: (root.displayState === 1 && root.isExpanded) ? root.motionPanel : root.motionExit
-            easing.type: (root.displayState === 1 && root.isExpanded) ? Easing.OutExpo : Easing.OutCubic
+            easing.type: Easing.OutCubic
         }
     }
 
@@ -81,6 +81,12 @@ Item {
                 id: artImg
                 anchors.fill: artMask
                 source: root.artUrl
+                // Album art arrives at 640-1000 px but is drawn in an ~80 px
+                // circle; decode to the circle instead of the file.
+                sourceSize: Qt.size(Math.max(1, Math.round(artMask.width * 2)),
+                                    Math.max(1, Math.round(artMask.height * 2)))
+                asynchronous: true
+                cache: false
                 fillMode: Image.PreserveAspectCrop
                 visible: false
             }

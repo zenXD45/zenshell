@@ -6,6 +6,7 @@ name = "Eva Theme"
 slug = "eva-theme"
 icon = "🤖"
 dark  = true
+gtk_theme = "Tokyonight-Green-Dark"
 
 [colors]
 bg      = "#1a0033"

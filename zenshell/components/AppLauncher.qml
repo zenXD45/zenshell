@@ -7,17 +7,16 @@ import Quickshell.Io
 Item {
     id: launcherRoot
     anchors.fill: parent
-    property real reveal: root.displayState === 3 ? 1 : 0
+    property bool entered: false
+    property real reveal: (root.displayState === 3 && entered) ? 1 : 0
     opacity: reveal
     visible: opacity > 0
-    clip: true
-    scale: 0.992 + reveal * 0.008
-    transform: Translate { y: (1 - launcherRoot.reveal) * 8 }
+    transform: Translate { y: (1 - launcherRoot.reveal) * 6 }
 
     Behavior on reveal {
         NumberAnimation {
             duration: root.displayState === 3 ? root.motionPanel : root.motionExit
-            easing.type: root.displayState === 3 ? Easing.OutExpo : Easing.OutCubic
+            easing.type: Easing.OutCubic
         }
     }
 
@@ -26,8 +25,8 @@ Item {
 
     readonly property int maxVisibleRows: 6
     readonly property int visibleRows: searchModel.count === 0 ? 3 : Math.min(maxVisibleRows, searchModel.count)
-    // 16 top + 40 field + 12 + (rows * 44 + 8) + 8 + 18 footer + 16 bottom
-    readonly property int panelHeight: 118 + visibleRows * 44
+    // 16 top + 56 search bar + 12 + (rows * 52 + 8 group padding) + 8 + 18 footer + 16 bottom
+    readonly property int panelHeight: 134 + visibleRows * 52
 
     function syncSelectedAction() {
         if (resultList.currentIndex >= 0 && resultList.currentIndex < searchModel.count) {
@@ -109,29 +108,32 @@ Item {
         anchors.margins: root.s5
         spacing: 0
 
-        // ── Search field: one inset rounded field ──────────────────
+        // ── Search bar: M3 search, 56 px, full radius ──────────────
         Item {
             Layout.fillWidth: true
-            Layout.preferredHeight: 40
+            Layout.preferredHeight: 56
 
             Rectangle {
                 anchors.fill: parent
-                radius: 12
-                color: root.ink(0.055)
+                radius: height / 2
+                color: searchInput.activeFocus ? root.cSurfaceContainerHighest : root.cSurfaceContainerHigh
+                border.width: searchInput.activeFocus ? 2 : 0
+                border.color: root.cPrimary
+                Behavior on color { ColorAnimation { duration: root.dMicro } }
             }
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: root.s4
-                anchors.rightMargin: root.s4
-                spacing: root.s3
+                anchors.leftMargin: 20
+                anchors.rightMargin: 12
+                spacing: root.s4
 
                 Text {
                     Layout.alignment: Qt.AlignVCenter
-                    text: "\uf002"
-                    color: searchInput.activeFocus ? root.currentThemeAccent : root.ink(0.45)
-                    font.family: root.fontMono
-                    font.pixelSize: 13
+                    text: root.icoSearch
+                    color: searchInput.activeFocus ? root.cPrimary : root.cOnSurfaceVariant
+                    font.family: root.fontIcon
+                    font.pixelSize: 22
                     Behavior on color { ColorAnimation { duration: root.dMicro } }
                 }
 
@@ -139,21 +141,21 @@ Item {
                     id: searchInput
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignVCenter
-                    color: root.cFgPrimary
+                    color: root.cOnSurface
                     font.family: root.fontSans
-                    font.pixelSize: 14
+                    font.pixelSize: 15
                     verticalAlignment: TextInput.AlignVCenter
                     padding: 0
                     clip: true
                     focus: root.displayState === 3
                     focusPolicy: Qt.StrongFocus
                     selectByMouse: true
-                    selectionColor: Qt.rgba(root.currentThemeAccent.r, root.currentThemeAccent.g, root.currentThemeAccent.b, 0.28)
+                    selectionColor: Qt.rgba(root.cPrimary.r, root.cPrimary.g, root.cPrimary.b, 0.28)
                     cursorDelegate: Rectangle {
                         width: 1.5
-                        height: 16
+                        height: 18
                         radius: 0.75
-                        color: root.currentThemeAccent
+                        color: root.cPrimary
                     }
 
                     onTextChanged: debounce.restart()
@@ -200,19 +202,30 @@ Item {
                         anchors.fill: parent
                         verticalAlignment: Text.AlignVCenter
                         text: "Search apps or calculate"
-                        color: root.ink(0.32)
+                        color: root.cOnSurfaceVariant
+                        opacity: 0.72
                         font.family: root.fontSans
-                        font.pixelSize: 14
+                        font.pixelSize: 15
                         visible: searchInput.text.length === 0
                     }
                 }
 
-                Text {
+                Rectangle {
                     Layout.alignment: Qt.AlignVCenter
-                    text: "esc"
-                    color: root.ink(0.30)
-                    font.family: root.fontMono
-                    font.pixelSize: 10
+                    width: 32
+                    height: 22
+                    radius: 6
+                    color: root.cSurfaceContainerHighest
+                    border.width: 1
+                    border.color: root.cOutlineVariant
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "esc"
+                        color: root.cOnSurfaceVariant
+                        font.family: root.fontMono
+                        font.pixelSize: 10
+                    }
                 }
             }
         }
@@ -226,15 +239,17 @@ Item {
 
             Rectangle {
                 anchors.fill: parent
-                radius: 14
-                color: root.ink(0.055)
+                radius: root.rLg
+                color: root.cSurfaceContainerLow
+                border.width: 1
+                border.color: root.cOutlineVariant
             }
 
             ListView {
                 id: resultList
                 anchors.fill: parent
                 anchors.margins: 4
-                spacing: 0
+                spacing: root.s1
                 clip: true
                 model: searchModel
                 boundsBehavior: Flickable.StopAtBounds
@@ -247,59 +262,48 @@ Item {
                     contentItem: Rectangle {
                         implicitWidth: 2
                         radius: 1
-                        color: root.ink(0.16)
+                        color: root.cOutline
                     }
                 }
 
                 delegate: Item {
                     id: resultRow
                     width: resultList.width
-                    height: 44
+                    height: 52
                     opacity: Math.max(0, Math.min(1, (launcherRoot.reveal - 0.05 - index * 0.03) / 0.72))
 
                     required property int index
                     required property var model
 
                     property bool isSel: index === resultList.currentIndex
-                    property color accent: root.currentThemeAccent
+                    property color accent: root.cPrimary
 
                     Rectangle {
                         anchors.fill: parent
                         anchors.margins: 2
-                        radius: 10
+                        radius: root.rMd
                         color: isSel
-                            ? root.ink(0.065)
-                            : (rowArea.containsMouse ? root.ink(0.04) : "transparent")
+                            ? root.cSecondaryContainer
+                            : (rowArea.containsMouse ? root.cStateHover : "transparent")
                         Behavior on color { ColorAnimation { duration: root.dMicro } }
-                    }
-
-                    Rectangle {
-                        visible: index < resultList.count - 1
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.bottom: parent.bottom
-                        anchors.leftMargin: 46
-                        anchors.rightMargin: 12
-                        height: 1
-                        color: root.ink(0.07)
                     }
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: root.s3
-                        anchors.rightMargin: root.s4
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 16
                         spacing: root.s4
 
                         Item {
                             Layout.alignment: Qt.AlignVCenter
-                            Layout.preferredWidth: 22
-                            Layout.preferredHeight: 22
+                            Layout.preferredWidth: 24
+                            Layout.preferredHeight: 24
 
                             Image {
                                 id: rowIcon
                                 anchors.centerIn: parent
-                                width: 20
-                                height: 20
+                                width: 22
+                                height: 22
                                 source: (model.icon && model.icon.startsWith("/"))
                                     ? "file://" + encodeURI(model.icon)
                                     : (model.icon ? "image://icon/" + model.icon : "")
@@ -315,7 +319,7 @@ Item {
                                 text: model.kind === "calc"
                                     ? "\uf1ec"
                                     : (model.name ? model.name.charAt(0).toUpperCase() : "?")
-                                color: root.cFgMuted
+                                color: root.cOnSurfaceVariant
                                 font.family: root.fontMono
                                 font.pixelSize: model.kind === "app" ? 12 : 13
                                 font.weight: Font.Medium
@@ -327,21 +331,33 @@ Item {
                         Text {
                             Layout.fillWidth: true
                             text: model.name
-                            color: root.cFgPrimary
+                            color: root.cOnSurface
                             font.family: root.fontSans
                             font.pixelSize: 14
-                            font.weight: resultRow.isSel ? Font.DemiBold : Font.Normal
+                            font.weight: resultRow.isSel ? Font.DemiBold : Font.Medium
                             elide: Text.ElideRight
                             maximumLineCount: 1
                         }
 
-                        Text {
+                        Rectangle {
                             Layout.alignment: Qt.AlignVCenter
                             visible: resultRow.isSel || model.kind === "calc"
-                            text: model.kind === "calc" ? "copy result" : "\u21b5"
-                            color: model.kind === "calc" ? root.ink(0.50) : root.ink(0.30)
-                            font.family: model.kind === "calc" ? root.fontSans : root.fontMono
-                            font.pixelSize: 11
+                            implicitWidth: actionLabel.implicitWidth + 12
+                            implicitHeight: 22
+                            radius: 6
+                            color: model.kind === "calc" ? root.cPrimaryContainer : root.cSurfaceContainerHighest
+                            border.width: 1
+                            border.color: root.cOutlineVariant
+
+                            Text {
+                                id: actionLabel
+                                anchors.centerIn: parent
+                                text: model.kind === "calc" ? "copy result" : "\u21b5"
+                                color: model.kind === "calc" ? root.cOnPrimaryContainer : root.cOnSurfaceVariant
+                                font.family: model.kind === "calc" ? root.fontSans : root.fontMono
+                                font.pixelSize: 10
+                                font.weight: Font.Medium
+                            }
                         }
                     }
 
@@ -360,6 +376,7 @@ Item {
                 anchors.centerIn: parent
                 width: parent.width - root.s6
                 visible: searchModel.count === 0
+                icon: root.icoSearchOff
                 title: "No matches"
                 detail: "Try an app name or 12*8"
             }
@@ -376,7 +393,8 @@ Item {
             Text {
                 Layout.fillWidth: true
                 text: searchModel.count + (searchModel.count === 1 ? " result" : " results")
-                color: root.ink(0.34)
+                color: root.cOnSurfaceVariant
+                opacity: 0.72
                 font.family: root.fontSans
                 font.pixelSize: 11
                 elide: Text.ElideRight
@@ -385,7 +403,8 @@ Item {
             Text {
                 Layout.alignment: Qt.AlignVCenter
                 text: "\u2191\u2193 move   \u21b5 " + selectedAction + "   esc close"
-                color: root.ink(0.30)
+                color: root.cOnSurfaceVariant
+                opacity: 0.6
                 font.family: root.fontMono
                 font.pixelSize: 10
             }

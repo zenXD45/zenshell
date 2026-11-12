@@ -1,14 +1,15 @@
 import QtQuick
 
-// Quiet icon button. No border, no resting fill: the glyph is the control and
-// a soft ink wash appears under the pointer. 26px target, 13px glyph.
+// Material 3 icon button: a 40 px circular state layer, a 22 px glyph, no
+// resting fill. Selection is a primary container, not a tinted outline.
 Item {
     id: iconButton
 
     property string icon: ""
+    property string iconFont: root.fontMono
     property bool selected: false
-    property color accentColor: root.currentThemeAccent || root.themeAccent
-    property int buttonSize: 26
+    property color accentColor: root.cPrimary
+    property int buttonSize: 40
 
     signal clicked()
 
@@ -19,10 +20,10 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: root.rSm
+        radius: width / 2
         color: iconButton.selected
-            ? Qt.rgba(iconButton.accentColor.r, iconButton.accentColor.g, iconButton.accentColor.b, 0.14)
-            : (buttonArea.containsMouse ? root.ink(0.07) : "transparent")
+            ? root.cPrimaryContainer
+            : (buttonArea.pressed ? root.cStatePressed : (buttonArea.containsMouse ? root.cStateHover : "transparent"))
         Behavior on color { ColorAnimation { duration: root.dMicro } }
     }
 
@@ -30,10 +31,10 @@ Item {
         anchors.centerIn: parent
         text: iconButton.icon
         color: iconButton.selected
-            ? iconButton.accentColor
-            : (buttonArea.containsMouse ? root.cFgPrimary : root.cFgMuted)
-        font.family: root.fontMono
-        font.pixelSize: 13
+            ? root.cOnPrimaryContainer
+            : (buttonArea.containsMouse ? root.cOnSurface : root.cOnSurfaceVariant)
+        font.family: iconButton.iconFont
+        font.pixelSize: 22
         Behavior on color { ColorAnimation { duration: root.dMicro } }
     }
 

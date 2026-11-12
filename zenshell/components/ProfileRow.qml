@@ -104,6 +104,37 @@ Item {
                     }
                 }
             }
+
+            // Status profile: the same island pill, but wider, with a row of
+            // workspace dots beneath it to signal the extra readouts.
+            Rectangle {
+                visible: row.profileId === "status"
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: parent.top
+                anchors.topMargin: 8
+                width: 34
+                height: 8
+                radius: 4
+                color: row.active ? root.currentThemeAccent : root.ink(0.32)
+            }
+
+            Row {
+                visible: row.profileId === "status"
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: parent.top
+                anchors.topMargin: 21
+                spacing: 3
+
+                Repeater {
+                    model: 3
+                    Rectangle {
+                        width: index === 1 ? 7 : 3
+                        height: 3
+                        radius: 1.5
+                        color: index === 1 ? root.ink(0.42) : root.ink(0.20)
+                    }
+                }
+            }
         }
 
         ColumnLayout {

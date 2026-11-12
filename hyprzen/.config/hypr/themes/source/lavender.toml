@@ -6,6 +6,7 @@ name = "Lavender"
 slug = "lavender"
 icon = "🪻"
 dark  = true
+gtk_theme = "Tokyonight-Purple-Dark"
 
 [colors]
 bg      = "#1a1525"

@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls as Controls
 import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell
@@ -6,29 +7,33 @@ import Quickshell.Io
 
 // The ZenShell settings window.
 //
-// It is a full modal dialog rather than another island state, so it lives
-// in its own overlay surface and can be as large as the desktop needs. The
-// left column is a searchable tree of pages; the right column renders the
-// active page. Every control writes through root.setValue(), which keeps the
-// store, the live shell and the persisted file in step.
-Item {
+// It is a real toplevel window, not a full-screen layer surface, so the
+// compositor can move, resize, minimise and maximise it like any other app.
+// The card is inset inside a transparent frame that leaves room for the drop
+// shadow and for the resize grips. The left column is a searchable tree of
+// pages; the right column renders the active page. Every control writes
+// through root.setValue(), which keeps the store, the live shell and the
+// persisted file in step.
+FloatingWindow {
     id: win
 
-    anchors.fill: parent
+    visible: root.settingsWindowOpen
+    title: "ZenShell Settings"
+    color: "transparent"
+    implicitWidth: 1040
+    implicitHeight: 740
+    minimumSize: Qt.size(840, 560)
+    maximumSize: Qt.size(2400, 1600)
 
+    readonly property int framePad: 24
     readonly property color accent: root.currentThemeAccent
     readonly property string uiFont: root.fontSans
     readonly property string iconFont: root.fontMono
+    // Descriptions are deliberately quieter than labels, but the shell-wide
+    // 54% muted token disappears on a dark glass card. Lift it for the
+    // settings window so 11 px supporting text still clears 4.5:1.
+    readonly property color textMuted: Qt.rgba(root.themeFg.r, root.themeFg.g, root.themeFg.b, 0.64)
 
-    // The window scales with the interface scale, exactly like the island
-    // and every panel. The card is laid out in unscaled units and then
-    // scaled, so the content keeps its proportions while the whole surface
-    // grows and shrinks with the rest of the shell.
-    readonly property real uiScale: root.uiScale ? root.uiScale : 1
-
-    // The window fills most of the screen but keeps a margin so the
-    // wallpaper still frames it, and can be expanded to fill completely.
-    property bool expanded: false
     property string query: ""
     readonly property string activePage: root.settingsPage
     property var expandedCategories: ({ personalization: true, shell: true, island: true, system: false })
@@ -36,17 +41,27 @@ Item {
     property var filtered: []
     property var activePageModel: null
 
-    // The card is sized in unscaled units; the scale below turns it into
-    // its final size on screen. The margins are therefore measured in
-    // scaled units too, which is why they are divided by uiScale. The base
-    // width stays wide enough for the theme grid, and the grids themselves
-    // reflow when the scale squeezes the content column.
-    readonly property int cardWidth: expanded
-        ? Math.floor((parent.width - 24) / uiScale)
-        : Math.floor(Math.min(1160, (parent.width - 76) / uiScale))
-    readonly property int cardHeight: expanded
-        ? Math.floor((parent.height - 24) / uiScale)
-        : Math.floor(Math.min(812, (parent.height - 76) / uiScale))
+    // Desktop applications for the Default Applications page. Quickshell
+    // scans .desktop files asynchronously, so the list starts empty and is
+    // rebuilt when the model announces new entries.
+    property var desktopApps: []
+    property var defaultApps: ({})
+    property bool defaultAppsLoaded: false
+    readonly property var appFilters: ({
+        browser: ["webbrowser"],
+        mail: ["email"],
+        file_manager: ["filemanager"],
+        text_editor: ["texteditor"],
+        image_viewer: ["graphics", "viewer"],
+        video_player: ["videoplayer", "player", "audiovideo"],
+        audio_player: ["audioplayer", "player", "audio"],
+        pdf_viewer: ["office", "viewer"]
+    })
+
+    // The card follows the real window size, so resizing the window reflows
+    // the content instead of scaling a fixed canvas.
+    readonly property int cardWidth: Math.max(0, win.width - win.framePad * 2)
+    readonly property int cardHeight: Math.max(0, win.height - win.framePad * 2)
 
     // ── Catalog ───────────────────────────────────────────────────
     // The catalog describes every setting the shell exposes. Pages are
@@ -98,7 +113,7 @@ Item {
                             {
                                 title: "Interface",
                                 rows: [
-                                    { type: "slider", id: "ui_scale", label: "Interface scale", desc: "Scales the island, every panel and this window together", min: 0.9, max: 1.5, step: 0.05, unit: "×" }
+                                    { type: "slider", id: "ui_scale", label: "Interface scale", desc: "Scales the island and every overlay panel; the settings window has its own size", min: 0.9, max: 1.5, step: 0.05, unit: "×" }
                                 ]
                             },
                             {
@@ -124,7 +139,7 @@ Item {
                             {
                                 title: "Shell profile",
                                 rows: [
-                                    { type: "segment", id: "profile", label: "Active profile", desc: "The island with the dock, or the command bar", options: [ { value: "island", label: "Island" }, { value: "bar", label: "Command bar" } ] }
+                                    { type: "segment", id: "profile", label: "Active profile", desc: "The island with the dock, the command bar, or the status island", options: [ { value: "island", label: "Island" }, { value: "bar", label: "Command bar" }, { value: "status", label: "Status" } ] }
                                 ]
                             },
                             {
@@ -146,11 +161,29 @@ Item {
                         id: "dock",
                         label: "Dock",
                         icon: "\uf1b3",
+                        desc: "Where the dock sits, how it hides and how large its icons grow.",
                         groups: [
                             {
-                                title: "Dock",
+                                title: "Behaviour",
                                 rows: [
-                                    { type: "toggle", id: "dock_auto_hide", label: "Auto-hide", desc: "Keep the dock out of the way until the pointer reaches the edge" },
+                                    { type: "toggle", id: "dock_enabled", label: "Show the dock", desc: "Hide the dock and free up the screen edge" },
+                                    { type: "toggle", id: "dock_auto_hide", label: "Auto-hide", desc: "Keep the dock out of the way until the pointer reaches the screen edge" },
+                                    { type: "segment", id: "dock_position", label: "Dock position", desc: "Which screen edge the dock is attached to", options: [ { value: "bottom", label: "Bottom" }, { value: "top", label: "Top" } ] },
+                                    { type: "segment", id: "dock_monitor", label: "Show on", desc: "One dock shared by every display, or only the primary display", options: [ { value: "all", label: "All displays" }, { value: "primary", label: "Primary" } ] },
+                                    { type: "slider", id: "dock_hide_delay", label: "Hide delay", desc: "How long the dock waits before sliding away after the pointer leaves", min: 100, max: 900, step: 20, unit: " ms" }
+                                ]
+                            },
+                            {
+                                title: "Size & motion",
+                                rows: [
+                                    { type: "slider", id: "dock_icon_size", label: "Icon size", desc: "The artwork size inside each dock tile", min: 28, max: 48, step: 2, unit: " px" },
+                                    { type: "slider", id: "dock_magnification", label: "Magnification", desc: "How large an icon grows when the pointer is over it", min: 1.0, max: 1.5, step: 0.02, unit: "×" },
+                                    { type: "toggle", id: "dock_show_indicators", label: "Running indicators", desc: "Show the dots under applications that have open windows" }
+                                ]
+                            },
+                            {
+                                title: "Material",
+                                rows: [
                                     { type: "segment", id: "dock_theme", label: "Dock material", desc: "The same choice as the island", options: [ { value: "solid", label: "Solid" }, { value: "liquid", label: "Liquid" } ] },
                                     { type: "slider", id: "dock_transparency", label: "Transparency", desc: "Background opacity of the dock surface", min: 0.0, max: 1.0, step: 0.05, unit: "" },
                                     { type: "slider", id: "dock_frost", label: "Frost", desc: "Milkiness of the liquid glass material", min: 0.0, max: 1.0, step: 0.05, unit: "" }
@@ -256,6 +289,39 @@ Item {
                         ]
                     },
                     {
+                        id: "default-apps",
+                        label: "Default Applications",
+                        icon: "\uf085",
+                        desc: "Choose which application opens each kind of link, file and document.",
+                        groups: [
+                            {
+                                title: "Web & mail",
+                                rows: [
+                                    { type: "dropdown", id: "default_browser", source: "default_apps", role: "browser", label: "Web browser", desc: "Opens links, HTML documents and authentication pages", options: win.appsFor("browser") },
+                                    { type: "dropdown", id: "default_mail", source: "default_apps", role: "mail", label: "Email client", desc: "Handles mailto: links from every application", options: win.appsFor("mail") }
+                                ]
+                            },
+                            {
+                                title: "Files & media",
+                                rows: [
+                                    { type: "dropdown", id: "default_file_manager", source: "default_apps", role: "file_manager", label: "File manager", desc: "Opens folders and mounted drives", options: win.appsFor("file_manager") },
+                                    { type: "dropdown", id: "default_text_editor", source: "default_apps", role: "text_editor", label: "Text editor", desc: "Opens plain text and configuration files", options: win.appsFor("text_editor") },
+                                    { type: "dropdown", id: "default_image_viewer", source: "default_apps", role: "image_viewer", label: "Image viewer", desc: "Opens PNG, JPEG and WebP images", options: win.appsFor("image_viewer") },
+                                    { type: "dropdown", id: "default_video_player", source: "default_apps", role: "video_player", label: "Video player", desc: "Opens local video files", options: win.appsFor("video_player") },
+                                    { type: "dropdown", id: "default_audio_player", source: "default_apps", role: "audio_player", label: "Music player", desc: "Opens local audio files", options: win.appsFor("audio_player") },
+                                    { type: "dropdown", id: "default_pdf_viewer", source: "default_apps", role: "pdf_viewer", label: "PDF viewer", desc: "Opens PDF documents", options: win.appsFor("pdf_viewer") }
+                                ]
+                            },
+                            {
+                                title: "Associations",
+                                rows: [
+                                    { type: "action", id: "default_apps_file", label: "Open mimeapps.list", desc: "Edit raw file associations for anything not listed here", actionLabel: "Open file" },
+                                    { type: "action", id: "default_apps_refresh", label: "Refresh application list", desc: "Rescan .desktop files after installing or removing applications", actionLabel: "Rescan" }
+                                ]
+                            }
+                        ]
+                    },
+                    {
                         id: "keyboard",
                         label: "Keyboard",
                         icon: "\uf11c",
@@ -281,6 +347,7 @@ Item {
     // keystroke.
     function pageMatches(page, q) {
         if (page.label.toLowerCase().indexOf(q) !== -1) return true;
+        if (page.desc && page.desc.toLowerCase().indexOf(q) !== -1) return true;
 
         for (var i = 0; i < page.groups.length; i++) {
             var group = page.groups[i];
@@ -365,26 +432,240 @@ Item {
 
     // The page can also be switched from outside the window (a keybind or
     // the CLI), so follow the shell's state rather than only our own clicks.
-    onActivePageChanged: win.refreshNav()
+    onActivePageChanged: {
+        win.refreshNav();
+        win.revealActiveCategory();
+        // A new page starts at its top; carrying the previous page's scroll
+        // offset made pages look like their first group was missing.
+        if (content) content.contentY = 0;
+    }
+
+    // A page opened from a keybind or IPC can live in a collapsed category.
+    // Expand it so the highlighted item is actually visible in the sidebar.
+    function revealActiveCategory() {
+        for (var i = 0; i < win.catalog.length; i++) {
+            for (var j = 0; j < win.catalog[i].pages.length; j++) {
+                if (win.catalog[i].pages[j].id === root.settingsPage) {
+                    var id = win.catalog[i].id;
+                    if (win.expandedCategories[id] === false) {
+                        var next = Object.assign({}, win.expandedCategories);
+                        next[id] = true;
+                        win.expandedCategories = next;
+                    }
+                    // The category can be expanded but still below the fold
+                    // in the sidebar, leaving the active page invisible.
+                    var categoryIndex = i;
+                    Qt.callLater(function() {
+                        navList.positionViewAtIndex(categoryIndex, ListView.Beginning);
+                    });
+                    return;
+                }
+            }
+        }
+    }
 
     // Escape closes the window from anywhere. The search field handles it
     // first — it clears the query when there is one — so this only sees the
     // key when the field does not hold the focus.
-    focus: true
-    Keys.onEscapePressed: {
-        root.settingsWindowOpen = false;
-        event.accepted = true;
+    // Opening the window puts the cursor in the search field, so the whole
+    // app is reachable from the keyboard without a single click. The small
+    // delay lets the compositor hand keyboard focus to the new toplevel
+    // before QML tries to move the active item.
+    Timer {
+        id: focusTimer
+        interval: 90
+        onTriggered: searchInput.forceActiveFocus()
     }
 
-    // Opening the window puts the cursor in the search field, so the whole
-    // app is reachable from the keyboard without a single click.
+    onVisibleChanged: {
+        if (visible) {
+            // Re-read both lists on every open: applications can be installed
+            // while the window is closed and the associations can change in
+            // another settings tool.
+            win.defaultAppsLoaded = false;
+            win.refreshDesktopApps();
+            win.refreshDefaultApps();
+            win.revealActiveCategory();
+            focusTimer.restart();
+        }
+    }
+
+    // A compositor close (Alt+F4) and the in-window close button both have
+    // to leave the shell's state pointing at a closed window.
+    onClosed: root.settingsWindowOpen = false
+
     Connections {
         target: root
         function onSettingsWindowOpenChanged() {
             if (root.settingsWindowOpen) {
-                Qt.callLater(function() { searchInput.forceActiveFocus(); });
+                win.refreshDefaultApps();
+                focusTimer.restart();
             }
         }
+    }
+
+    Connections {
+        target: DesktopEntries.applications
+        function onValuesChanged() {
+            win.refreshDesktopApps();
+        }
+    }
+
+    // ── Desktop applications ──────────────────────────────────────
+    // The launcher already reads .desktop files through Quickshell, so the
+    // default-apps picker uses the same source instead of keeping a second
+    // application list in sync by hand.
+    function refreshDesktopApps() {
+        var model = DesktopEntries.applications;
+        var entries = model && model.values ? model.values : [];
+        var list = [];
+        for (var i = 0; i < entries.length; i++) {
+            var entry = entries[i];
+            if (!entry || entry.noDisplay) continue;
+            if (!entry.id) continue;
+            list.push({
+                id: entry.id,
+                name: entry.name || entry.id,
+                categories: entry.categories || []
+            });
+        }
+        list.sort(function(a, b) { return String(a.name).localeCompare(String(b.name)); });
+        win.desktopApps = list;
+        win.refreshNav();
+    }
+
+    // Role-filtered options for the default-apps dropdowns. Categories are
+    // advisory, so when a machine has no application advertising a role the
+    // picker falls back to the full list rather than showing an empty menu.
+    function normalizeAppId(id) {
+        var value = String(id || "").replace(/@.*$/, "").replace(/\.desktop$/, "");
+        return value;
+    }
+
+    function desktopId(id) {
+        var value = String(id || "");
+        return value.indexOf(".desktop") === -1 ? value + ".desktop" : value;
+    }
+
+    function appsFor(role) {
+        var filters = win.appFilters[role] || [];
+        var matched = [];
+        var seen = {};
+        for (var i = 0; i < win.desktopApps.length; i++) {
+            var app = win.desktopApps[i];
+            var key = win.normalizeAppId(app.id);
+            if (seen[key]) continue;
+
+            var hit = filters.length === 0;
+            var categories = app.categories || [];
+            for (var c = 0; c < categories.length && !hit; c++) {
+                var category = String(categories[c]).toLowerCase();
+                for (var f = 0; f < filters.length; f++) {
+                    if (category.indexOf(filters[f]) !== -1) {
+                        hit = true;
+                        break;
+                    }
+                }
+            }
+            if (hit) {
+                seen[key] = true;
+                matched.push(app);
+            }
+        }
+        if (matched.length === 0) {
+            // Categories are advisory: fall back to every application rather
+            // than showing an empty menu on a machine that does not advertise
+            // the role.
+            for (var j = 0; j < win.desktopApps.length; j++) {
+                var fallback = win.desktopApps[j];
+                var fallbackKey = win.normalizeAppId(fallback.id);
+                if (seen[fallbackKey]) continue;
+                seen[fallbackKey] = true;
+                matched.push(fallback);
+            }
+        }
+
+        var options = [];
+        for (var k = 0; k < matched.length; k++) {
+            // DesktopEntries ids omit the .desktop suffix, while xdg-mime
+            // reports and expects the full desktop file id. Normalise once so
+            // the stored association matches the dropdown option exactly.
+            options.push({ value: win.desktopId(matched[k].id), label: matched[k].name });
+        }
+
+        // The associated application can be outside the category filter (a
+        // browser used for mail, for example). Keep it in the menu so the
+        // trigger never shows an id that cannot be re-selected.
+        var current = String(win.defaultApps[role] || "");
+        if (current !== "") {
+            var currentKey = win.normalizeAppId(current);
+            var present = false;
+            for (var m = 0; m < options.length; m++) {
+                if (win.normalizeAppId(options[m].value) === currentKey) {
+                    present = true;
+                    break;
+                }
+            }
+            if (!present) {
+                var label = currentKey;
+                for (var n = 0; n < win.desktopApps.length; n++) {
+                    if (win.normalizeAppId(win.desktopApps[n].id) === currentKey) {
+                        label = win.desktopApps[n].name;
+                        break;
+                    }
+                }
+                options.unshift({ value: win.desktopId(currentKey), label: label });
+            }
+        }
+        return options;
+    }
+
+    function refreshDefaultApps() {
+        if (!defaultAppsRead.running) defaultAppsRead.running = true;
+    }
+
+    function setDefaultApp(role, desktopId) {
+        if (!role || !desktopId) return;
+        var next = Object.assign({}, win.defaultApps);
+        next[role] = desktopId;
+        win.defaultApps = next;
+        defaultAppsWrite.command = [
+            "python3",
+            Quickshell.shellDir + "/scripts/default_apps.py",
+            "set",
+            role,
+            desktopId
+        ];
+        defaultAppsWrite.running = true;
+    }
+
+    Process {
+        id: defaultAppsRead
+        command: ["python3", Quickshell.shellDir + "/scripts/default_apps.py", "get"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    var parsed = JSON.parse(text);
+                    if (parsed && typeof parsed === "object") {
+                        win.defaultApps = parsed;
+                        // Rebuild once, on the first read, so a role whose
+                        // current app is outside the category filter still
+                        // appears in its dropdown options. Later writes do
+                        // not need to tear down the page.
+                        if (!win.defaultAppsLoaded) {
+                            win.defaultAppsLoaded = true;
+                            win.refreshNav();
+                        }
+                    }
+                } catch (e) {}
+            }
+        }
+    }
+
+    Process {
+        id: defaultAppsWrite
+        command: []
+        onExited: win.refreshDefaultApps()
     }
 
     // ── Actions ───────────────────────────────────────────────────
@@ -412,11 +693,31 @@ Item {
                 root.displayState = 23;
                 root.updateState();
                 break;
+            case "default_apps_file":
+                appsFileProc.command = ["bash", "-c", "touch \"$HOME/.config/mimeapps.list\"; xdg-open \"$HOME/.config/mimeapps.list\""];
+                appsFileProc.running = true;
+                break;
+            case "default_apps_refresh":
+                desktopRefreshProc.command = ["bash", "-c", "update-desktop-database \"$HOME/.local/share/applications\" >/dev/null 2>&1 || true"];
+                desktopRefreshProc.running = true;
+                win.refreshDesktopApps();
+                win.refreshDefaultApps();
+                break;
         }
     }
 
     Process {
         id: dockMenuProc
+        command: []
+    }
+
+    Process {
+        id: appsFileProc
+        command: []
+    }
+
+    Process {
+        id: desktopRefreshProc
         command: []
     }
 
@@ -440,58 +741,43 @@ Item {
         root.setValue(spec.id, value);
     }
 
-    // ── Backdrop ──────────────────────────────────────────────────
-    Rectangle {
-        anchors.fill: parent
-        color: "#99000000"
-        Behavior on color { ColorAnimation { duration: 200 } }
-    }
-
-    MouseArea {
-        anchors.fill: parent
-        onClicked: root.settingsWindowOpen = false
+    // The shadow is a sibling of the card: the card clips its own content,
+    // so a shadow parented inside it would be clipped away.
+    RectangularShadow {
+        anchors.fill: card
+        radius: card.radius
+        color: "#50000000"
+        blur: 24
+        spread: 0
+        offset: Qt.vector2d(0, 8)
     }
 
     // ── Card ──────────────────────────────────────────────────────
+    // The window is bigger than the visible card only by `framePad`, which
+    // holds the shadow and the eight resize grips. The card is the visual
+    // surface and owns keyboard focus for the window-level Escape shortcut.
     Rectangle {
         id: card
+        x: win.framePad
+        y: win.framePad
         width: win.cardWidth
         height: win.cardHeight
-        anchors.centerIn: parent
-        radius: 18
-        scale: win.uiScale
-        transformOrigin: Item.Center
-        color: root.islandTheme === "liquid" ? root.glass(0.94) : root.glass(0.95)
+        radius: 20
+        // A settings window is read for minutes at a time, so it is a solid
+        // tonal surface, not glass. The hierarchy comes from the sidebar and
+        // the group containers, not from a translucent sheen.
+        color: root.cSurface
         border.width: 1
-        border.color: Qt.rgba(win.accent.r, win.accent.g, win.accent.b, 0.28)
+        border.color: root.ink(0.12)
         clip: true
+        focus: true
 
-        Behavior on scale { NumberAnimation { duration: root.motionPanel; easing.type: Easing.OutExpo } }
-
-        Behavior on width { NumberAnimation { duration: root.motionPanel; easing.type: Easing.OutExpo } }
-        Behavior on height { NumberAnimation { duration: root.motionPanel; easing.type: Easing.OutExpo } }
-
-        RectangularShadow {
-            anchors.fill: card
-            radius: card.radius
-            color: "#70000000"
-            blur: 60
-            spread: 2
-            offset: Qt.vector2d(0, 18)
+        Keys.onEscapePressed: {
+            root.settingsWindowOpen = false;
+            event.accepted = true;
         }
 
-        // Top rim light, the same trick the island uses on its pill.
-        Rectangle {
-            width: parent.width
-            height: 1
-            anchors.top: parent.top
-            gradient: Gradient {
-                orientation: Gradient.Horizontal
-                GradientStop { position: 0.0; color: "transparent" }
-                GradientStop { position: 0.5; color: root.ink(0.22) }
-                GradientStop { position: 1.0; color: "transparent" }
-            }
-        }
+        Behavior on color { ColorAnimation { duration: 200 } }
 
         // ── Header ─────────────────────────────────────────────────
         Item {
@@ -503,36 +789,47 @@ Item {
             anchors.rightMargin: 18
             height: 60
 
+            // The header is the title bar. Pressing anywhere on it starts a
+            // native compositor move, so the window follows the pointer with
+            // the same physics as every other application.
+            MouseArea {
+                id: headerDrag
+                anchors.fill: parent
+                acceptedButtons: Qt.LeftButton
+                enabled: !win.maximized
+                onPressed: win.startSystemMove()
+            }
+
             Row {
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 11
 
                 Rectangle {
-                    width: 30
-                    height: 30
-                    radius: 9
+                    width: 34
+                    height: 34
+                    radius: 10
                     anchors.verticalCenter: parent.verticalCenter
-                    color: Qt.rgba(win.accent.r, win.accent.g, win.accent.b, 0.14)
+                    color: root.cSurfaceContainerHigh
                     border.width: 1
-                    border.color: Qt.rgba(win.accent.r, win.accent.g, win.accent.b, 0.28)
+                    border.color: root.cOutlineVariant
 
                     Text {
                         anchors.centerIn: parent
-                        text: "\uf013"
-                        color: win.accent
-                        font.family: win.iconFont
-                        font.pixelSize: 14
+                        text: root.icoSettings
+                        color: root.cPrimary
+                        font.family: root.fontIcon
+                        font.pixelSize: 18
                     }
                 }
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
                     text: "Settings"
-                    color: root.cFgPrimary
+                    color: root.cOnSurface
                     font.family: win.uiFont
-                    font.pixelSize: 19
-                    font.weight: Font.DemiBold
+                    font.pixelSize: 20
+                    font.weight: Font.Medium
                 }
             }
 
@@ -542,18 +839,16 @@ Item {
                 spacing: 6
 
                 Rectangle {
-                    width: 32
-                    height: 32
-                    radius: 9
-                    color: expandMouse.containsMouse ? root.ink(0.078) : "transparent"
-                    border.width: 1
-                    border.color: expandMouse.containsMouse ? root.ink(0.141) : "transparent"
+                    width: 34
+                    height: 34
+                    radius: 10
+                    color: expandMouse.containsMouse ? root.cStateHover : "transparent"
                     Behavior on color { ColorAnimation { duration: 140 } }
 
                     Text {
                         anchors.centerIn: parent
-                        text: win.expanded ? "\uf066" : "\uf065"
-                        color: root.cFgSecondary
+                        text: win.maximized ? "\uf066" : "\uf065"
+                        color: root.cOnSurfaceVariant
                         font.family: win.iconFont
                         font.pixelSize: 12
                     }
@@ -563,7 +858,7 @@ Item {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: win.expanded = !win.expanded
+                        onClicked: win.maximized = !win.maximized
                     }
                 }
 
@@ -676,7 +971,7 @@ Item {
 
                         Text {
                             text: "ZenShell · " + Quickshell.env("USER")
-                            color: root.cFgMuted
+                            color: win.textMuted
                             font.family: win.uiFont
                             font.pixelSize: 11
                         }
@@ -707,7 +1002,7 @@ Item {
                             anchors.leftMargin: 11
                             anchors.verticalCenter: parent.verticalCenter
                             text: "\uf002"
-                            color: root.cFgMuted
+                            color: win.textMuted
                             font.family: win.iconFont
                             font.pixelSize: 11
                         }
@@ -745,7 +1040,7 @@ Item {
                                 anchors.verticalCenter: parent.verticalCenter
                                 visible: searchInput.text.length === 0
                                 text: "Search settings"
-                                color: root.cFgMuted
+                                color: win.textMuted
                                 font.family: win.uiFont
                                 font.pixelSize: 12
                             }
@@ -769,6 +1064,19 @@ Item {
                     model: win.filtered
                     spacing: 4
 
+                    Controls.ScrollBar.vertical: Controls.ScrollBar {
+                        id: navScroll
+                        width: 4
+                        policy: Controls.ScrollBar.AsNeeded
+                        background: Item {}
+                        contentItem: Rectangle {
+                            implicitWidth: 4
+                            radius: 2
+                            color: navScroll.pressed ? root.ink(0.34) : root.ink(0.18)
+                            visible: navScroll.size < 1
+                        }
+                    }
+
                     delegate: Item {
                         id: categoryItem
                         required property var modelData
@@ -791,7 +1099,7 @@ Item {
                                     anchors.leftMargin: 10
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: categoryItem.modelData.icon
-                                    color: root.cFgMuted
+                                    color: win.textMuted
                                     font.family: win.iconFont
                                     font.pixelSize: 11
                                 }
@@ -817,10 +1125,10 @@ Item {
                                     anchors.rightMargin: 10
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: "\uf078"
-                                    color: root.cFgMuted
+                                    color: win.textMuted
                                     font.family: win.iconFont
                                     font.pixelSize: 9
-                                    rotation: win.expandedCategories[categoryItem.modelData.id] === false ? -90 : 0
+                                    rotation: win.query.trim() === "" && win.expandedCategories[categoryItem.modelData.id] === false ? -90 : 0
                                     Behavior on rotation { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
                                 }
 
@@ -845,7 +1153,7 @@ Item {
 
                                     readonly property bool active: root.settingsPage === modelData.id
 
-                                    visible: win.expandedCategories[categoryItem.modelData.id] !== false
+                                    visible: win.query.trim() !== "" || win.expandedCategories[categoryItem.modelData.id] !== false
 
                                     width: categoryColumn.width
                                     height: 36
@@ -860,7 +1168,7 @@ Item {
                                         anchors.leftMargin: 30
                                         anchors.verticalCenter: parent.verticalCenter
                                         text: pageItem.modelData.icon
-                                        color: pageItem.active ? win.accent : root.cFgMuted
+                                        color: pageItem.active ? win.accent : win.textMuted
                                         font.family: win.iconFont
                                         font.pixelSize: 11
                                     }
@@ -905,7 +1213,7 @@ Item {
                         anchors.rightMargin: 20
                         visible: win.filtered.length === 0
                         text: "No settings match \"" + win.query.trim() + "\""
-                        color: root.cFgMuted
+                        color: win.textMuted
                         font.family: win.uiFont
                         font.pixelSize: 11
                         wrapMode: Text.WordWrap
@@ -926,13 +1234,29 @@ Item {
                     anchors.topMargin: 24
                     anchors.bottomMargin: 20
                     clip: true
-                    contentWidth: width
+                    // Leave a narrow gutter at the right for the scroll bar so
+                    // it never sits on top of a dropdown or a slider.
+                    contentWidth: width - 8
                     contentHeight: pageColumn.implicitHeight
                     boundsBehavior: Flickable.StopAtBounds
 
+                    Controls.ScrollBar.vertical: Controls.ScrollBar {
+                        id: pageScroll
+                        width: 8
+                        policy: Controls.ScrollBar.AsNeeded
+                        background: Item {}
+                        contentItem: Rectangle {
+                            implicitWidth: 8
+                            radius: 4
+                            color: pageScroll.pressed ? root.ink(0.40) : root.ink(0.24)
+                            visible: pageScroll.size < 1
+                            Behavior on color { ColorAnimation { duration: 120 } }
+                        }
+                    }
+
                     Column {
                         id: pageColumn
-                        width: content.width
+                        width: content.width - 8
                         spacing: 18
 
                         // Page header
@@ -973,6 +1297,7 @@ Item {
                                 Text {
                                     text: {
                                         if (!win.activePageModel) return "";
+                                        if (win.activePageModel.desc) return win.activePageModel.desc;
                                         var cat = "";
                                         for (var i = 0; i < win.catalog.length; i++) {
                                             for (var j = 0; j < win.catalog[i].pages.length; j++) {
@@ -981,13 +1306,11 @@ Item {
                                         }
                                         return cat;
                                     }
-                                    color: root.cFgMuted
+                                    color: win.textMuted
                                     font.family: win.uiFont
                                     font.pixelSize: 11
                                 }
                             }
-
-                            Item { width: parent.width; Layout.fillWidth: true }
                         }
 
                         // Groups
@@ -1004,14 +1327,6 @@ Item {
                                 color: root.ink(0.031)
                                 border.width: 1
                                 border.color: root.ink(0.071)
-
-                                // An open dropdown paints over the groups
-                                // below it, so the card that owns it has to
-                                // be lifted above its siblings. Without
-                                // this the next group card painted over the
-                                // list.
-                                property int openDropdowns: 0
-                                z: openDropdowns > 0 ? 10 : 0
 
                                 Column {
                                     id: groupColumn
@@ -1046,7 +1361,7 @@ Item {
                                         width: parent.width
                                         visible: groupCard.modelData.intro !== undefined
                                         text: groupCard.modelData.intro ? groupCard.modelData.intro.desc : ""
-                                        color: root.cFgMuted
+                                        color: win.textMuted
                                         font.family: win.uiFont
                                         font.pixelSize: 11
                                         wrapMode: Text.WordWrap
@@ -1097,11 +1412,17 @@ Item {
                                                 anchors.fill: parent
                                                 anchors.topMargin: 1
                                                 spec: rowHolder.modelData
-                                                value: root.values[rowHolder.modelData.id]
+                                                value: rowHolder.modelData.source === "default_apps"
+                                                    ? (win.defaultApps[rowHolder.modelData.role] || "")
+                                                    : root.values[rowHolder.modelData.id]
                                                 accent: win.accent
-                                                onPicked: (v) => win.handlePick(rowHolder.modelData, v)
-                                                onDropdownOpenChanged: {
-                                                    groupCard.openDropdowns = Math.max(0, groupCard.openDropdowns + (dropdownOpen ? 1 : -1));
+                                                hostWindow: win
+                                                onPicked: (v) => {
+                                                    if (rowHolder.modelData.source === "default_apps") {
+                                                        win.setDefaultApp(rowHolder.modelData.role, v);
+                                                    } else {
+                                                        win.handlePick(rowHolder.modelData, v);
+                                                    }
                                                 }
                                             }
                                         }
@@ -1113,5 +1434,112 @@ Item {
                 }
             }
         }
+    }
+
+    // ── Resize grips ──────────────────────────────────────────────
+    // The transparent frame around the card is the only place the grips can
+    // live without covering content. Each one starts a native compositor
+    // resize from the edge it sits on, exactly like a window decoration.
+    Component {
+        id: resizeGrip
+
+        MouseArea {
+            property int edges: Qt.RightEdge
+
+            width: 8
+            height: 8
+            acceptedButtons: Qt.LeftButton
+            hoverEnabled: true
+            visible: !win.maximized
+            cursorShape: edges === Qt.LeftEdge || edges === Qt.RightEdge
+                ? Qt.SizeHorCursor
+                : (edges === Qt.TopEdge || edges === Qt.BottomEdge
+                    ? Qt.SizeVerCursor
+                    : ((edges === (Qt.LeftEdge | Qt.TopEdge) || edges === (Qt.RightEdge | Qt.BottomEdge))
+                        ? Qt.SizeFDiagCursor
+                        : Qt.SizeBDiagCursor))
+
+            onPressed: win.startSystemResize(edges)
+        }
+    }
+
+    Loader {
+        anchors.left: parent.left
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        width: win.framePad
+        sourceComponent: resizeGrip
+        onLoaded: item.edges = Qt.LeftEdge
+        visible: !win.maximized
+    }
+
+    Loader {
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        width: win.framePad
+        sourceComponent: resizeGrip
+        onLoaded: item.edges = Qt.RightEdge
+        visible: !win.maximized
+    }
+
+    Loader {
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: win.framePad
+        sourceComponent: resizeGrip
+        onLoaded: item.edges = Qt.TopEdge
+        visible: !win.maximized
+    }
+
+    Loader {
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: win.framePad
+        sourceComponent: resizeGrip
+        onLoaded: item.edges = Qt.BottomEdge
+        visible: !win.maximized
+    }
+
+    Loader {
+        anchors.left: parent.left
+        anchors.top: parent.top
+        width: win.framePad + 8
+        height: win.framePad + 8
+        sourceComponent: resizeGrip
+        onLoaded: item.edges = Qt.LeftEdge | Qt.TopEdge
+        visible: !win.maximized
+    }
+
+    Loader {
+        anchors.right: parent.right
+        anchors.top: parent.top
+        width: win.framePad + 8
+        height: win.framePad + 8
+        sourceComponent: resizeGrip
+        onLoaded: item.edges = Qt.RightEdge | Qt.TopEdge
+        visible: !win.maximized
+    }
+
+    Loader {
+        anchors.left: parent.left
+        anchors.bottom: parent.bottom
+        width: win.framePad + 8
+        height: win.framePad + 8
+        sourceComponent: resizeGrip
+        onLoaded: item.edges = Qt.LeftEdge | Qt.BottomEdge
+        visible: !win.maximized
+    }
+
+    Loader {
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        width: win.framePad + 8
+        height: win.framePad + 8
+        sourceComponent: resizeGrip
+        onLoaded: item.edges = Qt.RightEdge | Qt.BottomEdge
+        visible: !win.maximized
     }
 }

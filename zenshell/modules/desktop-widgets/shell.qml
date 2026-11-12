@@ -175,19 +175,19 @@ Scope {
     NumberAnimation on clockReveal {
         from: 0
         to: 1
-        duration: 720
-        easing.type: Easing.OutExpo
+        duration: 560
+        easing.type: Easing.OutCubic
     }
 
     SequentialAnimation on weatherReveal {
-        PauseAnimation { duration: 110 }
-        NumberAnimation { from: 0; to: 1; duration: 720; easing.type: Easing.OutExpo }
+        PauseAnimation { duration: 90 }
+        NumberAnimation { from: 0; to: 1; duration: 560; easing.type: Easing.OutCubic }
     }
 
     Timer {
         id: clockTimer
         interval: 1000
-        running: true
+        running: root.widgetsVisible && root.shellProfile !== "bar"
         repeat: true
         onTriggered: {
             var d = new Date()
@@ -206,7 +206,7 @@ Scope {
     Timer {
         id: weatherTimer
         interval: 600000 // Every 10 mins
-        running: true
+        running: root.widgetsVisible && root.shellProfile !== "bar"
         repeat: true
         onTriggered: weatherProcess.running = true
         Component.onCompleted: triggered()
@@ -238,7 +238,7 @@ Scope {
             screen: modelData
 
             color: "transparent"
-            visible: root.shellProfile !== "bar"
+            visible: root.shellProfile !== "bar" && root.widgetsVisible
 
             WlrLayershell.layer: WlrLayer.Bottom
             WlrLayershell.namespace: "qs-widgets"
@@ -478,7 +478,7 @@ Scope {
                                 }
 
                                 SequentialAnimation {
-                                    running: true
+                                    running: root.widgetsVisible && root.shellProfile !== "bar"
                                     loops: Animation.Infinite
                                     NumberAnimation {
                                         target: weatherFloat

@@ -4,7 +4,8 @@ import QtQuick.Layouts
 Item {
     id: compact
     anchors.fill: parent
-    property real reveal: (root.displayState === 1 && !root.isExpanded) ? 1 : 0
+    property bool entered: false
+    property real reveal: (root.displayState === 1 && !root.isExpanded && entered) ? 1 : 0
     opacity: reveal
     visible: opacity > 0
     transform: Translate { y: (1 - compact.reveal) * 4 }
@@ -12,7 +13,7 @@ Item {
     Behavior on reveal {
         NumberAnimation {
             duration: (root.displayState === 1 && !root.isExpanded) ? root.motionBase : root.motionExit
-            easing.type: (root.displayState === 1 && !root.isExpanded) ? Easing.OutExpo : Easing.OutCubic
+            easing.type: Easing.OutCubic
         }
     }
 
@@ -97,7 +98,7 @@ Item {
                     easing.type: Easing.OutCubic
                 }
             }
-            Behavior on scale { NumberAnimation { duration: root.dNormal; easing.type: Easing.OutExpo } }
+            Behavior on scale { NumberAnimation { duration: root.dNormal; easing.type: Easing.OutCubic } }
         }
 
         Text {
@@ -121,7 +122,7 @@ Item {
                     easing.type: Easing.OutCubic
                 }
             }
-            Behavior on scale { NumberAnimation { duration: root.dNormal; easing.type: Easing.OutExpo } }
+            Behavior on scale { NumberAnimation { duration: root.dNormal; easing.type: Easing.OutCubic } }
         }
     }
 

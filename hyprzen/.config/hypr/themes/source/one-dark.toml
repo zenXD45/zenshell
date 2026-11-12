@@ -5,6 +5,7 @@ name = "One Dark"
 slug = "one-dark"
 icon = "💻"
 dark  = true
+gtk_theme = "adw-gtk3-dark"
 
 [colors]
 bg      = "#282c34"

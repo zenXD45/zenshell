@@ -11,3 +11,78 @@
 @define-color subtext       #908caa;
 @define-color border_color  rgba(156, 207, 216, 0.2);
 @define-color urgent        #eb6f92;
+
+/* Standard GTK3 / GTK4 / libadwaita colours.
+   GTK loads the user gtk.css after the selected theme, so these names
+   recolour libadwaita apps and any theme that uses the standard palette
+   (adw-gtk3 uses them throughout). Keep this block last so it wins over
+   the HyprZen-specific names above. */
+
+@define-color accent_color #9ccfd8;
+@define-color accent_bg_color #9ccfd8;
+@define-color accent_fg_color #191724;
+@define-color window_bg_color #191724;
+@define-color window_fg_color #e0def4;
+@define-color view_bg_color #1f1d2e;
+@define-color view_fg_color #e0def4;
+@define-color headerbar_bg_color #1f1d2e;
+@define-color headerbar_fg_color #e0def4;
+@define-color headerbar_border_color #3d3b49;
+@define-color headerbar_backdrop_color #191724;
+@define-color headerbar_shade_color #100f17;
+@define-color card_bg_color #1f1d2e;
+@define-color card_fg_color #e0def4;
+@define-color card_shade_color #100f17;
+@define-color dialog_bg_color #1f1d2e;
+@define-color dialog_fg_color #e0def4;
+@define-color popover_bg_color #1f1d2e;
+@define-color popover_fg_color #e0def4;
+@define-color sidebar_bg_color #191724;
+@define-color sidebar_fg_color #e0def4;
+@define-color sidebar_backdrop_color #191724;
+@define-color sidebar_shade_color #100f17;
+@define-color secondary_sidebar_bg_color #1f1d2e;
+@define-color secondary_sidebar_fg_color #e0def4;
+@define-color secondary_sidebar_backdrop_color #1f1d2e;
+@define-color secondary_sidebar_shade_color #100f17;
+@define-color success_color #9ccfd8;
+@define-color success_bg_color #9ccfd8;
+@define-color success_fg_color #000000;
+@define-color warning_color #f6c177;
+@define-color warning_bg_color #f6c177;
+@define-color warning_fg_color #000000;
+@define-color error_color #eb6f92;
+@define-color error_bg_color #eb6f92;
+@define-color error_fg_color #ffffff;
+@define-color destructive_color #eb6f92;
+@define-color destructive_bg_color #eb6f92;
+@define-color destructive_fg_color #ffffff;
+@define-color borders #3d3b49;
+@define-color shade_color #100f17;
+@define-color scrollbar_outline_color #3d3b49;
+@define-color thumbnail_bg_color #1f1d2e;
+@define-color thumbnail_fg_color #e0def4;
+@define-color theme_bg_color #191724;
+@define-color theme_fg_color #e0def4;
+@define-color theme_base_color #1f1d2e;
+@define-color theme_text_color #e0def4;
+@define-color theme_selected_bg_color #9ccfd8;
+@define-color theme_selected_fg_color #191724;
+@define-color theme_unfocused_bg_color #191724;
+@define-color theme_unfocused_fg_color #908caa;
+@define-color theme_unfocused_base_color #1f1d2e;
+@define-color theme_unfocused_text_color #908caa;
+@define-color theme_unfocused_selected_bg_color #9ccfd8;
+@define-color theme_unfocused_selected_fg_color #191724;
+@define-color insensitive_bg_color #1c1a29;
+@define-color insensitive_fg_color #868496;
+@define-color insensitive_base_color #1c1a29;
+@define-color insensitive_text_color #868496;
+@define-color unfocused_borders #3d3b49;
+@define-color unfocused_insensitive_color #868496;
+@define-color link_color #31748f;
+@define-color info_color #31748f;
+@define-color question_color #c4a7e7;
+@define-color osd_bg_color #26233a;
+@define-color osd_fg_color #e0def4;
+@define-color osd_border_color #3d3b49;

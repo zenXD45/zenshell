@@ -37,6 +37,7 @@ Item {
     id: imgA
     anchors.fill: parent
     visible: root.frontIsA
+    sourceSize: Qt.size(Math.max(1, Math.round(width)), Math.max(1, Math.round(height)))
     cache: false
     asynchronous: true
     fillMode: Image.PreserveAspectCrop
@@ -47,6 +48,7 @@ Item {
     id: imgB
     anchors.fill: parent
     visible: !root.frontIsA
+    sourceSize: Qt.size(Math.max(1, Math.round(width)), Math.max(1, Math.round(height)))
     cache: false
     asynchronous: true
     fillMode: Image.PreserveAspectCrop

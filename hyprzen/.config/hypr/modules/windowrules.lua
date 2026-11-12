@@ -341,8 +341,9 @@ hl.window_rule({
 
 hl.window_rule({
     match = {
-        class = "^(quickshell)$",
+        class = "^(org\\.quickshell|quickshell)$",
     },
     float = true,
     center = true,
+    no_shadow = true,
 })

@@ -5,6 +5,7 @@ name = "Nord"
 slug = "nord"
 icon = "❄️"
 dark  = true
+gtk_theme = "Nordic"
 
 [colors]
 bg      = "#2e3440"

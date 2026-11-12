@@ -6,6 +6,7 @@ name = "Catppuccin"
 slug = "catppuccin"
 icon = "☕"
 dark  = true
+gtk_theme = "Catppuccin-Mocha-Mauve"
 
 [colors]
 bg      = "#1e1e2e"

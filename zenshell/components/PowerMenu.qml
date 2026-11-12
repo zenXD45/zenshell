@@ -8,28 +8,27 @@ import Quickshell.Io
 Item {
     id: powerRoot
     anchors.fill: parent
-    property real reveal: root.displayState === 12 ? 1 : 0
+    property bool entered: false
+    property real reveal: (root.displayState === 12 && entered) ? 1 : 0
     opacity: reveal
     visible: opacity > 0
-    clip: true
-    scale: 0.992 + reveal * 0.008
-    transform: Translate { y: (1 - powerRoot.reveal) * 8 }
+    transform: Translate { y: (1 - powerRoot.reveal) * 6 }
 
     Behavior on reveal {
         NumberAnimation {
-            duration: root.displayState === 12 ? root.dPage : root.dFast
-            easing.type: root.displayState === 12 ? Easing.OutExpo : Easing.OutCubic
+            duration: root.displayState === 12 ? root.motionPanel : root.motionExit
+            easing.type: Easing.OutCubic
         }
     }
 
     property int selectedIndex: 0
 
     readonly property var actions: [
-        { icon: "\uf023", label: "Lock",     key: "L", decisive: false },
-        { icon: "\uf186", label: "Suspend",  key: "U", decisive: false },
-        { icon: "\uf2f5", label: "Log out",  key: "E", decisive: false },
-        { icon: "\uf01e", label: "Restart",  key: "R", decisive: false },
-        { icon: "\uf011", label: "Shut down", key: "S", decisive: true }
+        { icon: root.icoLock,     label: "Lock",      key: "L", decisive: false },
+        { icon: root.icoBedtime,  label: "Suspend",   key: "U", decisive: false },
+        { icon: root.icoLogout,   label: "Log out",   key: "E", decisive: false },
+        { icon: root.icoRestart,  label: "Restart",   key: "R", decisive: false },
+        { icon: root.icoPower,    label: "Shut down", key: "S", decisive: true }
     ]
 
     Process {
@@ -88,10 +87,11 @@ Item {
                     required property int index
                     required property var modelData
 
-                    rowHeight: 46
+                    rowHeight: 48
                     icon: modelData.icon
                     label: modelData.label
                     value: modelData.key
+                    valueKeycap: true
                     destructive: modelData.decisive
                     selected: index === powerRoot.selectedIndex
                     last: index === powerRoot.actions.length - 1

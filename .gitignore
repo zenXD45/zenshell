@@ -11,3 +11,9 @@ hyprzen/.config/hypr/themes/current_theme.conf
 hyprzen/.config/hypr/themes/current_theme.lua
 hyprzen/.config/hypr/themes/current.css
 hyprzen/.config/kitty/themes/current.conf
+
+# Generated theme artifacts (run gen-themes.py / fetch-wallpaper-colors.sh to regenerate)
+hyprzen/.config/hypr/themes/palettes.json
+hyprzen/.config/hypr/themes/wallpaper.conf
+hyprzen/.config/hypr/themes/wallpaper.css
+hyprzen/.config/hypr/themes/wallpaper.lua

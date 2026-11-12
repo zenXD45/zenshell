@@ -1,6 +1,6 @@
 #!/bin/bash
 if [ -z "$1" ]; then
-    echo "Usage: $0 <launcher|wallpapers|themes|power|control|weather|profiles|bar-settings|settings [page]|bar|island|dock|dock-settings|camera|camera-snap|mic-mute|camera-output>"
+    echo "Usage: $0 <launcher|wallpapers|themes|power|control|weather|screentime|profiles|bar-settings|settings [page]|bar|status|island|dock|dock-settings|camera|camera-snap|mic-mute|camera-output>"
     exit 1
 fi
 
@@ -22,6 +22,8 @@ elif [ "$1" == "clipboard" ]; then
     quickshell ipc -p "$CONFIG_PATH" call island showClipboard
 elif [ "$1" == "cheatsheet" ]; then
     quickshell ipc -p "$CONFIG_PATH" call island showCheatsheet
+elif [ "$1" == "screentime" ] || [ "$1" == "screen-time" ]; then
+    quickshell ipc -p "$CONFIG_PATH" call island showScreenTime
 elif [ "$1" == "weather" ]; then
     quickshell ipc -p "$CONFIG_PATH" call island showWeather
 elif [ "$1" == "profiles" ] || [ "$1" == "profile-switch" ]; then
@@ -37,6 +39,8 @@ elif [ "$1" == "settings" ]; then
     fi
 elif [ "$1" == "bar" ]; then
     quickshell ipc -p "$CONFIG_PATH" call profile switchTo bar
+elif [ "$1" == "status" ]; then
+    quickshell ipc -p "$CONFIG_PATH" call profile switchTo status
 elif [ "$1" == "island" ]; then
     quickshell ipc -p "$CONFIG_PATH" call profile switchTo island
 elif [ "$1" == "dock" ]; then

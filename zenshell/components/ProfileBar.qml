@@ -525,6 +525,8 @@ Scope {
                                                 width: 16
                                                 height: 16
                                                 source: barScope.trayIcon(modelData)
+                                                sourceSize: Qt.size(32, 32)
+                                                asynchronous: true
                                                 smooth: true
                                             }
 

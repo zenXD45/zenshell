@@ -6,6 +6,7 @@ name = "Alabaster"
 slug = "alabaster"
 icon = "🤍"
 dark  = false
+gtk_theme = "adw-gtk3"
 
 [colors]
 bg      = "#f7f7f7"

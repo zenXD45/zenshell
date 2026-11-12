@@ -22,7 +22,7 @@ button {
 }
 
 button:hover, button:focus {
-    background-color: rgba(255, 255, 255, 0.15); /* WLOGOUT_HOVER_COLOR */
+    background-color: rgba(255, 93, 98, 0.5); /* WLOGOUT_HOVER_COLOR */
     background-size: 30%;
     margin: 10px 10px;
     border: none;

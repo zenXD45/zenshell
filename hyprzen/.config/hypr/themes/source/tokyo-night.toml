@@ -5,6 +5,7 @@ name = "Tokyo Night"
 slug = "tokyo-night"
 icon = "🌃"
 dark  = true
+gtk_theme = "Tokyonight-Dark"
 
 [colors]
 bg      = "#1a1b26"

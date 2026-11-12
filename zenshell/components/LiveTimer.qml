@@ -6,16 +6,16 @@ RowLayout {
     anchors.fill: parent
     anchors.margins: 12
     spacing: 12
-    property real reveal: root.displayState === 7 ? 1 : 0
+    property bool entered: false
+    property real reveal: (root.displayState === 7 && entered) ? 1 : 0
     opacity: reveal
     visible: opacity > 0
-    clip: true
-    transform: Translate { y: (1 - timerRoot.reveal) * 5 }
+    transform: Translate { y: (1 - timerRoot.reveal) * 4 }
 
     Behavior on reveal {
         NumberAnimation {
             duration: root.displayState === 7 ? root.motionBase : root.motionExit
-            easing.type: root.displayState === 7 ? Easing.OutExpo : Easing.OutCubic
+            easing.type: Easing.OutCubic
         }
     }
 

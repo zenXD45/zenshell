@@ -9,6 +9,7 @@ name = "Matugen"
 slug = "matugen"
 icon = "🎨"
 dark  = true
+gtk_theme = "adw-gtk3-dark"
 
 [colors]
 bg      = "{{ colors.background.default.hex }}"

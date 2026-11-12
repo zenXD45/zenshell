@@ -4,17 +4,16 @@ import QtQuick.Layouts
 Item {
     id: themeRoot
     anchors.fill: parent
-    property real reveal: root.displayState === 11 ? 1 : 0
+    property bool entered: false
+    property real reveal: (root.displayState === 11 && entered) ? 1 : 0
     opacity: reveal
     visible: opacity > 0
-    clip: true
-    scale: 0.992 + reveal * 0.008
-    transform: Translate { y: (1 - themeRoot.reveal) * 8 }
+    transform: Translate { y: (1 - themeRoot.reveal) * 6 }
 
     Behavior on reveal {
         NumberAnimation {
             duration: root.displayState === 11 ? root.motionPanel : root.motionExit
-            easing.type: root.displayState === 11 ? Easing.OutExpo : Easing.OutCubic
+            easing.type: Easing.OutCubic
         }
     }
 
@@ -61,15 +60,17 @@ Item {
 
             Rectangle {
                 anchors.fill: parent
-                radius: 14
-                color: root.ink(0.055)
+                radius: root.rLg
+                color: root.cSurfaceContainerLow
+                border.width: 1
+                border.color: root.cOutlineVariant
             }
 
             ListView {
                 id: themeList
                 anchors.fill: parent
                 anchors.margins: 4
-                spacing: 0
+                spacing: root.s1
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
                 currentIndex: 0
@@ -118,7 +119,7 @@ Item {
                 delegate: Item {
                     id: themeRow
                     width: themeList.width
-                    height: 46
+                    height: 48
 
                     property var theme: root.themesList[index] || {}
                     property color tBg: theme.bg || root.themeSurface
@@ -129,22 +130,11 @@ Item {
                     Rectangle {
                         anchors.fill: parent
                         anchors.margins: 2
-                        radius: 10
+                        radius: root.rMd
                         color: themeRow.isSel
-                            ? root.ink(0.065)
-                            : (rowHover.containsMouse ? root.ink(0.04) : "transparent")
+                            ? root.cSecondaryContainer
+                            : (rowHover.containsMouse ? root.cStateHover : "transparent")
                         Behavior on color { ColorAnimation { duration: root.dMicro } }
-                    }
-
-                    Rectangle {
-                        visible: index < themeList.count - 1
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.bottom: parent.bottom
-                        anchors.leftMargin: 56
-                        anchors.rightMargin: 16
-                        height: 1
-                        color: root.ink(0.07)
                     }
 
                     RowLayout {
@@ -157,10 +147,10 @@ Item {
                             Layout.alignment: Qt.AlignVCenter
                             Layout.preferredWidth: 26
                             Layout.preferredHeight: 26
-                            radius: 7
+                            radius: 8
                             color: themeRow.tBg
                             border.width: 1
-                            border.color: root.ink(0.12)
+                            border.color: root.cOutlineVariant
 
                             Rectangle {
                                 anchors.centerIn: parent
@@ -175,20 +165,20 @@ Item {
                             Layout.fillWidth: true
                             Layout.alignment: Qt.AlignVCenter
                             text: themeRow.theme.name || themeRow.theme.id || "Theme"
-                            color: root.cFgPrimary
+                            color: root.cOnSurface
                             font.family: root.fontSans
                             font.pixelSize: 14
-                            font.weight: themeRow.isActive ? Font.DemiBold : Font.Normal
+                            font.weight: themeRow.isActive ? Font.DemiBold : Font.Medium
                             elide: Text.ElideRight
                         }
 
                         Text {
                             Layout.alignment: Qt.AlignVCenter
                             visible: themeRow.isActive
-                            text: "\uf00c"
-                            color: root.currentThemeAccent
-                            font.family: root.fontMono
-                            font.pixelSize: 13
+                            text: root.icoCheck
+                            color: root.cPrimary
+                            font.family: root.fontIcon
+                            font.pixelSize: 16
                         }
                     }
 

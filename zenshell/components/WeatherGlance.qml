@@ -6,16 +6,16 @@ import QtQuick.Layouts
 Item {
     id: weatherRoot
     anchors.fill: parent
-    property real reveal: root.displayState === 6 ? 1 : 0
+    property bool entered: false
+    property real reveal: (root.displayState === 6 && entered) ? 1 : 0
     opacity: reveal
     visible: opacity > 0
-    clip: true
     transform: Translate { y: (1 - weatherRoot.reveal) * 5 }
 
     Behavior on reveal {
         NumberAnimation {
-            duration: root.displayState === 6 ? root.dNormal : root.dFast
-            easing.type: root.displayState === 6 ? Easing.OutExpo : Easing.OutCubic
+            duration: root.displayState === 6 ? root.motionBase : root.motionExit
+            easing.type: Easing.OutCubic
         }
     }
 

@@ -39,6 +39,7 @@ hl.on("hyprland.start", function()
     -- The island must be up before the notification daemon is needed, and
     -- it claims org.freedesktop.Notifications on start.
     hl.exec_cmd("~/.config/quickshell/dynamic-island/start_all.sh")
+    hl.exec_cmd("nohup python3 $HOME/scripts/screen-time-daemon.py >/dev/null 2>&1 &")
     hl.exec_cmd("wl-paste --type text  --watch cliphist store")
     hl.exec_cmd("wl-paste --type image --watch cliphist store")
     hl.exec_cmd("nm-applet --indicator")

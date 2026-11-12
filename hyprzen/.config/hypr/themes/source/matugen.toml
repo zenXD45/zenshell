@@ -9,40 +9,41 @@ name = "Matugen"
 slug = "matugen"
 icon = "🎨"
 dark  = true
+gtk_theme = "adw-gtk3-dark"
 
 [colors]
-bg      = "#191113"
-surface = "#191113"
-overlay = "#22191b"
-accent  = "#ffb1c0"
-fg      = "#efdee0"
-subfg   = "#d6c2c4"
+bg      = "#1a1111"
+surface = "#1a1111"
+overlay = "#231919"
+accent  = "#ffb3ae"
+fg      = "#f1dedd"
+subfg   = "#d8c2bf"
 urgent  = "#ffb4ab"
 
 [geometry]
 rounding = 14
 border_size = 0
 gaps_in = 5
-gaps_out = 12
-blur_size = 6
+gaps_out = 14
+blur_size = 5
 blur_passes = 3
-inactive_opacity = 0.92
+inactive_opacity = 0.93
 shadow_color = "rgba(0000008c)"
 
 [palette]
-black   = "#232223"
-red     = "#b2b2b2"
-green   = "#b2b2b2"
-yellow  = "#b2b2b2"
-blue    = "#b2b2b2"
-magenta = "#b2b2b2"
-cyan    = "#b2b2b2"
-white   = "#fefefe"
-bright_black   = "#818081"
-bright_red     = "#b2b2b2"
-bright_green   = "#b2b2b2"
-bright_yellow  = "#b2b2b2"
-bright_blue    = "#b2b2b2"
-bright_magenta = "#b2b2b2"
-bright_cyan    = "#b2b2b2"
-bright_white   = "#fefefe"
+black   = "#050202"
+red     = "#050202"
+green   = "#8c1f1f"
+yellow  = "#791b1a"
+blue    = "#901f20"
+magenta = "#901f21"
+cyan    = "#9b2c2f"
+white   = "#f5af67"
+bright_black   = "#6c4c2e"
+bright_red     = "#050202"
+bright_green   = "#8c1f1f"
+bright_yellow  = "#791b1a"
+bright_blue    = "#901f20"
+bright_magenta = "#901f21"
+bright_cyan    = "#9b2c2f"
+bright_white   = "#f5af67"

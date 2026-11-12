@@ -1,24 +1,26 @@
 import QtQuick
 import QtQuick.Layouts
 
-// One line of a menu: glyph, label, optional live value, optional chevron.
-// Rows are the only structural unit in ZenShell panels — a menu is a stack of
-// rows over a hairline, never a field of cards. There is no border, no icon
-// tile and no accent unless the row is the active selection or destructive.
+// A Material 3 list row for drill-in menus: leading glyph, label, optional
+// live detail and value, optional chevron. Hover and selection are tonal state
+// layers; there is no card border and no resting accent.
 Item {
     id: row
 
     property string icon: ""
+    property string iconFont: root.fontIcon
     property string label: ""
     property string value: ""
     property string detail: ""
     property bool chevron: false
+    property string chevronGlyph: root.icoChevronRight
+    property string chevronFont: root.fontIcon
     property bool active: false
     property bool danger: false
     property bool interactive: true
     property bool showDivider: false
-    property int rowHeight: 44
-    property color accentColor: root.currentThemeAccent || root.themeAccent
+    property int rowHeight: 48
+    property color accentColor: root.cPrimary
 
     signal clicked()
 
@@ -28,30 +30,31 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: root.rSm
+        anchors.margins: 4
+        radius: root.rMd
         color: row.active
-            ? Qt.rgba(row.accentColor.r, row.accentColor.g, row.accentColor.b, 0.11)
-            : (rowArea.containsMouse && row.interactive ? root.ink(0.05) : "transparent")
+            ? root.cSecondaryContainer
+            : (rowArea.containsMouse && row.interactive ? root.cStateHover : "transparent")
         Behavior on color { ColorAnimation { duration: root.dMicro } }
     }
 
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: root.s3
-        anchors.rightMargin: root.s3
+        anchors.leftMargin: 16
+        anchors.rightMargin: 16
         spacing: root.s4
 
         Text {
             Layout.alignment: Qt.AlignVCenter
-            Layout.preferredWidth: 20
+            Layout.preferredWidth: 24
             horizontalAlignment: Text.AlignHCenter
             text: row.icon
             visible: row.icon !== ""
             color: row.danger
-                ? root.cDanger
-                : (row.active ? row.accentColor : root.cFgSecondary)
-            font.family: root.fontMono
-            font.pixelSize: 15
+                ? root.cError
+                : (row.active ? root.cOnSecondaryContainer : root.cOnSurfaceVariant)
+            font.family: row.iconFont
+            font.pixelSize: 19
             Behavior on color { ColorAnimation { duration: root.dMicro } }
         }
 
@@ -62,9 +65,9 @@ Item {
             Text {
                 Layout.fillWidth: true
                 text: row.label
-                color: row.danger ? root.cDanger : root.cFgPrimary
+                color: row.danger ? root.cError : root.cOnSurface
                 font.family: root.fontSans
-                font.pixelSize: 13
+                font.pixelSize: 14
                 font.weight: Font.Medium
                 elide: Text.ElideRight
                 maximumLineCount: 1
@@ -74,7 +77,7 @@ Item {
                 Layout.fillWidth: true
                 visible: text !== ""
                 text: row.detail || ""
-                color: root.cFgMuted
+                color: root.cOnSurfaceVariant
                 font.family: root.fontSans
                 font.pixelSize: 12
                 elide: Text.ElideRight
@@ -86,7 +89,7 @@ Item {
             Layout.alignment: Qt.AlignVCenter
             visible: text !== ""
             text: row.value
-            color: row.active ? row.accentColor : root.cFgMuted
+            color: row.active ? root.cOnSecondaryContainer : root.cOnSurfaceVariant
             font.family: root.fontMono
             font.pixelSize: 11
             horizontalAlignment: Text.AlignRight
@@ -96,23 +99,23 @@ Item {
         Text {
             Layout.alignment: Qt.AlignVCenter
             visible: row.chevron
-            text: "\uf054"
-            color: root.ink(rowArea.containsMouse ? 0.62 : 0.34)
-            font.family: root.fontMono
-            font.pixelSize: 10
+            text: row.chevronGlyph
+            color: rowArea.containsMouse ? root.cOnSurface : root.cOnSurfaceVariant
+            font.family: row.chevronFont
+            font.pixelSize: 20
             Behavior on color { ColorAnimation { duration: root.dMicro } }
         }
     }
 
-    // Hairline belongs to the row above it in reading order.
     Rectangle {
         visible: row.showDivider
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.leftMargin: root.s3 + 20 + root.s4
+        anchors.leftMargin: 56
+        anchors.rightMargin: 16
         height: 1
-        color: root.ink(0.055)
+        color: root.cOutlineVariant
     }
 
     MouseArea {

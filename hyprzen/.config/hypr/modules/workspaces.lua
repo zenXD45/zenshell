@@ -91,24 +91,11 @@ hl.window_rule({
 
 hl.window_rule({
     match = {
-        class = "^(mpv)$",
-    },
-    workspace = "4 silent",
-})
-
-hl.window_rule({
-    match = {
         class = "^(thunar)$",
     },
     workspace = "3 silent",
 })
 
-hl.window_rule({
-    match = {
-        class = "^(steam)$",
-    },
-    workspace = "4 silent",
-})
 
 hl.window_rule({
     match = {

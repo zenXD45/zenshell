@@ -186,7 +186,8 @@ OFFICIAL_PKGS=(
     # AUR entry this installer used to carry (`adw-gtk3`) no longer exists.
     # JetBrainsMono Nerd is what kitty and ZenShell actually ask for by name;
     # Google Sans Flex is downloaded below because no distro ships it.
-    adw-gtk-theme ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji papirus-icon-theme
+    # sassc is needed to compile Fausto GTK themes (Gruvbox, Tokyo Night, etc.)
+    adw-gtk-theme ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji papirus-icon-theme sassc
     # Python (monitors / control scripts)
     python python-dbus python-gobject
     # Shell

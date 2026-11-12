@@ -1,4 +1,6 @@
 import QtQuick
+import QtQuick.Controls as Controls
+import QtQuick.Effects
 import QtQuick.Layouts
 
 // One setting row: a title and a description on the left, the control on
@@ -12,7 +14,14 @@ Item {
     property var spec: null
     property var value: null
     property color accent: root.themeAccent
+    readonly property color muted: root.cOnSurfaceVariant
     property bool hovered: false
+    // The window that owns the row. The dropdown needs it to know where the
+    // bottom of the screen is so the list can open upwards near the edge.
+    property var hostWindow: null
+
+    // Mirrors the popup's open state so the trigger can stay highlighted.
+    readonly property bool dropdownOpen: dropMenu.opened
 
     // Emitted when the user picks a new value. The parent turns it into a
     // root.setValue() call so every write goes through one door.
@@ -21,38 +30,49 @@ Item {
     implicitHeight: 58
     implicitWidth: 1
 
-    // An open dropdown paints over the rows below it, so the row itself has
-    // to be lifted in the stacking order while the list is showing.
-    property bool dropdownOpen: false
-    z: dropdownOpen ? 30 : 0
-
     readonly property bool hasDesc: row.spec && row.spec.desc !== undefined && row.spec.desc !== "";
+
+    // A state layer behind the whole row, like a Material list item. The
+    // HoverHandler only observes the pointer, so it never steals clicks from
+    // the switch, slider or dropdown that sit on top of it.
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: 2
+        radius: root.rMd
+        color: row.hovered ? root.cStateHover : "transparent"
+        Behavior on color { ColorAnimation { duration: root.dMicro } }
+    }
+
+    HoverHandler {
+        onHoveredChanged: row.hovered = hovered
+    }
 
     // ── Toggle ────────────────────────────────────────────────────
     Rectangle {
         id: toggle
         visible: row.spec && row.spec.type === "toggle"
-        width: 38
-        height: 22
-        radius: 11
+        width: 44
+        height: 24
+        radius: 12
         // The switch belongs on the right edge of the row, opposite the
         // label. Without these anchors it sat at (0,0) and covered the
         // title text.
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        color: row.value === true ? row.accent : root.themeSurface
-        border.width: 1
-        border.color: row.value === true ? Qt.rgba(row.accent.r, row.accent.g, row.accent.b, 0.6) : root.ink(0.141)
+        color: row.value === true ? root.cPrimary : root.cSurfaceContainerHighest
+        border.width: row.value === true ? 0 : 1
+        border.color: root.cOutline
         Behavior on color { ColorAnimation { duration: 150 } }
 
         Rectangle {
-            width: 17
-            height: 17
-            radius: 8.5
-            y: 2.5
-            x: row.value === true ? 19 : 2
-            color: root.themeFg
+            width: 18
+            height: 18
+            radius: 9
+            y: 3
+            x: row.value === true ? 23 : 3
+            color: row.value === true ? root.cOnPrimary : root.cOutline
             Behavior on x { NumberAnimation { duration: 170; easing.type: Easing.OutCubic } }
+            Behavior on color { ColorAnimation { duration: 150 } }
         }
     }
 
@@ -84,26 +104,21 @@ Item {
 
                 readonly property bool selected: String(row.value) === String(modelData.value)
 
-                height: 30
-                width: Math.max(52, chipLabel.implicitWidth + 22)
-                radius: 9
+                height: 32
+                width: Math.max(56, chipLabel.implicitWidth + 24)
+                radius: 8
                 color: selected
-                    ? Qt.rgba(row.accent.r, row.accent.g, row.accent.b, 0.16)
-                    : (chipMouse.containsMouse ? root.ink(0.071) : root.ink(0.031))
-                border.width: 1
-                border.color: selected
-                    ? Qt.rgba(row.accent.r, row.accent.g, row.accent.b, 0.45)
-                    : (chipMouse.containsMouse ? root.ink(0.149) : root.ink(0.078))
+                    ? root.cSecondaryContainer
+                    : (chipMouse.containsMouse ? root.cSurfaceContainerHighest : root.cSurfaceContainerHigh)
                 Behavior on color { ColorAnimation { duration: 140 } }
-                Behavior on border.color { ColorAnimation { duration: 140 } }
 
                 Text {
                     id: chipLabel
                     anchors.centerIn: parent
                     text: chip.modelData.label
-                    color: chip.selected ? row.accent : root.cFgSecondary
+                    color: chip.selected ? root.cOnSecondaryContainer : root.cOnSurfaceVariant
                     font.family: root.fontSans
-                    font.pixelSize: 11
+                    font.pixelSize: 12
                     font.weight: Font.Medium
                 }
 
@@ -151,27 +166,29 @@ Item {
         Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             width: parent.width
-            height: 5
-            radius: 2.5
-            color: root.ink(0.122)
+            height: 4
+            radius: 2
+            color: root.cSurfaceContainerHighest
 
             Rectangle {
-                width: Math.max(0, slider.valueToX(slider.current))
+                width: Math.max(0, Math.min(parent.width, slider.valueToX(slider.current) + knob.width / 2))
                 height: parent.height
                 radius: parent.radius
-                color: row.accent
+                color: root.cPrimary
                 Behavior on width { NumberAnimation { duration: 90 } }
             }
         }
 
         Rectangle {
             id: knob
-            width: 16
-            height: 16
-            radius: 8
+            width: 18
+            height: 18
+            radius: 9
             y: (parent.height - height) / 2
             x: Math.max(0, Math.min(parent.width - width, slider.valueToX(slider.current)))
-            color: root.themeFg
+            color: root.cPrimary
+            border.width: 2
+            border.color: root.cSurface
             scale: sliderArea.containsMouse ? 1.12 : 1.0
             Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
             Behavior on x { NumberAnimation { duration: 90 } }
@@ -199,9 +216,9 @@ Item {
             var suffix = row.spec && row.spec.unit !== undefined ? row.spec.unit : "";
             return (Math.round(row.value * 100) / 100) + suffix;
         }
-        color: root.cFgSecondary
+        color: root.cOnSurfaceVariant
         font.family: root.fontSans
-        font.pixelSize: 11
+        font.pixelSize: 12
         font.weight: Font.Medium
     }
 
@@ -224,45 +241,36 @@ Item {
 
                 readonly property bool checked: row.value && row.value.indexOf(modelData.value) !== -1
 
-                Layout.preferredWidth: 152
-                Layout.preferredHeight: 30
-                radius: 9
+                Layout.preferredWidth: 156
+                Layout.preferredHeight: 34
+                radius: 8
                 color: checked
-                    ? Qt.rgba(row.accent.r, row.accent.g, row.accent.b, 0.12)
-                    : (optionMouse.containsMouse ? root.ink(0.071) : root.ink(0.031))
-                border.width: 1
-                border.color: checked
-                    ? Qt.rgba(row.accent.r, row.accent.g, row.accent.b, 0.40)
-                    : (optionMouse.containsMouse ? root.ink(0.149) : root.ink(0.078))
+                    ? root.cSecondaryContainer
+                    : (optionMouse.containsMouse ? root.cSurfaceContainerHighest : root.cSurfaceContainerHigh)
                 Behavior on color { ColorAnimation { duration: 140 } }
-                Behavior on border.color { ColorAnimation { duration: 140 } }
 
                 Row {
                     anchors.fill: parent
-                    anchors.leftMargin: 9
-                    anchors.rightMargin: 9
-                    spacing: 7
+                    anchors.leftMargin: 10
+                    anchors.rightMargin: 10
+                    spacing: 8
 
                     Rectangle {
-                        width: 14
-                        height: 14
+                        width: 16
+                        height: 16
                         radius: 4
                         anchors.verticalCenter: parent.verticalCenter
-                        color: optionBox.checked
-                            ? Qt.rgba(row.accent.r, row.accent.g, row.accent.b, 0.22)
-                            : "transparent"
-                        border.width: 1
-                        border.color: optionBox.checked
-                            ? Qt.rgba(row.accent.r, row.accent.g, row.accent.b, 0.55)
-                            : root.ink(0.188)
+                        color: optionBox.checked ? root.cPrimary : "transparent"
+                        border.width: optionBox.checked ? 0 : 1
+                        border.color: root.cOutline
 
                         Text {
                             anchors.centerIn: parent
                             visible: optionBox.checked
-                            text: "\uf00c"
-                            color: row.accent
-                            font.family: root.fontMono
-                            font.pixelSize: 8
+                            text: root.icoCheck
+                            color: root.cOnPrimary
+                            font.family: root.fontIcon
+                            font.pixelSize: 12
                         }
                     }
 
@@ -270,9 +278,9 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         width: Math.min(implicitWidth, 104)
                         text: optionBox.modelData.label
-                        color: optionBox.checked ? root.cFgPrimary : root.cFgSecondary
+                        color: optionBox.checked ? root.cOnSecondaryContainer : root.cOnSurfaceVariant
                         font.family: root.fontSans
-                        font.pixelSize: 11
+                        font.pixelSize: 12
                         font.weight: Font.Medium
                         elide: Text.ElideRight
                     }
@@ -299,51 +307,67 @@ Item {
     Item {
         id: dropdown
         visible: row.spec && row.spec.type === "dropdown"
-        width: 176
-        height: 32
+        width: 220
+        height: 40
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
 
         readonly property var options: row.spec && row.spec.options ? row.spec.options : []
+        readonly property int itemHeight: 40
+        readonly property int menuHeight: Math.min(options.length * itemHeight + 10, 320)
 
         readonly property string currentLabel: {
-            if (!row.value) return "";
-            var needle = String(row.value).split("@")[0];
+            if (!row.value) return "Not set";
+            var needle = String(row.value).replace(/@.*$/, "").replace(/\.desktop$/, "");
             for (var i = 0; i < dropdown.options.length; i++) {
-                if (String(dropdown.options[i].value).split("@")[0] === needle) {
+                var candidate = String(dropdown.options[i].value).replace(/@.*$/, "").replace(/\.desktop$/, "");
+                if (candidate === needle) {
                     return dropdown.options[i].label;
                 }
             }
-            return String(row.value);
+            // The stored association is not in the filtered list (a role with
+            // no matching application, or an app that was uninstalled). Show
+            // the id without its file suffix rather than raw "name.desktop".
+            return needle;
         }
 
         function toggle() {
-            dropdownOpen = !dropdownOpen;
+            if (dropMenu.opened) dropMenu.close();
+            else dropMenu.open();
+        }
+
+        function selectedIndex() {
+            var needle = String(row.value || "").replace(/@.*$/, "").replace(/\.desktop$/, "");
+            if (needle === "") return -1;
+            for (var i = 0; i < dropdown.options.length; i++) {
+                var candidate = String(dropdown.options[i].value).replace(/@.*$/, "").replace(/\.desktop$/, "");
+                if (candidate === needle) return i;
+            }
+            return -1;
         }
 
         Rectangle {
             id: dropButton
             anchors.fill: parent
-            radius: 9
-            color: dropdownOpen
-                ? Qt.rgba(row.accent.r, row.accent.g, row.accent.b, 0.14)
-                : (dropMouse.containsMouse ? root.ink(0.071) : root.ink(0.031))
-            border.width: 1
-            border.color: dropdownOpen
-                ? Qt.rgba(row.accent.r, row.accent.g, row.accent.b, 0.40)
-                : (dropMouse.containsMouse ? root.ink(0.149) : root.ink(0.078))
+            radius: 12
+            color: row.dropdownOpen
+                ? root.cSurfaceContainerHighest
+                : (dropMouse.containsMouse ? root.cSurfaceContainerHighest : root.cSurfaceContainerHigh)
+            border.width: row.dropdownOpen ? 2 : 1
+            border.color: row.dropdownOpen ? root.cPrimary : root.cOutlineVariant
             Behavior on color { ColorAnimation { duration: 140 } }
+            Behavior on border.color { ColorAnimation { duration: 140 } }
 
             Text {
                 anchors.left: parent.left
-                anchors.leftMargin: 12
+                anchors.leftMargin: 14
                 anchors.right: chevron.left
-                anchors.rightMargin: 8
+                anchors.rightMargin: 6
                 anchors.verticalCenter: parent.verticalCenter
                 text: dropdown.currentLabel
-                color: root.cFgPrimary
+                color: root.cOnSurface
                 font.family: root.fontSans
-                font.pixelSize: 11
+                font.pixelSize: 13
                 font.weight: Font.Medium
                 elide: Text.ElideRight
             }
@@ -353,10 +377,12 @@ Item {
                 anchors.right: parent.right
                 anchors.rightMargin: 10
                 anchors.verticalCenter: parent.verticalCenter
-                text: "\uf078"
-                color: root.cFgSecondary
-                font.family: root.fontMono
-                font.pixelSize: 9
+                text: root.icoChevronRight
+                color: root.cOnSurfaceVariant
+                font.family: root.fontIcon
+                font.pixelSize: 18
+                rotation: row.dropdownOpen ? 270 : 90
+                Behavior on rotation { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
             }
 
             MouseArea {
@@ -368,70 +394,137 @@ Item {
             }
         }
 
-        Rectangle {
-            id: dropList
-            z: 40
-            visible: dropdownOpen
-            width: dropButton.width
-            x: 0
-            y: dropButton.height + 6
-            height: Math.min(dropListView.count * 34 + 10, 240)
-            radius: 12
-            color: root.surface(0.94)
-            border.width: 1
-            border.color: root.ink(0.149)
+        // A Popup lives in the window's overlay, not in the row's layout.
+        // The old in-row list was a child of the row, so QML kept it under
+        // every row painted after it — the next row's trigger drew straight
+        // through the open menu. The overlay also means the list is no
+        // longer clipped by the settings page's Flickable.
+        Controls.Popup {
+            id: dropMenu
+            parent: dropdown
+            popupType: Controls.Popup.Item
+            width: dropdown.width
+            height: dropdown.menuHeight
+            padding: 5
+            closePolicy: Controls.Popup.CloseOnEscape | Controls.Popup.CloseOnPressOutsideParent
 
-            ListView {
-                id: dropListView
-                anchors.fill: parent
-                anchors.margins: 5
-                model: dropdown.options
+            // Open below the trigger, or above it when the row is too close
+            // to the bottom of the window for the list to fit.
+            onAboutToShow: {
+                var anchor = dropdown.mapToItem(null, 0, 0);
+                var windowHeight = row.hostWindow ? row.hostWindow.height : 900;
+                var below = anchor.y + dropdown.height + 6;
+                dropMenu.y = (below + dropMenu.height <= windowHeight - 8)
+                    ? dropdown.height + 6
+                    : -dropMenu.height - 6;
+            }
+
+            // A long application list should open at the current choice, not
+            // at "A" with the selected row several screens down.
+            onOpened: {
+                var index = dropdown.selectedIndex();
+                if (index >= 0) menuList.positionViewAtIndex(index, ListView.Center);
+            }
+
+            enter: Transition {
+                NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 110; easing.type: Easing.OutCubic }
+            }
+            exit: Transition {
+                NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 80; easing.type: Easing.InCubic }
+            }
+
+            background: Item {
+                RectangularShadow {
+                    anchors.fill: panel
+                    radius: panel.radius
+                    color: "#80000000"
+                    blur: 26
+                    spread: 1
+                    offset: Qt.vector2d(0, 6)
+                }
+
+                Rectangle {
+                    id: panel
+                    anchors.fill: parent
+                    radius: 12
+                    // Opaque on purpose: an overlay menu that lets the row
+                    // underneath ghost through reads as a rendering bug.
+                    color: root.cSurfaceContainerHigh
+                    border.width: 1
+                    border.color: root.cOutlineVariant
+                }
+            }
+
+            contentItem: ListView {
+                id: menuList
                 clip: true
+                model: dropdown.options
                 boundsBehavior: Flickable.StopAtBounds
-                interactive: dropList.height < dropListView.contentHeight
+                interactive: contentHeight > height
+
+                Controls.ScrollBar.vertical: Controls.ScrollBar {
+                    id: menuScroll
+                    width: 4
+                    policy: Controls.ScrollBar.AsNeeded
+                    background: Item {}
+                    contentItem: Rectangle {
+                        implicitWidth: 4
+                        radius: 2
+                        color: root.ink(0.24)
+                        visible: menuScroll.size < 1
+                    }
+                }
 
                 delegate: Rectangle {
                     id: dropItem
                     required property var modelData
 
-                    readonly property bool selected: String(row.value) === String(modelData.value)
+                    readonly property bool selected: {
+                        var needle = String(row.value || "").replace(/@.*$/, "").replace(/\.desktop$/, "");
+                        var candidate = String(modelData.value).replace(/@.*$/, "").replace(/\.desktop$/, "");
+                        return needle !== "" && needle === candidate;
+                    }
 
-                    width: dropListView.width
-                    height: 34
+                    width: ListView.view.width
+                    height: dropdown.itemHeight
                     radius: 8
-                    color: dropMouse.containsMouse
-                        ? Qt.rgba(row.accent.r, row.accent.g, row.accent.b, 0.18)
-                        : "transparent"
+                    color: dropItem.selected
+                        ? root.cSecondaryContainer
+                        : (itemMouse.containsMouse ? root.cStateHover : "transparent")
 
                     Text {
                         anchors.left: parent.left
-                        anchors.leftMargin: 10
+                        anchors.leftMargin: 12
+                        anchors.right: checkMark.left
+                        anchors.rightMargin: 8
                         anchors.verticalCenter: parent.verticalCenter
                         text: dropItem.modelData.label
-                        color: dropItem.selected ? row.accent : root.cFgPrimary
+                        color: dropItem.selected ? root.cOnSecondaryContainer : root.cOnSurface
                         font.family: root.fontSans
-                        font.pixelSize: 11
-                        font.weight: Font.Medium
+                        font.pixelSize: 13
+                        font.weight: dropItem.selected ? Font.DemiBold : Font.Medium
+                        elide: Text.ElideRight
                     }
 
                     Text {
+                        id: checkMark
                         anchors.right: parent.right
-                        anchors.rightMargin: 10
+                        anchors.rightMargin: 12
                         anchors.verticalCenter: parent.verticalCenter
                         visible: dropItem.selected
-                        text: "\uf00c"
-                        color: row.accent
-                        font.family: root.fontMono
-                        font.pixelSize: 9
+                        text: root.icoCheck
+                        color: root.cPrimary
+                        font.family: root.fontIcon
+                        font.pixelSize: 16
                     }
 
                     MouseArea {
-                        id: dropMouse
+                        id: itemMouse
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            dropdownOpen = false;
+                            dropMenu.close();
                             row.picked(dropItem.modelData.value);
                         }
                     }
@@ -444,14 +537,12 @@ Item {
     Rectangle {
         id: actionButton
         visible: row.spec && row.spec.type === "action"
-        width: Math.max(78, actionLabel.implicitWidth + 24)
-        height: 32
-        radius: 9
+        width: Math.max(88, actionLabel.implicitWidth + 28)
+        height: 36
+        radius: 18
         color: actionMouse.containsMouse
-            ? Qt.rgba(row.accent.r, row.accent.g, row.accent.b, 0.18)
-            : Qt.rgba(row.accent.r, row.accent.g, row.accent.b, 0.09)
-        border.width: 1
-        border.color: Qt.rgba(row.accent.r, row.accent.g, row.accent.b, 0.32)
+            ? root.mixColor(root.cPrimaryContainer, root.cPrimary, 0.14)
+            : root.cPrimaryContainer
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
         Behavior on color { ColorAnimation { duration: 140 } }
@@ -460,9 +551,9 @@ Item {
             id: actionLabel
             anchors.centerIn: parent
             text: row.spec && row.spec.actionLabel ? row.spec.actionLabel : "Open"
-            color: row.accent
+            color: root.cOnPrimaryContainer
             font.family: root.fontSans
-            font.pixelSize: 11
+            font.pixelSize: 12
             font.weight: Font.DemiBold
         }
 
@@ -489,10 +580,10 @@ Item {
         Text {
             width: parent.width
             text: row.spec && row.spec.label ? row.spec.label : ""
-            color: root.cFgPrimary
+            color: root.cOnSurface
             font.family: root.fontSans
-            font.pixelSize: 13
-            font.weight: Font.DemiBold
+            font.pixelSize: 14
+            font.weight: Font.Medium
             elide: Text.ElideRight
         }
 
@@ -500,9 +591,9 @@ Item {
             width: parent.width
             visible: row.hasDesc
             text: row.spec && row.spec.desc ? row.spec.desc : ""
-            color: root.cFgMuted
+            color: row.muted
             font.family: root.fontSans
-            font.pixelSize: 11
+            font.pixelSize: 12
             font.weight: Font.Normal
             elide: Text.ElideRight
         }

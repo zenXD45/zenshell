@@ -55,6 +55,10 @@ REQUIRED_GEOMETRY = {
 }
 REQUIRED_COLORS = {"bg", "surface", "overlay", "accent", "fg", "subfg", "urgent"}
 REQUIRED_PALETTE = {"black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"}
+# Every theme names the GTK theme that mirrors its palette. User-level ports
+# (Catppuccin, Gruvbox, Nordic, …) live in ~/.themes; adw-gtk3 is the neutral
+# fallback for palettes that have no upstream GTK port (pywal, Matugen, …).
+REQUIRED_META = {"name", "icon", "gtk_theme"}
 
 
 def strip_hash(value: str) -> str:
@@ -75,6 +79,135 @@ def hex8(hex_color: str, alpha: float) -> str:
     return f"rgba({r:02x}{g:02x}{b:02x}{round(alpha * 255):02x})"
 
 
+def _rgb(hex_color: str) -> tuple[int, int, int]:
+    h = strip_hash(hex_color)
+    return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+
+
+def mix(a: str, b: str, amount: float) -> str:
+    """Linear blend a→b; amount 0 keeps a, 1 returns b."""
+    ar, ag, ab = _rgb(a)
+    br, bg, bb = _rgb(b)
+    r = round(ar + (br - ar) * amount)
+    g = round(ag + (bg - ag) * amount)
+    bl = round(ab + (bb - ab) * amount)
+    return f"#{r:02x}{g:02x}{bl:02x}"
+
+
+def luminance(hex_color: str) -> float:
+    """Relative luminance (WCAG) — used to pick readable text on an accent."""
+    def channel(v: int) -> float:
+        s = v / 255
+        return s / 12.92 if s <= 0.03928 else ((s + 0.055) / 1.055) ** 2.4
+
+    r, g, b = _rgb(hex_color)
+    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+
+
+def readable_on(background: str, light: str = "#ffffff", dark: str = "#000000") -> str:
+    """Pick the more legible of two foregrounds for a given background."""
+    return dark if luminance(background) > 0.45 else light
+
+
+def gtk_palette(theme: dict) -> dict[str, str]:
+    """Every named colour GTK3, GTK4 and libadwaita look up at style time.
+
+    User gtk.css is loaded after the theme, so redefining these names recolours
+    both adw-gtk3 and the installed ports without shipping a separate theme per
+    palette. Values come straight from the theme TOML, so the island, Hyprland
+    and GTK cannot drift apart.
+    """
+    c, p = theme["colors"], theme["palette"]
+    bg = "#" + strip_hash(c["bg"])
+    surface = "#" + strip_hash(c["surface"])
+    overlay = "#" + strip_hash(c["overlay"])
+    accent = "#" + strip_hash(c["accent"])
+    fg = "#" + strip_hash(c["fg"])
+    subfg = "#" + strip_hash(c["subfg"])
+    urgent = "#" + strip_hash(c["urgent"])
+    green = "#" + strip_hash(p.get("green", c["urgent"]))
+    yellow = "#" + strip_hash(p.get("yellow", c["accent"]))
+    blue = "#" + strip_hash(p.get("blue", c["accent"]))
+    magenta = "#" + strip_hash(p.get("magenta", c["accent"]))
+    on_accent = readable_on(accent, light="#ffffff", dark=bg)
+    border = mix(bg, fg, 0.18)
+    shade = mix(bg, "#000000", 0.35 if theme["meta"].get("dark", True) else 0.12)
+    insensitive_bg = mix(bg, surface, 0.5)
+    insensitive_fg = mix(fg, bg, 0.45)
+    return {
+        # GTK4 / libadwaita
+        "accent_color": accent,
+        "accent_bg_color": accent,
+        "accent_fg_color": on_accent,
+        "window_bg_color": bg,
+        "window_fg_color": fg,
+        "view_bg_color": surface,
+        "view_fg_color": fg,
+        "headerbar_bg_color": surface,
+        "headerbar_fg_color": fg,
+        "headerbar_border_color": border,
+        "headerbar_backdrop_color": bg,
+        "headerbar_shade_color": shade,
+        "card_bg_color": surface,
+        "card_fg_color": fg,
+        "card_shade_color": shade,
+        "dialog_bg_color": surface,
+        "dialog_fg_color": fg,
+        "popover_bg_color": surface,
+        "popover_fg_color": fg,
+        "sidebar_bg_color": bg,
+        "sidebar_fg_color": fg,
+        "sidebar_backdrop_color": bg,
+        "sidebar_shade_color": shade,
+        "secondary_sidebar_bg_color": surface,
+        "secondary_sidebar_fg_color": fg,
+        "secondary_sidebar_backdrop_color": surface,
+        "secondary_sidebar_shade_color": shade,
+        "success_color": green,
+        "success_bg_color": green,
+        "success_fg_color": readable_on(green),
+        "warning_color": yellow,
+        "warning_bg_color": yellow,
+        "warning_fg_color": readable_on(yellow),
+        "error_color": urgent,
+        "error_bg_color": urgent,
+        "error_fg_color": readable_on(urgent),
+        "destructive_color": urgent,
+        "destructive_bg_color": urgent,
+        "destructive_fg_color": readable_on(urgent),
+        "borders": border,
+        "shade_color": shade,
+        "scrollbar_outline_color": border,
+        "thumbnail_bg_color": surface,
+        "thumbnail_fg_color": fg,
+        # GTK3
+        "theme_bg_color": bg,
+        "theme_fg_color": fg,
+        "theme_base_color": surface,
+        "theme_text_color": fg,
+        "theme_selected_bg_color": accent,
+        "theme_selected_fg_color": on_accent,
+        "theme_unfocused_bg_color": bg,
+        "theme_unfocused_fg_color": subfg,
+        "theme_unfocused_base_color": surface,
+        "theme_unfocused_text_color": subfg,
+        "theme_unfocused_selected_bg_color": accent,
+        "theme_unfocused_selected_fg_color": on_accent,
+        "insensitive_bg_color": insensitive_bg,
+        "insensitive_fg_color": insensitive_fg,
+        "insensitive_base_color": insensitive_bg,
+        "insensitive_text_color": insensitive_fg,
+        "unfocused_borders": border,
+        "unfocused_insensitive_color": insensitive_fg,
+        "link_color": blue,
+        "info_color": blue,
+        "question_color": magenta,
+        "osd_bg_color": overlay,
+        "osd_fg_color": fg,
+        "osd_border_color": border,
+    }
+
+
 def load_themes() -> list[dict]:
     themes: list[dict] = []
     for toml_path in sorted(SOURCE_DIR.glob("*.toml")):
@@ -85,7 +218,7 @@ def load_themes() -> list[dict]:
             sys.exit(f"error: {toml_path.name} is not valid TOML: {exc}")
 
         for section, keys in (
-            ("meta", {"name", "icon"}),
+            ("meta", REQUIRED_META),
             ("colors", REQUIRED_COLORS),
             ("geometry", REQUIRED_GEOMETRY),
             ("palette", REQUIRED_PALETTE),
@@ -197,7 +330,16 @@ def render_css(theme: dict) -> str:
         f'@define-color border_color  {rgba(c["accent"], 0.20)};',
         f'@define-color urgent        #{strip_hash(c["urgent"])};',
         "",
+        "/* Standard GTK3 / GTK4 / libadwaita colours.",
+        "   GTK loads the user gtk.css after the selected theme, so these names",
+        "   recolour libadwaita apps and any theme that uses the standard palette",
+        "   (adw-gtk3 uses them throughout). Keep this block last so it wins over",
+        "   the HyprZen-specific names above. */",
+        "",
     ]
+    for name, value in gtk_palette(theme).items():
+        lines.append(f"@define-color {name} {value};")
+    lines.append("")
     return "\n".join(lines)
 
 
@@ -267,9 +409,32 @@ def render_zenshell(themes: list[dict]) -> str:
             "extra": t["colors"]["urgent"],
             "dark": t["meta"].get("dark", True),
             "rounding": t["geometry"]["rounding"],
+            # Name of the GTK theme that mirrors this palette. Consumed by
+            # apply-appearance.py when the island switches themes.
+            "gtk": t["meta"]["gtk_theme"],
         }
         for t in themes
     ]
+    return json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
+
+
+def render_palettes(themes: list[dict]) -> str:
+    """Full per-theme palettes for the GTK/Qt/KDE appearance sync.
+
+    themes.json stays small (the island only needs preview colours); this
+    manifest carries every colour and the GTK theme name so
+    apply-appearance.py does not have to parse TOML at switch time.
+    """
+    payload = {
+        t["meta"]["slug"]: {
+            "name": t["meta"]["name"],
+            "dark": t["meta"].get("dark", True),
+            "gtk_theme": t["meta"]["gtk_theme"],
+            "colors": t["colors"],
+            "palette": t["palette"],
+        }
+        for t in themes
+    }
     return json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
 
 
@@ -294,6 +459,7 @@ def main() -> int:
         outputs.update(build(theme))
     outputs[ZENSHELL_JSON] = render_zenshell(themes)
     outputs[HYPR_MANIFEST] = render_zenshell(themes)
+    outputs[HYPR_THEMES / "palettes.json"] = render_palettes(themes)
 
     if args.check:
         stale = [

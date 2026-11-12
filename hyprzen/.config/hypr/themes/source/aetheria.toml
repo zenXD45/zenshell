@@ -6,6 +6,7 @@ name = "Aetheria"
 slug = "aetheria"
 icon = "☁️"
 dark  = false
+gtk_theme = "Catppuccin-Latte-Lavender"
 
 [colors]
 bg      = "#fafafa"

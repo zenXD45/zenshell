@@ -6,6 +6,7 @@ name = "Rosé Pine"
 slug = "rose-pine"
 icon = "🌹"
 dark  = true
+gtk_theme = "Rose-Pine"
 
 [colors]
 bg      = "#191724"

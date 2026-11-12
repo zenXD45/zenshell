@@ -45,7 +45,55 @@ top-level `./install.sh` calls it for you.
 
 `SUPER + T` opens the theme picker in the ZenShell island. Switching a theme
 rewrites the Hyprland borders, blur, rounding and shadow opacity, then re-tints
-kitty, `nvim`, VSCodium, GTK and the CSS in one pass.
+kitty, `nvim`, VSCodium, GTK, Qt/KDE and the CSS in one pass.
+
+### GTK and Qt follow the same palette
+
+Each TOML names the GTK theme that mirrors its colours (`gtk_theme` in
+`[meta]`). `theme-switch.sh` hands the active slug to
+`scripts/apply-appearance.py`, which writes the GTK theme name, the Qt palette
+and `kdeglobals` from the same colours Hyprland and the island use.
+
+| Theme | GTK theme | Source |
+| :--- | :--- | :--- |
+| Aetheria | `Catppuccin-Latte-Lavender` | catppuccin/gtk |
+| Catppuccin | `Catppuccin-Mocha-Mauve` | catppuccin/gtk |
+| Gruvbox | `Gruvbox-Yellow-Dark` | Fausto-Korpsvart |
+| Nord | `Nordic` | EliverLara/Nordic |
+| Tokyo Night | `Tokyonight-Dark` | Fausto-Korpsvart |
+| Eva Theme | `Tokyonight-Green-Dark` | Fausto-Korpsvart |
+| Lavender | `Tokyonight-Purple-Dark` | Fausto-Korpsvart |
+| Osaka Jade | `Everforest-Green-Dark` | Fausto-Korpsvart |
+| Akane | `Kanagawa-Red-Dark` | Fausto-Korpsvart |
+| Rosé Pine | `Rose-Pine` | rose-pine/gtk |
+| Alabaster | `adw-gtk3` + palette override | system |
+| Noir / One Dark / Dynamic / Matugen | `adw-gtk3-dark` + palette override | system |
+
+Install the user-level ports (no root needed) with:
+
+```bash
+./scripts/install-gtk-themes.sh
+```
+
+Themes are written to `~/.themes`; the script downloads the prebuilt upstream
+releases and compiles the Fausto themes with `sassc`. If a theme is missing,
+`apply-appearance.py` falls back to `adw-gtk3`/`adw-gtk3-dark`, so switching
+never breaks — it just loses the matching titlebar/details.
+
+Qt apps use the `Fusion` style with a generated colour scheme
+(`~/.local/share/color-schemes/HyprZen-<Name>.colors`). Running Qt/KDE apps pick
+the palette up on their next launch; GTK3 apps update live through XSettings.
+
+GTK4/libadwaita apps update live too, provided the patched
+[`gtk4-live-css`](https://github.com/saneaspect/gtk4-live-css) package is
+installed. GTK only ever reloads the `gtk.css` it loaded at startup, so the
+patch watches that exact file (and its symlink target). `theme-switch.sh`
+therefore writes `~/.config/gtk-4.0/gtk.css` as a generated file instead of a
+symlink into this repo, and rewrites it on every switch — the old dotfiles
+symlink never changed, which is why the patch appeared not to work. Apps started
+before the patched package was installed need one restart; after that no GTK4
+app needs restarting again.
+
 
 ### Two themes are computed, not written
 
@@ -131,7 +179,8 @@ themes/source/<name>.toml     ← the only file you edit
         ▼
 themes/<name>.lua             ← borders, blur, rounding, shadows
 themes/<name>.conf            ← Hyprlang (animations, decorations)
-themes/<name>.css             ← GTK (wlogout, etc.)
+themes/<name>.css             ← GTK (libadwaita + GTK3 named colours)
+themes/palettes.json          ← full palettes for the GTK/Qt/KDE sync
 kitty/themes/<name>.conf      ← terminal colours
 themes/themes.json            ← manifest read by the UI and switcher
 ```
@@ -139,7 +188,8 @@ themes/themes.json            ← manifest read by the UI and switcher
 `python3 scripts/gen-themes.py` regenerates all of it; `--check` fails if the
 committed artifacts are stale. Geometry — gaps, borders, rounding, blur passes,
 inactive opacity — comes from the same file, so a theme can change the *feel* of
-the compositor, not just its colours.
+the compositor, not just its colours. `scripts/apply-appearance.py` then turns
+`palettes.json` into GTK, Qt and KDE settings when a theme is applied.
 
 ## Structure
 
@@ -156,6 +206,8 @@ hyprzen/
 ├── scripts/
 │   ├── gen-themes.py           # theme generator
 │   ├── theme-switch.sh         # apply a theme everywhere
+│   ├── apply-appearance.py     # palette → GTK / Qt / KDE
+│   ├── install-gtk-themes.sh   # user-level GTK ports (~/.themes)
 │   ├── dynamic-colors.sh       # pywal → dynamic.lua / .conf
 │   ├── wallpaper-selector.sh   # apply a wallpaper (island calls this)
 │   ├── wallpaper-random.sh

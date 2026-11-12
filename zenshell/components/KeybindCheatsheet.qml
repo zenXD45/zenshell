@@ -7,17 +7,16 @@ import Quickshell.Io
 Item {
     id: cheatsheetRoot
     anchors.fill: parent
-    property real reveal: root.displayState === 23 ? 1 : 0
+    property bool entered: false
+    property real reveal: (root.displayState === 23 && entered) ? 1 : 0
     opacity: reveal
     visible: opacity > 0
-    clip: true
-    scale: 0.992 + reveal * 0.008
-    transform: Translate { y: (1 - cheatsheetRoot.reveal) * 8 }
+    transform: Translate { y: (1 - cheatsheetRoot.reveal) * 6 }
 
     Behavior on reveal {
         NumberAnimation {
             duration: root.displayState === 23 ? root.motionPanel : root.motionExit
-            easing.type: root.displayState === 23 ? Easing.OutExpo : Easing.OutCubic
+            easing.type: Easing.OutCubic
         }
     }
 
@@ -95,56 +94,55 @@ Item {
         // ── Header ───────────────────────────────────────────────
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 34
+            Layout.preferredHeight: 48
             spacing: root.s2
 
             Text {
                 Layout.alignment: Qt.AlignVCenter
                 text: "Keybinds"
-                color: root.cFgPrimary
+                color: root.cOnSurface
                 font.family: root.fontSans
-                font.pixelSize: 15
+                font.pixelSize: 16
                 font.weight: Font.DemiBold
-                font.letterSpacing: -0.1
             }
 
             Text {
                 Layout.alignment: Qt.AlignVCenter
-                Layout.leftMargin: root.s2
+                Layout.leftMargin: root.s3
                 text: visibleCount + (visibleCount === 1 ? " shortcut" : " shortcuts")
-                color: root.ink(0.36)
+                color: root.cOnSurfaceVariant
                 font.family: root.fontSans
-                font.pixelSize: 11
+                font.pixelSize: 12
             }
 
             Item { Layout.fillWidth: true }
 
             Item {
                 Layout.alignment: Qt.AlignVCenter
-                Layout.preferredWidth: 260
-                Layout.preferredHeight: 30
+                Layout.preferredWidth: 280
+                Layout.preferredHeight: 40
 
                 Rectangle {
                     anchors.fill: parent
-                    radius: root.rSm
-                    color: root.ink(0.05)
-                    border.width: searchInput.activeFocus ? 1 : 0
-                    border.color: Qt.rgba(root.currentThemeAccent.r, root.currentThemeAccent.g, root.currentThemeAccent.b, 0.45)
+                    radius: 20
+                    color: root.cSurfaceContainerHigh
+                    border.width: searchInput.activeFocus ? 2 : 0
+                    border.color: root.cPrimary
                     Behavior on border.color { ColorAnimation { duration: root.dMicro } }
                 }
 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: root.s3
-                    anchors.rightMargin: root.s3
-                    spacing: root.s2
+                    anchors.leftMargin: 14
+                    anchors.rightMargin: 8
+                    spacing: root.s3
 
                     Text {
                         Layout.alignment: Qt.AlignVCenter
-                        text: "\uf002"
-                        color: searchInput.activeFocus ? root.currentThemeAccent : root.ink(0.45)
-                        font.family: root.fontMono
-                        font.pixelSize: 12
+                        text: root.icoSearch
+                        color: searchInput.activeFocus ? root.cPrimary : root.cOnSurfaceVariant
+                        font.family: root.fontIcon
+                        font.pixelSize: 19
                         Behavior on color { ColorAnimation { duration: root.dMicro } }
                     }
 
@@ -152,16 +150,16 @@ Item {
                         id: searchInput
                         Layout.fillWidth: true
                         Layout.alignment: Qt.AlignVCenter
-                        color: root.cFgPrimary
+                        color: root.cOnSurface
                         font.family: root.fontSans
-                        font.pixelSize: 12
+                        font.pixelSize: 13
                         verticalAlignment: TextInput.AlignVCenter
                         padding: 0
                         clip: true
                         focus: root.displayState === 23
                         focusPolicy: Qt.StrongFocus
                         selectByMouse: true
-                        selectionColor: Qt.rgba(root.currentThemeAccent.r, root.currentThemeAccent.g, root.currentThemeAccent.b, 0.30)
+                        selectionColor: Qt.rgba(root.cPrimary.r, root.cPrimary.g, root.cPrimary.b, 0.30)
 
                         onTextChanged: filterBinds(text)
 
@@ -184,19 +182,30 @@ Item {
                             anchors.fill: parent
                             verticalAlignment: Text.AlignVCenter
                             text: "Filter shortcuts"
-                            color: root.ink(0.32)
+                            color: root.cOnSurfaceVariant
+                            opacity: 0.72
                             font.family: root.fontSans
-                            font.pixelSize: 12
+                            font.pixelSize: 13
                             visible: searchInput.text.length === 0
                         }
                     }
 
-                    Text {
+                    Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        text: "esc"
-                        color: root.ink(0.30)
-                        font.family: root.fontMono
-                        font.pixelSize: 10
+                        width: 28
+                        height: 20
+                        radius: 6
+                        color: root.cSurfaceContainerHighest
+                        border.width: 1
+                        border.color: root.cOutlineVariant
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "esc"
+                            color: root.cOnSurfaceVariant
+                            font.family: root.fontMono
+                            font.pixelSize: 9
+                        }
                     }
                 }
             }
@@ -257,6 +266,7 @@ Item {
             EmptyState {
                 anchors.centerIn: parent
                 visible: visibleCount === 0
+                icon: root.icoSearchOff
                 title: "No shortcuts match"
                 detail: "Try another filter"
             }
@@ -289,9 +299,10 @@ Item {
                         required property int index
                         required property var modelData
 
-                        rowHeight: 30
+                        rowHeight: 34
                         labelSize: 12
-                        valueSize: 11
+                        valueSize: 10
+                        valueKeycap: true
                         label: modelData.action
                         value: modelData.key
                         last: index === bindRepeater.count - 1

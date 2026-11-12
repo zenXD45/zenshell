@@ -2,6 +2,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Widgets
 import QtQuick
+import Qt5Compat.GraphicalEffects
 
 PanelWindow {
   id: menu
@@ -12,13 +13,21 @@ PanelWindow {
   property real anchorScreenX: 0
   property real anchorScreenY: 0
   property string menuMode: "app"
-  property color accent: root.ink(0.949)
+  property color accent: root.ink(0.94)
   property string uiFont: "Google Sans Flex"
   property string iconFont: "JetBrainsMono Nerd Font"
   property bool dockAutoHide: true
   property bool dockLiquid: true
   property int pinnedCount: 0
   property int runningCount: 0
+
+  readonly property color cSurface: root.themeSurface
+  readonly property color cSurfaceHigh: Qt.lighter(root.themeSurface, 1.10)
+  readonly property color cOnSurface: root.themeFg
+  readonly property color cOnSurfaceVariant: root.ink(0.72)
+  readonly property color cOutlineVariant: root.ink(0.105)
+  readonly property color cPrimary: root.themeAccent
+  readonly property color cError: root.themeExtra
 
   readonly property int surfaceWidth: 250
   readonly property int surfaceHeight: contentColumn.implicitHeight + 16
@@ -243,13 +252,13 @@ PanelWindow {
       Behavior on opacity {
         NumberAnimation {
           duration: menu.menuVisible ? 150 : 110
-          easing.type: menu.menuVisible ? Easing.OutExpo : Easing.OutCubic
+          easing.type: Easing.OutCubic
         }
       }
       Behavior on scale {
         NumberAnimation {
           duration: menu.menuVisible ? 180 : 130
-          easing.type: menu.menuVisible ? Easing.OutExpo : Easing.OutCubic
+          easing.type: Easing.OutCubic
         }
       }
 
@@ -266,7 +275,7 @@ PanelWindow {
           color: "#26000000"
           anchors.margins: -12
           layer.enabled: true
-          layer.effect: FastBlur { radius: 28; samples: 9; transparentBorder: true }
+          layer.effect: FastBlur { radius: 28; transparentBorder: true }
         }
 
         // Key shadow (tighter)
@@ -276,7 +285,7 @@ PanelWindow {
           color: "#40000000"
           anchors.margins: -6
           layer.enabled: true
-          layer.effect: FastBlur { radius: 16; samples: 9; transparentBorder: true }
+          layer.effect: FastBlur { radius: 16; transparentBorder: true }
         }
       }
 
@@ -284,38 +293,9 @@ PanelWindow {
         id: surface
         anchors.fill: parent
         radius: 16
-        color: root.glass(0.98)
+        color: Qt.rgba(menu.cSurface.r, menu.cSurface.g, menu.cSurface.b, 0.985)
         border.width: 1
-        border.color: root.ink(0.149)
-
-        // Inner depth
-        Rectangle {
-          anchors.fill: parent
-          radius: 16
-          opacity: 0.5
-          gradient: Gradient {
-            GradientStop { position: 0.0; color: root.ink(0.08) }
-            GradientStop { position: 0.3; color: "#00000000" }
-            GradientStop { position: 0.7; color: "#00000000" }
-            GradientStop { position: 1.0; color: "#1A000000" }
-          }
-        }
-        
-        // Top rim highlight
-        Rectangle {
-          width: parent.width - 24
-          height: 1
-          anchors.top: parent.top
-          anchors.topMargin: 2
-          anchors.horizontalCenter: parent.horizontalCenter
-          opacity: 0.6
-          gradient: Gradient {
-            orientation: Gradient.Horizontal
-            GradientStop { position: 0.0; color: "transparent" }
-            GradientStop { position: 0.5; color: root.ink(0.2) }
-            GradientStop { position: 1.0; color: "transparent" }
-          }
-        }
+        border.color: menu.cOutlineVariant
 
         MouseArea {
           anchors.fill: parent
@@ -343,10 +323,10 @@ PanelWindow {
             anchors.verticalCenter: parent.verticalCenter
             width: 38
             height: 38
-            radius: 11
-            color: root.ink(0.078)
+            radius: 12
+            color: menu.cSurfaceHigh
             border.width: 1
-            border.color: root.ink(0.11)
+            border.color: menu.cOutlineVariant
 
             IconImage {
               id: appIcon
@@ -356,6 +336,7 @@ PanelWindow {
               source: menu.menuMode === "app" && menu.appData
                 ? Quickshell.iconPath(menu.appData.icon || menu.appData.id, true)
                 : ""
+              asynchronous: true
               visible: status === Image.Ready
             }
 
@@ -365,7 +346,7 @@ PanelWindow {
               text: menu.menuMode === "dock"
                 ? "\uF009"
                 : (menu.appData && menu.appData.id ? menu.appData.id.charAt(0).toUpperCase() : "?")
-              color: menu.accent
+              color: menu.cOnSurfaceVariant
               font.family: menu.iconFont
               font.pixelSize: menu.menuMode === "dock" ? 16 : 18
               font.weight: Font.DemiBold
@@ -385,7 +366,7 @@ PanelWindow {
             Text {
               width: parent.width
               text: menu.appTitle()
-              color: menu.accent
+              color: menu.cOnSurface
               font.family: menu.uiFont
               font.pixelSize: 14
               font.weight: Font.DemiBold
@@ -396,9 +377,9 @@ PanelWindow {
             Text {
               width: parent.width
               text: menu.appMeta()
-              color: root.ink(0.651)
+              color: menu.cOnSurfaceVariant
               font.family: menu.uiFont
-              font.pixelSize: 10
+              font.pixelSize: 11
               font.weight: Font.Medium
               elide: Text.ElideRight
               maximumLineCount: 1
@@ -409,7 +390,7 @@ PanelWindow {
         Rectangle {
           width: parent.width
           height: 1
-          color: root.ink(0.086)
+          color: menu.cOutlineVariant
         }
 
         Repeater {
@@ -420,25 +401,19 @@ PanelWindow {
             required property var modelData
             required property int index
             width: contentColumn.width
-            height: modelData.separatorBefore ? 39 : 34
-
-            Rectangle {
-              width: parent.width
-              height: 1
-              y: 4
-              color: root.ink(0.078)
-              visible: !!modelData.separatorBefore
-            }
+            height: 40 + (modelData.separatorBefore ? 8 : 0)
 
             Rectangle {
               id: actionRow
               width: parent.width
-              height: 34
-              y: modelData.separatorBefore ? 5 : 0
-              radius: 9
+              height: 40
+              y: modelData.separatorBefore ? 8 : 0
+              radius: 12
               color: {
-                if (modelData.danger && (mouse.containsMouse || (menu.keyboardActive && menu.currentIndex === index))) return "#24FF6B5E";
-                if (mouse.containsMouse || (menu.keyboardActive && menu.currentIndex === index)) return root.ink(0.086);
+                if (modelData.danger && (mouse.containsMouse || (menu.keyboardActive && menu.currentIndex === index)))
+                  return Qt.rgba(menu.cError.r, menu.cError.g, menu.cError.b, 0.16);
+                if (mouse.containsMouse || (menu.keyboardActive && menu.currentIndex === index))
+                  return root.ink(0.06);
                 return "transparent";
               }
               opacity: modelData.disabled === true ? 0.38 : 1.0
@@ -447,28 +422,28 @@ PanelWindow {
 
               Text {
                 id: actionGlyph
-                x: 10
+                x: 12
                 anchors.verticalCenter: parent.verticalCenter
-                width: 18
+                width: 20
                 text: modelData.glyph
-                color: modelData.danger ? "#FFB4AB" : root.ink(0.839)
+                color: modelData.danger ? menu.cError : menu.cOnSurfaceVariant
                 font.family: menu.iconFont
-                font.pixelSize: 12
+                font.pixelSize: 15
                 horizontalAlignment: Text.AlignHCenter
               }
 
               Text {
                 anchors {
                   left: actionGlyph.right
-                  leftMargin: 9
+                  leftMargin: 12
                   right: actionHint.left
-                  rightMargin: modelData.checked ? 30 : 8
+                  rightMargin: modelData.checked !== undefined ? 48 : 10
                   verticalCenter: parent.verticalCenter
                 }
                 text: modelData.label
-                color: modelData.danger ? "#FFB4AB" : menu.accent
+                color: modelData.danger ? menu.cError : menu.cOnSurface
                 font.family: menu.uiFont
-                font.pixelSize: 12
+                font.pixelSize: 13
                 font.weight: Font.Medium
                 elide: Text.ElideRight
                 maximumLineCount: 1
@@ -481,30 +456,38 @@ PanelWindow {
                   rightMargin: 10
                   verticalCenter: parent.verticalCenter
                 }
+                visible: modelData.checked === undefined
                 text: modelData.hint || ""
-                color: root.ink(0.502)
+                color: menu.cOnSurfaceVariant
                 font.family: menu.uiFont
-                font.pixelSize: 9
+                font.pixelSize: 10
                 font.weight: Font.Medium
               }
 
               Rectangle {
-                visible: modelData.checked === true
-                width: 14
-                height: 14
-                radius: 4
+                visible: modelData.checked !== undefined
+                width: 32
+                height: 18
+                radius: 9
                 anchors {
                   right: parent.right
-                  rightMargin: 9
+                  rightMargin: 10
                   verticalCenter: parent.verticalCenter
                 }
-                color: root.ink(0.11)
-                Text {
-                  anchors.centerIn: parent
-                  text: "\uF00C"
-                  color: menu.accent
-                  font.family: menu.iconFont
-                  font.pixelSize: 8
+                color: modelData.checked === true
+                  ? menu.cPrimary
+                  : root.ink(0.14)
+                border.width: modelData.checked === true ? 0 : 1
+                border.color: menu.cOutlineVariant
+
+                Rectangle {
+                  width: 14
+                  height: 14
+                  radius: 7
+                  y: 2
+                  x: modelData.checked === true ? 16 : 2
+                  color: modelData.checked === true ? root.themeBg : menu.cOnSurfaceVariant
+                  Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
                 }
               }
 
@@ -534,16 +517,18 @@ PanelWindow {
               leftMargin: 10
               verticalCenter: parent.verticalCenter
             }
-            width: 24
-            height: 17
-            radius: 5
-            color: root.ink(0.078)
+            width: 28
+            height: 20
+            radius: 6
+            color: root.ink(0.07)
+            border.width: 1
+            border.color: menu.cOutlineVariant
             Text {
               anchors.centerIn: parent
               text: "esc"
-              color: root.ink(0.62)
+              color: menu.cOnSurfaceVariant
               font.family: menu.uiFont
-              font.pixelSize: 8
+              font.pixelSize: 9
               font.weight: Font.Medium
             }
           }
@@ -551,17 +536,18 @@ PanelWindow {
           Text {
             anchors {
               left: parent.left
-              leftMargin: 42
+              leftMargin: 46
               verticalCenter: parent.verticalCenter
             }
             text: "close"
-            color: root.ink(0.502)
+            color: menu.cOnSurfaceVariant
             font.family: menu.uiFont
-            font.pixelSize: 9
+            font.pixelSize: 10
           }
         }
       }
     }
+  }
   }
 
   onAppDataChanged: {
@@ -576,5 +562,4 @@ PanelWindow {
   onDockLiquidChanged: rebuildActions()
   onPinnedCountChanged: rebuildActions()
   Component.onCompleted: rebuildActions()
-}
 }

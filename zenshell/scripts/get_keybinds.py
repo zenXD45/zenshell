@@ -22,6 +22,8 @@ def human_readable_action(action):
         '~/.config/quickshell/dynamic-island/island_ctl.sh powerprofile': 'Power Profiles',
         '~/.config/quickshell/dynamic-island/island_ctl.sh themes': 'Theme Switcher',
         '~/.config/quickshell/dynamic-island/island_ctl.sh wallpapers': 'Wallpaper Selector',
+        '~/.config/quickshell/dynamic-island/island_ctl.sh screen-time': 'Screen Time',
+        '~/.config/quickshell/dynamic-island/island_ctl.sh screentime': 'Screen Time',
         'hyprshade toggle oled': 'Toggle OLED Shader',
         'quickshell ipc -p ~/.config/quickshell/dynamic-island/modules/desktop-widgets call widgets toggle': 'Toggle Desktop Widgets',
         'wlogout -b 5 -T 350 -B 350': 'Logout Menu',

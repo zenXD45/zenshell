@@ -5,6 +5,7 @@ name = "Noir"
 slug = "noir"
 icon = "🌑"
 dark  = true
+gtk_theme = "adw-gtk3-dark"
 
 [colors]
 bg      = "#0f0f0f"

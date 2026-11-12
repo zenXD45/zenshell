@@ -24,3 +24,6 @@ require("modules.workspaces")
 require("modules.plugins")
 
 
+
+-- Cursor theme set from Toolbox.
+require("toolbox_cursor")

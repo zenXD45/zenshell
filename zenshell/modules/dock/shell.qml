@@ -15,6 +15,37 @@ Scope {
   property string dockTheme: "liquid"
   property bool isAutoHide: true
   property string shellProfile: "island"
+
+  // Dock geometry and behaviour, all driven by the same settings file the
+  // settings window writes. The icon size sets the tile size, which in turn
+  // sets the surface height, so every part of the dock grows together.
+  property string dockPosition: "bottom"
+  property string dockMonitor: "all"
+  property int dockIconSize: 32
+  property real dockMagnification: 1.12
+  property bool showIndicators: true
+  property int dockHideDelay: 280
+
+  readonly property int dockItemSize: root.dockIconSize + 12
+  readonly property int dockItemRadius: Math.round(root.dockItemSize * 0.32)
+  readonly property int dockSurfaceHeight: root.dockItemSize + 12
+  // Fully hide the pill. Leaving a two-pixel sliver made the dock's input
+  // region overlap the edge trigger, so the pill could steal the hover from
+  // the trigger while it was mid-animation and the reveal would stall.
+  // The full-width trigger is the only thing at the edge now.
+  readonly property int dockPeek: 0
+
+  property bool dockShown: false
+  property bool pointerOnDock: false
+  property bool pointerOnEdge: false
+  // Hover is tracked per input layer: the Flickable and the icon MouseAreas
+  // sit above the pill surface and receive hover first. Any one of them
+  // means the pointer is still on the dock.
+  property bool hoverPill: false
+  property bool hoverFlick: false
+  function syncDockHover() {
+    root.pointerOnDock = root.hoverPill || root.hoverFlick;
+  }
   readonly property string uiFont: "Google Sans Flex"
   readonly property string iconFont: "JetBrainsMono Nerd Font"
 
@@ -104,7 +135,10 @@ Scope {
   // ── Depth ───────────────────────────────────────────────────────
   // Transparent padding inside the layer surface gives the shadow room to
   // fall without moving the visible pill or changing the auto-hide travel.
-  readonly property int shadowPad: 48
+  // It has to be larger than the widest blur reach (blur + offset), otherwise
+  // the layer surface clips the fading edge and leaves a hard rectangular
+  // line around the pill.
+  readonly property int shadowPad: 92
 
   // Configurable appearance (synced with shell_settings.json)
   property real dockTransparency: 0.5      // 0.0 = opaque, 1.0 = fully transparent
@@ -163,6 +197,13 @@ Scope {
     onTextChanged: {
       try {
         var settings = JSON.parse(text());
+        // The settings window owns this flag. Quitting the whole dock
+        // process (rather than hiding the pill) is what actually gives the
+        // screen edge and its memory back.
+        if (settings.dock_enabled === false) {
+          Qt.quit();
+          return;
+        }
         if (settings.dock_theme === "liquid" || settings.dock_theme === "solid") {
           root.dockTheme = settings.dock_theme;
         }
@@ -174,6 +215,24 @@ Scope {
         }
         if (typeof settings.dock_frost === "number") {
           root.dockFrost = Math.max(0.0, Math.min(1.0, settings.dock_frost));
+        }
+        if (settings.dock_position === "bottom" || settings.dock_position === "top") {
+          root.dockPosition = settings.dock_position;
+        }
+        if (settings.dock_monitor === "all" || settings.dock_monitor === "primary") {
+          root.dockMonitor = settings.dock_monitor;
+        }
+        if (typeof settings.dock_icon_size === "number") {
+          root.dockIconSize = Math.max(24, Math.min(64, Math.round(settings.dock_icon_size)));
+        }
+        if (typeof settings.dock_magnification === "number") {
+          root.dockMagnification = Math.max(1.0, Math.min(1.6, settings.dock_magnification));
+        }
+        if (typeof settings.dock_show_indicators === "boolean") {
+          root.showIndicators = settings.dock_show_indicators;
+        }
+        if (typeof settings.dock_hide_delay === "number") {
+          root.dockHideDelay = Math.max(80, Math.min(1500, Math.round(settings.dock_hide_delay)));
         }
         if (settings.profile === "island" || settings.profile === "bar") {
           if (root.shellProfile !== settings.profile) {
@@ -220,6 +279,43 @@ Scope {
   function setDockFrost(value) {
     root.dockFrost = Math.max(0.0, Math.min(1.0, value));
     root.saveDockSetting("dock_frost", root.dockFrost);
+  }
+
+  // ── Auto-hide ───────────────────────────────────────────────────
+  // The dock stays up while the pointer is on the pill, on the thin edge
+  // trigger, or while a context menu is open. Everything else starts the
+  // hide timer; reading position and state separately avoids the old bug
+  // where the pointer left the 2px strip and the dock slid away under it.
+  function dockOnScreen(screen) {
+    if (!screen) return false;
+    if (root.dockMonitor !== "primary") return true;
+    return Quickshell.screens.length === 0 || screen === Quickshell.screens[0];
+  }
+
+  function refreshDockVisibility() {
+    if (!root.isAutoHide) {
+      root.dockShown = true;
+      dockHideTimer.stop();
+      return;
+    }
+    if (root.pointerOnDock || root.pointerOnEdge || root.contextMenuOpen) {
+      if (!root.dockShown) root.dockShown = true;
+      dockHideTimer.stop();
+    } else if (root.dockShown) {
+      dockHideTimer.restart();
+    }
+  }
+
+  onIsAutoHideChanged: refreshDockVisibility()
+  onContextMenuOpenChanged: refreshDockVisibility()
+  onPointerOnDockChanged: refreshDockVisibility()
+  onPointerOnEdgeChanged: refreshDockVisibility()
+
+  Timer {
+    id: dockHideTimer
+    interval: root.dockHideDelay
+    repeat: false
+    onTriggered: root.dockShown = false
   }
 
   IpcHandler {
@@ -291,7 +387,7 @@ Scope {
 
           for (var i = 0; i < clients.length; i++) {
             var c = clients[i];
-            if (c.class === "" || c.class === "quickshell") continue;
+            if (c.class === "" || c.class === "quickshell" || c.class === "org.quickshell") continue;
             var wid = c.initialClass || c.class;
             var addr = c.address;
             var rIcon = c.resolvedIcon || wid;
@@ -343,6 +439,7 @@ Scope {
   Component.onCompleted: {
     loadPinned();
     fetchOpenApps();
+    refreshDockVisibility();
   }
   
   property var pinnedDockItems: []
@@ -464,8 +561,12 @@ Scope {
     // mapToGlobal is window-relative, while dockPanelWidth/Height describe
     // the visible pill. Reconstruct the window origin, padding included, so
     // menus still land on the icon they were opened from.
-    var panelX = (screen.width - panelWidth) / 2 - root.shadowPad;
-    var panelY = screen.height - panelHeight - 12 - root.shadowPad;
+    var panelX = root.dockPosition === "top"
+      ? 0
+      : (screen.width - panelWidth) / 2 - root.shadowPad;
+    var panelY = root.dockPosition === "top"
+      ? 12
+      : screen.height - panelHeight - 12 - root.shadowPad;
     root.contextScreen = screen;
     root.contextAnchorX = panelX + local.x;
     root.contextAnchorY = panelY + local.y;
@@ -633,8 +734,8 @@ Scope {
     id: appDelegate
     Item {
       id: iconRect
-      width: 44
-      height: 44
+      width: root.dockItemSize
+      height: root.dockItemSize
 
       Component.onCompleted: root.appAnchors[modelData.id] = mouseArea
       Component.onDestruction: {
@@ -642,15 +743,16 @@ Scope {
       }
       
       Rectangle {
+        id: tile
         anchors.fill: parent
-        radius: 14
+        radius: root.dockItemRadius
         color: modelData.isFocused ? root.ink(0.188) : (mouseArea.containsMouse ? root.ink(0.125) : "transparent")
         Behavior on color { ColorAnimation { duration: 120 } }
         
         // Hover/focus elevation shadow for the icon itself
         RectangularShadow {
           anchors.fill: parent
-          radius: 14
+          radius: root.dockItemRadius
           color: mouseArea.containsMouse || modelData.isFocused ? "#40000000" : "#00000000"
           blur: 16
           offset: Qt.vector2d(0, 4)
@@ -662,7 +764,7 @@ Scope {
         // Inner press depth
         Rectangle {
           anchors.fill: parent
-          radius: 14
+          radius: root.dockItemRadius
           opacity: mouseArea.pressed ? 0.6 : 0
           gradient: Gradient {
             GradientStop { position: 0.0; color: "#10000000" }
@@ -674,25 +776,25 @@ Scope {
         IconImage {
           id: appIcon
           anchors.centerIn: parent
-          width: 32
-          height: 32
+          width: root.dockIconSize
+          height: root.dockIconSize
           source: Quickshell.iconPath(modelData.icon, true)
+          asynchronous: true
         }
         
         // Scale animation on hover
-        scale: mouseArea.containsMouse ? 1.12 : 1.0
+        scale: mouseArea.containsMouse ? root.dockMagnification : 1.0
         Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
         
         // Pressed scale
         property real pressScale: mouseArea.pressed ? 0.94 : 1.0
         Behavior on pressScale { NumberAnimation { duration: 60; easing.type: Easing.OutQuad } }
-        transform: Scale { origin.x: 22; origin.y: 22; xScale: iconRect.pressScale; yScale: iconRect.pressScale }
-        
+        transform: Scale { origin.x: root.dockItemSize / 2; origin.y: root.dockItemSize / 2; xScale: tile.pressScale; yScale: tile.pressScale }        
         Text {
           anchors.centerIn: parent
           text: modelData.id.charAt(0).toUpperCase()
           color: root.themeFg
-          font.pixelSize: 18
+          font.pixelSize: Math.round(root.dockIconSize * 0.56)
           font.family: root.uiFont
           font.weight: Font.Bold
           visible: appIcon.status !== Image.Ready
@@ -701,11 +803,13 @@ Scope {
       
       Row {
         id: windowIndicators
-        anchors.bottom: parent.bottom
+        anchors.bottom: root.dockPosition === "bottom" ? parent.bottom : undefined
+        anchors.top: root.dockPosition === "top" ? parent.top : undefined
         anchors.bottomMargin: -4
+        anchors.topMargin: -4
         anchors.horizontalCenter: parent.horizontalCenter
         spacing: 3
-        visible: modelData.isOpen
+        visible: root.showIndicators && modelData.isOpen
 
         Repeater {
           model: Math.min(modelData.count, 3)
@@ -761,107 +865,72 @@ Scope {
   }
   
   Variants {
-    model: Quickshell.screens
+    model: Quickshell.screens.filter(screen => root.dockOnScreen(screen))
     PanelWindow {
       id: panel
       required property var modelData
       screen: modelData
       visible: root.shellProfile !== "bar"
       
-      anchors { bottom: true }
+      anchors {
+        bottom: root.dockPosition === "bottom"
+        top: root.dockPosition === "top"
+        // A top dock spans the screen so the pill can sit at the left edge,
+        // clear of the centred clock island. The bottom dock stays centred.
+        left: root.dockPosition === "top"
+        right: root.dockPosition === "top"
+      }
       
-      property bool isHidden: !panelHover.hovered && !root.contextMenuOpen
-      margins { bottom: root.isAutoHide ? (isHidden ? -54 : 12) : 12 }
-      Behavior on margins.bottom { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+      readonly property int hiddenMargin: root.dockPeek - root.dockSurfaceHeight
+      margins {
+        bottom: root.dockPosition === "bottom" ? (root.dockShown ? 12 : hiddenMargin) : 0
+        top: root.dockPosition === "top" ? (root.dockShown ? 12 : hiddenMargin) : 0
+        left: 0
+        right: 0
+      }
+      Behavior on margins.bottom { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
+      Behavior on margins.top { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
       
       implicitWidth: Math.min(layout.implicitWidth + 24, modelData.width - 40) + root.shadowPad * 2
-      implicitHeight: 56 + root.shadowPad
+      implicitHeight: root.dockSurfaceHeight + root.shadowPad
       color: "transparent"
       
       WlrLayershell.layer: WlrLayer.Top
       WlrLayershell.namespace: "qs-dock"
-      WlrLayershell.exclusiveZone: root.isAutoHide ? -1 : 68
+      WlrLayershell.exclusiveZone: root.isAutoHide ? -1 : root.dockSurfaceHeight + 12
       // Only the pill accepts input; the transparent shadow padding passes
       // clicks through to whatever is under the dock.
       mask: Region { item: dockSurface }
 
-      // ── Optimized Pill Shadow ──
-      // Uses RectangularShadow (GPU-accelerated) for the base, plus a single
-      // blurred Item for the true capsule ends. Only 2 blur passes total.
+      // ── Pill shadow ────────────────────────────────────────────────
+      // Both layers use the pill's exact capsule shape: radius = height / 2.
+      // A single rounded-rectangle shape has no straight-to-round seam and,
+      // unlike an expanded rectangle with a slightly larger radius, keeps the
+      // blur's outer contour capsule-shaped instead of boxy.
       Item {
         id: shadowStack
         anchors.fill: dockSurface
-        y: root.shadowOffsetY
 
-        // Base shadow: RectangularShadow handles the straight sections efficiently.
-        // The radius makes it a rounded-rect; we add end caps for true pill shape.
+        // Wide, low-opacity ambient halo.
+        RectangularShadow {
+          id: ambientShadow
+          anchors.fill: parent
+          radius: height / 2
+          color: root.aoColor
+          blur: root.aoBlur
+          offset: Qt.vector2d(0, root.aoOffsetY)
+        }
+
+        // Tighter contact shadow that gives the pill its edge.
         RectangularShadow {
           id: baseShadow
-          anchors.fill: dockSurface
-          radius: dockSurface.radius
+          anchors.fill: parent
+          radius: height / 2
           color: root.shadowColor
           blur: root.shadowBlur
-          offset: Qt.vector2d(0, 0)
+          offset: Qt.vector2d(0, root.shadowOffsetY)
           Behavior on color { ColorAnimation { duration: 200 } }
           Behavior on blur { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-        }
-
-        // True capsule end caps — only these need per-frame blur.
-        // Single blurred item with both caps; one render target, one blur pass.
-        Item {
-          id: endCaps
-          anchors.fill: parent
-          anchors.topMargin: 0
-          anchors.bottomMargin: 0
-
-          Rectangle {
-            width: dockSurface.height
-            height: dockSurface.height
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            radius: dockSurface.height / 2
-            color: root.shadowColor
-            layer.enabled: true
-            layer.effect: FastBlur {
-              radius: root.shadowBlur / 2
-              samples: root.shadowBlur > 24 ? 9 : 5
-              transparentBorder: true
-            }
-          }
-
-          Rectangle {
-            width: dockSurface.height
-            height: dockSurface.height
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            radius: dockSurface.height / 2
-            color: root.shadowColor
-            layer.enabled: true
-            layer.effect: FastBlur {
-              radius: root.shadowBlur / 2
-              samples: root.shadowBlur > 24 ? 9 : 5
-              transparentBorder: true
-            }
-          }
-        }
-
-        // Ambient occlusion pool — single wide blurred rect (no end caps needed;
-        // the softness hides the rectangular shape).
-        Rectangle {
-          id: aoPool
-          anchors.left: parent.left
-          anchors.right: parent.right
-          anchors.top: parent.top
-          anchors.bottom: parent.bottom
-          anchors.margins: -16
-          radius: dockSurface.radius + 8
-          color: root.aoColor
-          layer.enabled: true
-          layer.effect: FastBlur {
-            radius: root.aoBlur / 2
-            samples: 9
-            transparentBorder: true
-          }
         }
       }
 
@@ -869,9 +938,12 @@ Scope {
       Rectangle {
         id: dockSurface
         width: Math.min(layout.implicitWidth + 24, modelData.width - 40)
-        height: 56
-        anchors.bottom: parent.bottom
-        anchors.horizontalCenter: parent.horizontalCenter
+        height: root.dockSurfaceHeight
+        anchors.bottom: root.dockPosition === "bottom" ? parent.bottom : undefined
+        anchors.top: root.dockPosition === "top" ? parent.top : undefined
+        anchors.horizontalCenter: root.dockPosition === "bottom" ? parent.horizontalCenter : undefined
+        anchors.left: root.dockPosition === "top" ? parent.left : undefined
+        anchors.leftMargin: root.dockPosition === "top" ? 24 : 0
         radius: height / 2
         color: root.dockTheme === "liquid" ? root.liquidSurface : root.glass(0.9)
         border.color: root.dockTheme === "liquid" ? root.ink(0.188) : root.ink(0.157)
@@ -881,6 +953,10 @@ Scope {
 
         HoverHandler {
           id: panelHover
+          onHoveredChanged: {
+            root.hoverPill = hovered;
+            root.syncDockHover();
+          }
         }
 
         // ── Liquid glass material (liquid theme) ──
@@ -895,7 +971,7 @@ Scope {
           // Frost overlay — adds milkiness based on dockFrost (0.0 to 1.0)
           Rectangle {
             anchors.fill: parent
-            radius: parent.radius
+            radius: dockSurface.radius
             opacity: root.dockFrost * 0.4
             color: root.themeDark ? root.glass(1.0) : root.ink(1.0)
             Behavior on opacity { NumberAnimation { duration: 200 } }
@@ -904,7 +980,7 @@ Scope {
           // Layer 1: Combined base glass — subsurface warmth, fresnel top, inner depth bottom
           Rectangle {
             anchors.fill: parent
-            radius: parent.radius
+            radius: dockSurface.radius
             opacity: 1.0 - root.dockFrost * 0.3
             gradient: Gradient {
               // Top: Fresnel highlight + subsurface warmth
@@ -927,7 +1003,7 @@ Scope {
           // Layer 2: Waterline + lower specular catch (thin horizontal accents)
           Rectangle {
             anchors.fill: parent
-            radius: parent.radius
+            radius: dockSurface.radius
             opacity: 1.0 - root.dockFrost * 0.5
             gradient: Gradient {
               // Waterline at ~22%
@@ -953,7 +1029,7 @@ Scope {
           // Combined: top highlight + inner depth
           Rectangle {
             anchors.fill: parent
-            radius: parent.radius
+            radius: dockSurface.radius
             gradient: Gradient {
               GradientStop { position: 0.00; color: root.ink(0.12) }
               GradientStop { position: 0.15; color: root.ink(0.06) }
@@ -1015,6 +1091,11 @@ Scope {
           root.ipcMenuAnchor = dockMenuAnchor;
         }
       }
+      Component.onDestruction: {
+        root.hoverPill = false;
+        root.hoverFlick = false;
+        root.pointerOnDock = false;
+      }
       onWidthChanged: root.dockPanelWidth = dockSurface.width
       onHeightChanged: root.dockPanelHeight = dockSurface.height
 
@@ -1030,6 +1111,13 @@ Scope {
         clip: true
         interactive: true
         flickableDirection: Flickable.HorizontalFlick
+
+        HoverHandler {
+          onHoveredChanged: {
+            root.hoverFlick = hovered;
+            root.syncDockHover();
+          }
+        }
         
         Row {
           id: layout
@@ -1079,6 +1167,60 @@ Scope {
           }
         }
       }
+    }
+  }
+
+  // ── Edge trigger ────────────────────────────────────────────────
+  // A full-width eight-pixel layer surface on the chosen edge. The dock
+  // itself is completely off-screen while hidden, so this strip is the only
+  // thing under the pointer and cannot be covered by the pill's input
+  // region mid-animation. Hovering it sets dockShown, and the dock panel
+  // then slides in from whichever edge it is anchored to. It exists only
+  // while auto-hide is on.
+  Variants {
+    model: Quickshell.screens.filter(screen => root.dockOnScreen(screen))
+    PanelWindow {
+      id: edgeTrigger
+      required property var modelData
+      screen: modelData
+      visible: root.isAutoHide && root.shellProfile !== "bar"
+
+      anchors {
+        left: true
+        // The bottom edge is free, so the whole width is a convenient target.
+        // At the top the trigger only spans the dock: a full-width strip
+        // would sit over the clock island and steal its top few pixels.
+        right: root.dockPosition === "bottom"
+        bottom: root.dockPosition === "bottom"
+        top: root.dockPosition === "top"
+      }
+      margins.left: root.dockPosition === "top" ? 24 : 0
+      implicitWidth: root.dockPosition === "top"
+        ? Math.max(root.dockPanelWidth, 40)
+        : 0
+      implicitHeight: 8
+      color: "transparent"
+
+      // At the top the trigger has to sit above the bar/island layer or the
+      // bar's input region swallows the hover before the trigger sees it.
+      // It only spans the dock's own width there, so it cannot cover the
+      // centred clock. The bottom trigger stays on Top and stays full-width.
+      WlrLayershell.layer: root.dockPosition === "top" ? WlrLayer.Overlay : WlrLayer.Top
+      WlrLayershell.namespace: "qs-dock-trigger"
+      WlrLayershell.exclusiveZone: -1
+
+      mask: Region { item: edgeTouch }
+
+      Item {
+        id: edgeTouch
+        anchors.fill: parent
+
+        HoverHandler {
+          onHoveredChanged: root.pointerOnEdge = hovered
+        }
+      }
+
+      Component.onDestruction: root.pointerOnEdge = false
     }
   }
 }

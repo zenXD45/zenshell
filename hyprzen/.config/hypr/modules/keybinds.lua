@@ -36,14 +36,12 @@ hl.bind(S .. " + V", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/island
 hl.bind(S .. " + N", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/island_ctl.sh control"))
 
 -- ── Power / Session ───────────────────────────────────────────
--- wlogout comes from the AUR list in install.sh. ZenShell also ships a power
--- menu on SUPER+ESC; both are intentionally available.
-hl.bind(S .. " + X", hl.dsp.exec_cmd("wlogout -b 5 -T 350 -B 350"))
 hl.bind(SS .. " + L", hl.dsp.exec_cmd("hyprlock"))
 hl.bind(SS .. " + C", hl.dsp.exec_cmd("~/scripts/caffeine.sh"))
 
 -- ── Theme & Wallpaper (ZenShell island) ───────────────────────
 hl.bind(S .. " + T", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/island_ctl.sh themes"))
+hl.bind(S .. " + I", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/island_ctl.sh screen-time"))
 hl.bind(S .. " + W", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/island_ctl.sh wallpapers"))
 
 
@@ -168,6 +166,22 @@ hl.bind(SA .. " + SHIFT + D", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-isla
 hl.bind(SA .. " + C", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/island_ctl.sh camera"))
 -- Settings app (also SUPER+. from the island launcher)
 hl.bind(SA .. " + period", hl.dsp.exec_cmd("~/.config/quickshell/dynamic-island/island_ctl.sh settings"))
+
+-- ── Layout (dwindle ↔ scrolling) ──────────────────────────────
+-- Toggle the global tiling layout between dwindle and the built-in
+-- scrolling layout (Hyprland 0.57+). State is tracked in Lua so the
+-- bind stays in sync with the default set in modules/general.lua
+-- (layout = "dwindle"); it also resyncs on config reload (SUPER+CTRL+R).
+local current_layout = "dwindle"
+hl.bind(S .. " + backslash", function()
+    if current_layout == "dwindle" then
+        current_layout = "scrolling"
+    else
+        current_layout = "dwindle"
+    end
+    hl.config({ general = { layout = current_layout } })
+    hl.exec_cmd("notify-send \"Hyprland\" \"Layout: " .. current_layout .. "\"")
+end)
 
 -- ── System ────────────────────────────────────────────────────
 hl.bind(SC .. " + R", hl.dsp.exec_cmd("hyprctl reload && notify-send \"Hyprland\" \"Config reloaded\""))

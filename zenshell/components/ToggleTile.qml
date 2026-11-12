@@ -1,32 +1,36 @@
 import QtQuick
 import QtQuick.Layouts
 
-// A switch rendered as a square tile. The active state is carried by a tinted
-// surface plus an accent icon — not by a glow — so four of them in a row stay
-// calm while still being scannable at a glance.
+// System-themed quick-settings tile.
+// Derived strictly from the active Hyprland/ZenShell theme palette tokens.
+// Features Emil Kowalski tactile press feedback (0.96) and Material 3 tonal hierarchy.
 Rectangle {
     id: toggleTile
 
     property string title: ""
+    property string subtitle: ""
     property string icon: ""
+    property string iconFont: root.fontIcon
     property bool checked: false
-    property color accentColor: root.cAccent
     property real press: 1.0
-    property real pressScale: 0.97
+    property real pressScale: 0.96
 
     signal toggled()
 
-    radius: root.rMd
+    implicitHeight: 74
+    radius: root.themeRounding || 14
+
     color: toggleTile.checked
-        ? Qt.rgba(toggleTile.accentColor.r, toggleTile.accentColor.g, toggleTile.accentColor.b, 0.14)
-        : (toggleTileMouse.containsMouse ? root.ink(0.055) : root.cBgSecondary)
+        ? root.cPrimaryContainer
+        : (toggleTileMouse.containsMouse ? root.cSurfaceContainerHighest : root.cSurfaceContainerHigh)
+
     border.width: 1
     border.color: toggleTile.checked
-        ? Qt.rgba(toggleTile.accentColor.r, toggleTile.accentColor.g, toggleTile.accentColor.b, 0.32)
-        : (toggleTileMouse.containsMouse ? root.cBorderDefault : root.cBorderSubtle)
+        ? Qt.rgba(root.themeAccent.r, root.themeAccent.g, root.themeAccent.b, 0.35)
+        : root.cOutlineVariant
 
-    Behavior on color { ColorAnimation { duration: root.dMicro } }
-    Behavior on border.color { ColorAnimation { duration: root.dMicro } }
+    Behavior on color { ColorAnimation { duration: root.dMicro; easing.type: Easing.OutCubic } }
+    Behavior on border.color { ColorAnimation { duration: root.dMicro; easing.type: Easing.OutCubic } }
 
     transform: Scale {
         origin.x: toggleTile.width / 2
@@ -37,23 +41,70 @@ Rectangle {
     Behavior on press { NumberAnimation { duration: root.dMicro; easing.type: Easing.OutCubic } }
 
     ColumnLayout {
-        anchors.centerIn: parent
-        spacing: root.s1
+        anchors.fill: parent
+        anchors.margins: 11
+        spacing: 0
+
+        // Top Row: Icon emblem + Status dot
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 0
+
+            Rectangle {
+                Layout.preferredWidth: 32
+                Layout.preferredHeight: 32
+                radius: 16
+                color: toggleTile.checked
+                    ? root.themeAccent
+                    : root.cSurfaceContainerHighest
+
+                Behavior on color { ColorAnimation { duration: root.dMicro; easing.type: Easing.OutCubic } }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: toggleTile.icon
+                    color: toggleTile.checked ? root.onAccent() : root.cOnSurfaceVariant
+                    font.family: toggleTile.iconFont
+                    font.pixelSize: 16
+                }
+            }
+
+            Item { Layout.fillWidth: true }
+
+            Rectangle {
+                Layout.alignment: Qt.AlignVCenter
+                width: 6
+                height: 6
+                radius: 3
+                color: toggleTile.checked ? root.themeAccent : root.cOutlineVariant
+                Behavior on color { ColorAnimation { duration: root.dMicro; easing.type: Easing.OutCubic } }
+            }
+        }
+
+        Item { Layout.fillHeight: true }
+
+        // Bottom Labels
+        Text {
+            Layout.fillWidth: true
+            text: toggleTile.title
+            color: root.cOnSurface
+            font.family: root.fontSans
+            font.pixelSize: 12
+            font.weight: Font.DemiBold
+            elide: Text.ElideRight
+            maximumLineCount: 1
+        }
 
         Text {
-            Layout.alignment: Qt.AlignHCenter
-            text: toggleTile.icon
-            color: toggleTile.checked ? toggleTile.accentColor : root.cFgMuted
-            font.family: root.fontMono
-            font.pixelSize: 14
-        }
-        Text {
-            Layout.alignment: Qt.AlignHCenter
-            text: toggleTile.title
-            color: toggleTile.checked ? root.cFgPrimary : root.cFgMuted
+            Layout.fillWidth: true
+            text: toggleTile.subtitle !== "" ? toggleTile.subtitle : (toggleTile.checked ? "On" : "Off")
+            color: toggleTile.checked ? root.themeAccent : root.cOnSurfaceVariant
+            opacity: toggleTile.checked ? 1.0 : 0.65
             font.family: root.fontSans
-            font.pixelSize: root.tCaption[0]
-            font.weight: toggleTile.checked ? Font.DemiBold : Font.Medium
+            font.pixelSize: 10
+            font.weight: Font.Medium
+            elide: Text.ElideRight
+            maximumLineCount: 1
         }
     }
 
@@ -64,6 +115,7 @@ Rectangle {
         cursorShape: Qt.PointingHandCursor
         onPressed: toggleTile.press = toggleTile.pressScale
         onReleased: toggleTile.press = 1.0
+        onCanceled: toggleTile.press = 1.0
         onClicked: toggleTile.toggled()
     }
 }

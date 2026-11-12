@@ -6,17 +6,16 @@ import Quickshell.Io
 Item {
     id: wallpaperRoot
     anchors.fill: parent
-    property real reveal: root.displayState === 4 ? 1 : 0
+    property bool entered: false
+    property real reveal: (root.displayState === 4 && entered) ? 1 : 0
     opacity: reveal
     visible: opacity > 0
-    clip: true
-    scale: 0.992 + reveal * 0.008
-    transform: Translate { y: (1 - wallpaperRoot.reveal) * 8 }
+    transform: Translate { y: (1 - wallpaperRoot.reveal) * 6 }
 
     Behavior on reveal {
         NumberAnimation {
             duration: root.displayState === 4 ? root.motionPanel : root.motionExit
-            easing.type: root.displayState === 4 ? Easing.OutExpo : Easing.OutCubic
+            easing.type: Easing.OutCubic
         }
     }
 
@@ -179,9 +178,13 @@ Item {
                             Image {
                                 anchors.fill: parent
                                 source: "file://" + model.path
+                                // The originals are 4K. Decode straight to the
+                                // card size instead of keeping 33 full frames
+                                // resident (~10 MB each).
+                                sourceSize: Qt.size(360, Math.max(1, Math.round(wpListView.height * 2)))
                                 fillMode: Image.PreserveAspectCrop
                                 asynchronous: true
-                                cache: true
+                                cache: false
                                 opacity: isSel ? 1.0 : (isHov ? 0.78 : 0.48)
                                 Behavior on opacity { NumberAnimation { duration: root.dFast } }
                             }

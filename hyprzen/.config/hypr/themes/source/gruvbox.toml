@@ -6,6 +6,7 @@ name = "Gruvbox"
 slug = "gruvbox"
 icon = "📦"
 dark  = true
+gtk_theme = "Gruvbox-Yellow-Dark"
 
 [colors]
 bg      = "#282828"

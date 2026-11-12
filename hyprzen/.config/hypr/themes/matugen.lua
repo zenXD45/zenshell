@@ -5,23 +5,23 @@
 -- Matugen
 ---@module "hl"
 
-bg = "191113"
+bg = "1a1111"
 
-surface = "191113"
+surface = "1a1111"
 
-overlay = "22191b"
+overlay = "231919"
 
-accent = "ffb1c0"
+accent = "ffb3ae"
 
-text = "efdee0"
+text = "f1dedd"
 
-subtext = "d6c2c4"
+subtext = "d8c2bf"
 
 urgent = "ffb4ab"
 
-border_active = "rgba(ffb1c0ff)"
+border_active = "rgba(ffb3aeff)"
 
-border_inactive = "rgba(191113a6)"
+border_inactive = "rgba(1a1111a6)"
 
 rounding = 14
 
@@ -29,12 +29,12 @@ border_size = 0
 
 gaps_in = 5
 
-gaps_out = 12
+gaps_out = 14
 
-blur_size = 6
+blur_size = 5
 
 blur_passes = 3
 
-inactive_opacity = 0.92
+inactive_opacity = 0.93
 
 shadow_color = "rgba(0000008c)"

@@ -21,18 +21,22 @@ fi
 
 # Match on scripts/<name> so a shell whose command line merely mentions the
 # script (e.g. a grep) is never mistaken for the daemon itself.
-alive() { pgrep -f "scripts/$1" >/dev/null 2>&1; }
+    alive() {
+        local count
+        count=$(pgrep -f "scripts/$1" | wc -l)
+        [ "$count" -ge 1 ]
+    }
 
-if alive battery_monitor.sh && alive bluetooth_monitor.sh && alive notification_monitor.py; then
-    echo "monitors: already running (battery, bluetooth, notifications)."
-    exit 0
-fi
+    if alive battery_monitor.sh && alive bluetooth_monitor.sh && alive notification_monitor.py; then
+        echo "monitors: already running (battery, bluetooth, notifications)."
+        exit 0
+    fi
 
-# Restart the whole set, so a single dead watcher can never leave the others
-# duplicated.
-pkill -f "scripts/battery_monitor.sh"
-pkill -f "scripts/bluetooth_monitor.sh"
-pkill -f "scripts/notification_monitor.py"
+    # Kill any stale watchers before starting
+    pkill -f "scripts/battery_monitor.sh" || true
+    pkill -f "scripts/bluetooth_monitor.sh" || true
+    pkill -f "scripts/notification_monitor.py" || true
+    sleep 0.2
 pkill -f "scripts/notification_monitor.sh"
 
 sleep 1

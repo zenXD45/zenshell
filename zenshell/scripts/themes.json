@@ -9,7 +9,8 @@
     "fg": "#4c4f69",
     "extra": "#ea76cb",
     "dark": false,
-    "rounding": 18
+    "rounding": 18,
+    "gtk": "Catppuccin-Latte-Lavender"
   },
   {
     "id": "akane",
@@ -21,7 +22,8 @@
     "fg": "#dcd7ba",
     "extra": "#e05a5a",
     "dark": true,
-    "rounding": 16
+    "rounding": 16,
+    "gtk": "Kanagawa-Red-Dark"
   },
   {
     "id": "alabaster",
@@ -33,7 +35,8 @@
     "fg": "#434343",
     "extra": "#aa3731",
     "dark": false,
-    "rounding": 12
+    "rounding": 12,
+    "gtk": "adw-gtk3"
   },
   {
     "id": "catppuccin",
@@ -45,7 +48,8 @@
     "fg": "#cdd6f4",
     "extra": "#f38ba8",
     "dark": true,
-    "rounding": 14
+    "rounding": 14,
+    "gtk": "Catppuccin-Mocha-Mauve"
   },
   {
     "id": "dynamic",
@@ -57,7 +61,8 @@
     "fg": "#ebdbb2",
     "extra": "#fb4934",
     "dark": true,
-    "rounding": 12
+    "rounding": 12,
+    "gtk": "adw-gtk3-dark"
   },
   {
     "id": "eva-theme",
@@ -69,7 +74,8 @@
     "fg": "#c0caf5",
     "extra": "#ff5370",
     "dark": true,
-    "rounding": 12
+    "rounding": 12,
+    "gtk": "Tokyonight-Green-Dark"
   },
   {
     "id": "gruvbox",
@@ -81,7 +87,8 @@
     "fg": "#ebdbb2",
     "extra": "#fb4934",
     "dark": true,
-    "rounding": 12
+    "rounding": 12,
+    "gtk": "Gruvbox-Yellow-Dark"
   },
   {
     "id": "lavender",
@@ -93,19 +100,21 @@
     "fg": "#c8d3f5",
     "extra": "#ff757f",
     "dark": true,
-    "rounding": 20
+    "rounding": 20,
+    "gtk": "Tokyonight-Purple-Dark"
   },
   {
     "id": "matugen",
     "name": "Matugen",
     "icon": "🎨",
-    "accent": "#ffb1c0",
-    "bg": "#191113",
-    "surface": "#191113",
-    "fg": "#efdee0",
+    "accent": "#ffb3ae",
+    "bg": "#1a1111",
+    "surface": "#1a1111",
+    "fg": "#f1dedd",
     "extra": "#ffb4ab",
     "dark": true,
-    "rounding": 14
+    "rounding": 14,
+    "gtk": "adw-gtk3-dark"
   },
   {
     "id": "noir",
@@ -117,7 +126,8 @@
     "fg": "#d0d0d0",
     "extra": "#c23b3b",
     "dark": true,
-    "rounding": 12
+    "rounding": 12,
+    "gtk": "adw-gtk3-dark"
   },
   {
     "id": "nord",
@@ -129,7 +139,8 @@
     "fg": "#d8dee9",
     "extra": "#bf616a",
     "dark": true,
-    "rounding": 12
+    "rounding": 12,
+    "gtk": "Nordic"
   },
   {
     "id": "one-dark",
@@ -141,7 +152,8 @@
     "fg": "#abb2bf",
     "extra": "#e06c75",
     "dark": true,
-    "rounding": 12
+    "rounding": 12,
+    "gtk": "adw-gtk3-dark"
   },
   {
     "id": "osaka-jade",
@@ -153,7 +165,8 @@
     "fg": "#d3c6aa",
     "extra": "#e67e80",
     "dark": true,
-    "rounding": 14
+    "rounding": 14,
+    "gtk": "Everforest-Green-Dark"
   },
   {
     "id": "rose-pine",
@@ -165,7 +178,8 @@
     "fg": "#e0def4",
     "extra": "#eb6f92",
     "dark": true,
-    "rounding": 16
+    "rounding": 16,
+    "gtk": "Rose-Pine"
   },
   {
     "id": "tokyo-night",
@@ -177,6 +191,7 @@
     "fg": "#c0caf5",
     "extra": "#f7768e",
     "dark": true,
-    "rounding": 12
+    "rounding": 12,
+    "gtk": "Tokyonight-Dark"
   }
 ]

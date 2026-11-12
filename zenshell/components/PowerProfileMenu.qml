@@ -8,17 +8,16 @@ import Quickshell.Io
 Item {
     id: powerProfileMenu
     anchors.fill: parent
-    property real reveal: root.displayState === 14 ? 1 : 0
+    property bool entered: false
+    property real reveal: (root.displayState === 14 && entered) ? 1 : 0
     opacity: reveal
     visible: opacity > 0
-    clip: true
-    scale: 0.992 + reveal * 0.008
-    transform: Translate { y: (1 - powerProfileMenu.reveal) * 8 }
+    transform: Translate { y: (1 - powerProfileMenu.reveal) * 6 }
 
     Behavior on reveal {
         NumberAnimation {
             duration: root.displayState === 14 ? root.motionPanel : root.motionExit
-            easing.type: root.displayState === 14 ? Easing.OutExpo : Easing.OutCubic
+            easing.type: Easing.OutCubic
         }
     }
 
@@ -27,9 +26,9 @@ Item {
     property int selectedIndex: 1
 
     readonly property var profiles: [
-        { id: "performance", icon: "\uf135", label: "Performance", sub: "G-Mode · maximum clocks", key: "1" },
-        { id: "balanced",    icon: "\uf240", label: "Balanced",    sub: "Automatic fans · normal", key: "2" },
-        { id: "power-saver", icon: "\uf06c", label: "Power saver", sub: "Quiet · battery first",   key: "3" }
+        { id: "performance", icon: root.icoPower,   label: "Performance", sub: "G-Mode · maximum clocks", key: "1" },
+        { id: "balanced",    icon: root.icoBattery, label: "Balanced",    sub: "Automatic fans · normal", key: "2" },
+        { id: "power-saver", icon: root.icoBedtime, label: "Power saver", sub: "Quiet · battery first",   key: "3" }
     ]
 
     function accentFor(id) {
@@ -107,89 +106,112 @@ Item {
             title: "Power profile"
         }
 
-        Item { Layout.preferredHeight: root.s2 }
+        Item { Layout.preferredHeight: root.s3 }
 
-        Repeater {
-            model: powerProfileMenu.profiles
+        Group {
+            Repeater {
+                model: powerProfileMenu.profiles
 
-            Item {
-                id: profileRow
-                required property int index
-                required property var modelData
+                Item {
+                    id: profileRow
+                    required property int index
+                    required property var modelData
 
-                Layout.fillWidth: true
-                Layout.preferredHeight: 54
+                    width: parent ? parent.width : 0
+                    height: 56
 
-                readonly property bool isTarget: profileRow.index === powerProfileMenu.selectedIndex
-                readonly property bool isActive: powerProfileMenu.activeProfile === profileRow.modelData.id
-                readonly property color tone: powerProfileMenu.accentFor(profileRow.modelData.id)
+                    readonly property bool isTarget: profileRow.index === powerProfileMenu.selectedIndex
+                    readonly property bool isActive: powerProfileMenu.activeProfile === profileRow.modelData.id
+                    readonly property color tone: powerProfileMenu.accentFor(profileRow.modelData.id)
 
-                Rectangle {
-                    anchors.fill: parent
-                    radius: root.rSm
-                    color: profileRow.isTarget ? root.ink(0.055)
-                        : (rowArea.containsMouse ? root.ink(0.04) : "transparent")
-                    Behavior on color { ColorAnimation { duration: root.dMicro } }
-                }
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: root.s3
-                    anchors.rightMargin: root.s3
-                    spacing: root.s4
-
-                    Text {
-                        Layout.alignment: Qt.AlignVCenter
-                        Layout.preferredWidth: 20
-                        horizontalAlignment: Text.AlignHCenter
-                        text: profileRow.modelData.icon
-                        color: profileRow.isActive ? profileRow.tone : root.cFgMuted
-                        font.family: root.fontMono
-                        font.pixelSize: 16
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: 4
+                        radius: root.rMd
+                        color: profileRow.isTarget ? root.cSecondaryContainer
+                            : (rowArea.containsMouse ? root.cStateHover : "transparent")
                         Behavior on color { ColorAnimation { duration: root.dMicro } }
                     }
 
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 0
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 16
+                        anchors.rightMargin: 16
+                        spacing: root.s4
 
                         Text {
+                            Layout.alignment: Qt.AlignVCenter
+                            Layout.preferredWidth: 24
+                            horizontalAlignment: Text.AlignHCenter
+                            text: profileRow.modelData.icon
+                            color: profileRow.isActive ? profileRow.tone : root.cOnSurfaceVariant
+                            font.family: root.fontIcon
+                            font.pixelSize: 19
+                            Behavior on color { ColorAnimation { duration: root.dMicro } }
+                        }
+
+                        ColumnLayout {
                             Layout.fillWidth: true
-                            text: profileRow.modelData.label
-                            color: root.cFgPrimary
-                            font.family: root.fontSans
-                            font.pixelSize: 13
-                            font.weight: profileRow.isActive ? Font.DemiBold : Font.Medium
-                            elide: Text.ElideRight
+                            spacing: 1
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: profileRow.modelData.label
+                                color: root.cOnSurface
+                                font.family: root.fontSans
+                                font.pixelSize: 14
+                                font.weight: profileRow.isActive ? Font.DemiBold : Font.Medium
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: profileRow.modelData.sub
+                                color: profileRow.isActive ? profileRow.tone : root.cOnSurfaceVariant
+                                font.family: root.fontSans
+                                font.pixelSize: 12
+                                elide: Text.ElideRight
+                            }
                         }
 
                         Text {
-                            Layout.fillWidth: true
-                            text: profileRow.modelData.sub
-                            color: root.cFgMuted
+                            Layout.alignment: Qt.AlignVCenter
+                            visible: profileRow.isActive
+                            text: "In use"
+                            color: profileRow.tone
                             font.family: root.fontSans
-                            font.pixelSize: 11
-                            elide: Text.ElideRight
+                            font.pixelSize: 12
+                            font.weight: Font.Medium
+                        }
+
+                        Rectangle {
+                            Layout.alignment: Qt.AlignVCenter
+                            visible: !profileRow.isActive
+                            width: 20
+                            height: 20
+                            radius: 6
+                            color: root.cSurfaceContainerHighest
+                            border.width: 1
+                            border.color: root.cOutlineVariant
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: profileRow.modelData.key
+                                color: root.cOnSurfaceVariant
+                                font.family: root.fontMono
+                                font.pixelSize: 10
+                            }
                         }
                     }
 
-                    Text {
-                        Layout.alignment: Qt.AlignVCenter
-                        text: profileRow.isActive ? "In use" : profileRow.modelData.key
-                        color: profileRow.isActive ? profileRow.tone : root.ink(0.32)
-                        font.family: profileRow.isActive ? root.fontSans : root.fontMono
-                        font.pixelSize: 11
-                        font.weight: profileRow.isActive ? Font.Medium : Font.Normal
+                    MouseArea {
+                        id: rowArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onEntered: powerProfileMenu.selectedIndex = profileRow.index
+                        onClicked: powerProfileMenu.setProfile(profileRow.modelData.id)
                     }
-                }
-
-                MouseArea {
-                    id: rowArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onEntered: powerProfileMenu.selectedIndex = profileRow.index
-                    onClicked: powerProfileMenu.setProfile(profileRow.modelData.id)
                 }
             }
         }

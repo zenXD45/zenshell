@@ -8,17 +8,16 @@ import Quickshell.Services.Pipewire
 Item {
     id: controlPanel
     anchors.fill: parent
-    property real reveal: root.displayState === 13 ? 1 : 0
+    property bool entered: false
+    property real reveal: (root.displayState === 13 && entered) ? 1 : 0
     opacity: reveal
     visible: opacity > 0
-    clip: true
-    scale: 0.992 + reveal * 0.008
-    transform: Translate { y: (1 - controlPanel.reveal) * 8 }
+    transform: Translate { y: (1 - controlPanel.reveal) * 6 }
 
     Behavior on reveal {
         NumberAnimation {
             duration: root.displayState === 13 ? root.motionPanel : root.motionExit
-            easing.type: root.displayState === 13 ? Easing.OutExpo : Easing.OutCubic
+            easing.type: Easing.OutCubic
         }
     }
 
@@ -27,9 +26,11 @@ Item {
 
     // ── View Navigation ────────────────────────────────────────────
     property string currentView: "main"
+    property string mainTab: "controls"
 
     // ── Header / meta ──────────────────────────────────────────────
     property string panelClock: ""
+    property string panelDate: ""
 
     // ── Network state ──────────────────────────────────────────────
     property bool wifiRadio: true
@@ -286,11 +287,17 @@ Item {
         var hh = (d.getHours() < 10 ? "0" : "") + d.getHours()
         var mm = (d.getMinutes() < 10 ? "0" : "") + d.getMinutes()
         panelClock = hh + ":" + mm
+
+        var days = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"]
+        var months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+        panelDate = days[d.getDay()] + " · " + d.getDate() + " " + months[d.getMonth()]
     }
 
     onVisibleChanged: {
         if (visible) {
             currentView = "main"
+            mainTab = "controls"
+            tickClock()
             initTimer.restart()
         }
     }
@@ -382,6 +389,8 @@ Item {
         Keys.onEscapePressed: {
             if (currentView !== "main") {
                 currentView = "main"
+            } else if (mainTab !== "controls") {
+                mainTab = "controls"
             } else {
                 root.displayState = 0
                 root.updateState()
@@ -390,13 +399,16 @@ Item {
     }
 
     // ════════════════════════════════════════════════════════════════
-    // │ MAIN VIEW — inset groups, hairline rows, real switches
+    // │ MAIN VIEW — tonal tabs, quick settings, M3 controls
+    // ════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════════════════
+    // │ MAIN VIEW — Glass Dark Control Center & Notifications
     // ════════════════════════════════════════════════════════════════
     ColumnLayout {
         id: mainView
         anchors.fill: parent
-        anchors.margins: root.s5
-        spacing: 0
+        anchors.margins: 18
+        spacing: 12
         opacity: currentView === "main" ? 1 : 0
         visible: opacity > 0
         transform: Translate { y: currentView === "main" ? (1 - mainView.opacity) * 6 : -mainView.opacity * 6 }
@@ -407,198 +419,520 @@ Item {
             }
         }
 
-        // ── Header ─────────────────────────────────────────────────
+        // ── Top Header: User Profile, Battery Pill & Quick Actions ─────
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 34
-            spacing: root.s2
+            Layout.preferredHeight: 44
+            spacing: 10
 
-            Text {
+            // User Profile Chip (Avatar + Name + Subtitle)
+            RowLayout {
+                spacing: 10
                 Layout.alignment: Qt.AlignVCenter
-                text: "Control Center"
-                color: root.cFgPrimary
-                font.family: root.fontSans
-                font.pixelSize: 17
-                font.weight: Font.DemiBold
-                font.letterSpacing: -0.2
+
+                // Avatar Squircle
+                Rectangle {
+                    width: 38
+                    height: 38
+                    radius: 12
+                    color: root.cSurfaceContainerHigh
+                    border.width: 1
+                    border.color: root.cOutlineVariant
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: (Quickshell.env("USER") || "Z").charAt(0).toUpperCase()
+                        color: root.themeAccent
+                        font.family: root.fontSans
+                        font.pixelSize: 16
+                        font.weight: Font.Bold
+                    }
+                }
+
+                ColumnLayout {
+                    spacing: 0
+                    Layout.alignment: Qt.AlignVCenter
+
+                    Text {
+                        text: (Quickshell.env("USER") || "zen").charAt(0).toUpperCase() + (Quickshell.env("USER") || "zen").slice(1)
+                        color: root.cOnSurface
+                        font.family: root.fontSans
+                        font.pixelSize: 14
+                        font.weight: Font.DemiBold
+                    }
+
+                    Text {
+                        text: (Quickshell.env("USER") || "zen") + "@archlinux"
+                        color: root.cOnSurfaceVariant
+                        opacity: 0.60
+                        font.family: root.fontMono
+                        font.pixelSize: 10
+                    }
+                }
             }
 
             Item { Layout.fillWidth: true }
 
-            Text {
+            // Battery Badge Pill
+            Rectangle {
                 Layout.alignment: Qt.AlignVCenter
-                text: panelClock
-                color: root.ink(0.40)
-                font.family: root.fontMono
-                font.pixelSize: 11
+                implicitHeight: 28
+                implicitWidth: batteryLayout.implicitWidth + 18
+                radius: 14
+                color: root.batteryCharging
+                    ? root.cPrimaryContainer
+                    : root.cSurfaceContainer
+                border.width: 1
+                border.color: root.batteryCharging
+                    ? Qt.rgba(root.themeAccent.r, root.themeAccent.g, root.themeAccent.b, 0.35)
+                    : root.cOutlineVariant
+
+                RowLayout {
+                    id: batteryLayout
+                    anchors.centerIn: parent
+                    spacing: 5
+
+                    Text {
+                        text: root.batteryCharging ? "\uf0e7" : (root.batteryPercent > 20 ? "\uf240" : "\uf244")
+                        color: root.batteryCharging ? root.themeAccent : (root.batteryPercent <= 20 ? root.cError : root.cOnSurfaceVariant)
+                        font.family: root.fontMono
+                        font.pixelSize: 11
+                    }
+
+                    Text {
+                        text: (root.batteryPercent > 0 ? root.batteryPercent : 80) + "%"
+                        color: root.batteryCharging ? root.themeAccent : root.cOnSurface
+                        font.family: root.fontMono
+                        font.pixelSize: 11
+                        font.weight: Font.DemiBold
+                    }
+                }
             }
 
-            IconButton {
+            // Quick Settings Action Button
+            Rectangle {
                 Layout.alignment: Qt.AlignVCenter
-                icon: "\uf013"
-                onClicked: {
-                    root.displayState = 0;
-                    root.updateState();
-                    root.openSettings();
+                width: 32
+                height: 32
+                radius: 16
+                color: settingsBtnArea.containsMouse ? root.cSurfaceContainerHighest : root.cSurfaceContainer
+                border.width: 1
+                border.color: settingsBtnArea.containsMouse ? root.cOutline : root.cOutlineVariant
+                Behavior on color { ColorAnimation { duration: root.dMicro } }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: root.icoSettings
+                    color: settingsBtnArea.containsMouse ? root.cOnSurface : root.cOnSurfaceVariant
+                    font.family: root.fontIcon
+                    font.pixelSize: 17
+                }
+
+                MouseArea {
+                    id: settingsBtnArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        root.displayState = 0;
+                        root.updateState();
+                        root.openSettings();
+                    }
+                }
+            }
+
+            // Power Action Button
+            Rectangle {
+                Layout.alignment: Qt.AlignVCenter
+                width: 32
+                height: 32
+                radius: 16
+                color: powerBtnArea.containsMouse ? root.cErrorContainer : root.cSurfaceContainer
+                border.width: 1
+                border.color: powerBtnArea.containsMouse ? Qt.rgba(root.cError.r, root.cError.g, root.cError.b, 0.40) : root.cOutlineVariant
+                Behavior on color { ColorAnimation { duration: root.dMicro } }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: root.icoPower
+                    color: powerBtnArea.containsMouse ? root.cOnErrorContainer : root.cOnSurfaceVariant
+                    font.family: root.fontIcon
+                    font.pixelSize: 16
+                }
+
+                MouseArea {
+                    id: powerBtnArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        root.displayState = 12;
+                        root.updateState();
+                    }
                 }
             }
         }
 
-        Item { Layout.preferredHeight: root.s3 }
+        // ── Segmented Glass Tab Switcher ───────────────────────────
+        Rectangle {
+            id: segmentedTabs
+            Layout.fillWidth: true
+            Layout.preferredHeight: 38
+            radius: 19
+            color: root.cSurfaceContainerLow
+            border.width: 1
+            border.color: root.cOutlineVariant
 
-        // ── Connections ────────────────────────────────────────────
-        Group {
-            GroupRow {
-                icon: activeType === "wired" ? "\uf0a0" : "\uf1eb"
-                label: "Network"
-                value: activeType === "wired"
-                    ? (wiredConn || "Wired")
-                    : (wifiActive ? (wifiConn || "Wi-Fi") : "Offline")
-                chevron: true
-                onActivated: { currentView = "network"; refreshNetwork() }
-            }
+            // Animated Sliding Pill Indicator
+            Rectangle {
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                anchors.topMargin: 3
+                anchors.bottomMargin: 3
+                x: mainTab === "controls" ? 3 : (parent.width / 2)
+                width: (parent.width / 2) - 3
+                radius: 16
+                color: root.cSurfaceContainerHigh
+                border.width: 1
+                border.color: root.cOutline
 
-            GroupRow {
-                icon: "\uf293"
-                label: "Bluetooth"
-                value: btPowered ? "On" : "Off"
-                chevron: true
-                onActivated: { currentView = "bt"; refreshBluetooth() }
-            }
-
-            GroupRow {
-                icon: "\uf030"
-                label: "Camera"
-                value: !root.cameraService ? "Not installed"
-                    : root.cameraService.block ? "Blocked"
-                    : root.cameraService.consumers > 0 ? "In use"
-                    : root.cameraService.running ? "Live"
-                    : "Idle"
-                chevron: true
-                last: recorderMode === "none"
-                onActivated: {
-                    root.displayState = 24;
-                    root.updateState();
+                Behavior on x {
+                    NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
                 }
             }
 
-            GroupRow {
-                visible: recorderMode !== "none"
-                icon: recordingActive ? "\uf111" : "\uf03d"
-                label: "Screen recording"
-                value: recordingActive ? "Recording" : "Idle"
-                destructive: recordingActive
-                last: true
-                onActivated: toggleRecord()
+            RowLayout {
+                anchors.fill: parent
+                spacing: 0
+
+                // Controls Tab Button
+                Item {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+
+                    RowLayout {
+                        anchors.centerIn: parent
+                        spacing: 6
+
+                        Text {
+                            text: "Controls"
+                            color: mainTab === "controls" ? root.cOnSurface : root.cOnSurfaceVariant
+                            font.family: root.fontSans
+                            font.pixelSize: 13
+                            font.weight: mainTab === "controls" ? Font.Bold : Font.Medium
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: mainTab = "controls"
+                    }
+                }
+
+                // Notifications Tab Button
+                Item {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+
+                    RowLayout {
+                        anchors.centerIn: parent
+                        spacing: 6
+
+                        Text {
+                            text: "Notifications"
+                            color: mainTab === "notifications" ? root.cOnSurface : root.cOnSurfaceVariant
+                            font.family: root.fontSans
+                            font.pixelSize: 13
+                            font.weight: mainTab === "notifications" ? Font.Bold : Font.Medium
+                        }
+
+                        // Badge Counter
+                        Rectangle {
+                            width: Math.max(18, notifCountText.implicitWidth + 8)
+                            height: 18
+                            radius: 9
+                            color: root.notificationList.length > 0
+                                ? (mainTab === "notifications" ? root.themeAccent : root.cSurfaceContainerHighest)
+                                : root.cSurfaceContainer
+
+                            Text {
+                                id: notifCountText
+                                anchors.centerIn: parent
+                                text: root.notificationList.length
+                                color: root.notificationList.length > 0 ? (mainTab === "notifications" ? root.onAccent() : root.cOnSurface) : root.cOnSurfaceVariant
+                                font.family: root.fontMono
+                                font.pixelSize: 10
+                                font.weight: Font.Bold
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: mainTab = "notifications"
+                    }
+                }
             }
         }
 
-        Item { Layout.preferredHeight: root.s3 }
-
-        // ── Output ─────────────────────────────────────────────────
-        Group {
-            SliderRow {
-                width: parent.width
-                height: 40
-                icon: "\uf185"
-                value: brightnessValue
-                min: 0
-                max: 100
-                accentColor: themeAccent
-                valueSuffix: "%"
-                onMoved: setBrightness(value)
-            }
-
-            SliderRow {
-                width: parent.width
-                height: 40
-                icon: "\uf028"
-                value: volumeValue
-                min: 0
-                max: 100
-                accentColor: themeAccent
-                valueSuffix: "%"
-                onMoved: setVolume(value)
-            }
-        }
-
-        Item { Layout.preferredHeight: root.s3 }
-
-        // ── Quick switches ─────────────────────────────────────────
-        Group {
-            GroupRow {
-                icon: "\uf0f4"
-                label: "Caffeine"
-                showSwitch: true
-                switchOn: caffeineEnabled
-                onToggled: toggleCaffeine()
-            }
-
-            GroupRow {
-                icon: "\uf186"
-                label: "Night light"
-                showSwitch: true
-                switchOn: nightLightEnabled
-                onToggled: toggleNightLight()
-            }
-
-            GroupRow {
-                icon: "\uf0f3"
-                label: "Silence"
-                showSwitch: true
-                switchOn: root.dndEnabled
-                onToggled: toggleDnd()
-            }
-
-            GroupRow {
-                icon: micMuted ? "\uf131" : "\uf130"
-                label: "Microphone"
-                showSwitch: true
-                switchOn: !micMuted
-                last: true
-                onToggled: toggleMic()
-            }
-        }
-
-        Item { Layout.preferredHeight: root.s3 }
-
-        // ── Notifications ──────────────────────────────────────────
-        GroupHeader {
-            title: "Notifications"
-            action: root.notificationList.length > 0 ? "Clear" : ""
-            onActionClicked: clearAllNotifications()
-        }
-
+        // ── Tab Content Container ──────────────────────────────────
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            ListView {
+            // ── Controls View ──────────────────────────────────────
+            ColumnLayout {
                 anchors.fill: parent
-                clip: true
-                spacing: 0
-                boundsBehavior: Flickable.StopAtBounds
-                model: root.notificationList
+                spacing: 12
+                visible: mainTab === "controls"
 
-                delegate: NotificationItem {
-                    width: ListView.view.width
-                    height: 56
-                    showDivider: index < ListView.view.count - 1
-                    appName: modelData.app
-                    summary: modelData.summary
-                    body: modelData.body
-                    time: modelData.time
-                    accentColor: themeAccent
-                    onDismissed: clearNotification(modelData.id)
+                // 4 Quick Toggle Tiles
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 74
+                    spacing: 8
+
+                    ToggleTile {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        title: "Caffeine"
+                        subtitle: caffeineEnabled ? "Active" : "Off"
+                        icon: "\uf0f4"
+                        iconFont: root.fontMono
+                        checked: caffeineEnabled
+                        onToggled: toggleCaffeine()
+                    }
+
+                    ToggleTile {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        title: "Night light"
+                        subtitle: nightLightEnabled ? "Warm" : "Off"
+                        icon: root.icoNight
+                        checked: nightLightEnabled
+                        onToggled: toggleNightLight()
+                    }
+
+                    ToggleTile {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        title: "Silence"
+                        subtitle: root.dndEnabled ? "Silent" : "Off"
+                        icon: root.icoDnd
+                        checked: root.dndEnabled
+                        onToggled: toggleDnd()
+                    }
+
+                    ToggleTile {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        title: "Microphone"
+                        subtitle: micMuted ? "Muted" : "Active"
+                        icon: root.icoMic
+                        checked: !micMuted
+                        onToggled: toggleMic()
+                    }
+                }
+
+                // 2 Sleek Capsule Sliders
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+
+                    SliderRow {
+                        Layout.fillWidth: true
+                        icon: root.icoBrightness
+                        value: brightnessValue
+                        min: 0
+                        max: 100
+                        valueSuffix: "%"
+                        onMoved: setBrightness(value)
+                    }
+
+                    SliderRow {
+                        Layout.fillWidth: true
+                        icon: volumeValue <= 0 ? root.icoVolumeMute : root.icoVolume
+                        value: volumeValue
+                        min: 0
+                        max: 100
+                        valueSuffix: "%"
+                        onMoved: setVolume(value)
+                    }
+                }
+
+                // System Connectivity & Services Group
+                Group {
+                    GroupRow {
+                        icon: activeType === "wired" ? "\uf0a0" : root.icoWifi
+                        iconFont: activeType === "wired" ? root.fontMono : root.fontIcon
+                        label: "Network"
+                        value: activeType === "wired"
+                            ? (wiredConn || "Wired")
+                            : (wifiActive ? (wifiConn || "Wi-Fi") : "Offline")
+                        valueActive: activeType === "wired" || wifiActive
+                        chevron: true
+                        showDivider: true
+                        onActivated: { currentView = "network"; refreshNetwork() }
+                    }
+
+                    GroupRow {
+                        icon: root.icoBluetooth
+                        label: "Bluetooth"
+                        value: btPowered ? "On" : "Off"
+                        valueActive: btPowered
+                        chevron: true
+                        showDivider: true
+                        onActivated: { currentView = "bt"; refreshBluetooth() }
+                    }
+
+                    GroupRow {
+                        icon: "\uf030"
+                        iconFont: root.fontMono
+                        label: "Camera"
+                        value: !root.cameraService ? "Not installed"
+                            : root.cameraService.block ? "Blocked"
+                            : root.cameraService.consumers > 0 ? "In use"
+                            : root.cameraService.running ? "Live"
+                            : "Idle"
+                        valueActive: root.cameraService && (root.cameraService.consumers > 0 || root.cameraService.running)
+                        chevron: true
+                        showDivider: recorderMode !== "none"
+                        onActivated: {
+                            root.displayState = 24;
+                            root.updateState();
+                        }
+                    }
+
+                    GroupRow {
+                        visible: recorderMode !== "none"
+                        icon: recordingActive ? "\uf111" : "\uf03d"
+                        iconFont: root.fontMono
+                        label: "Screen recording"
+                        value: recordingActive ? "Recording" : "Idle"
+                        valueActive: recordingActive
+                        destructive: recordingActive
+                        onActivated: toggleRecord()
+                    }
+                }
+
+                Item { Layout.fillHeight: true }
+
+                // Footer Metadata
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 18
+
+                    Text {
+                        text: "ZenShell"
+                        color: root.cOnSurfaceVariant
+                        opacity: 0.50
+                        font.family: root.fontMono
+                        font.pixelSize: 10
+                        font.letterSpacing: 0.08
+                    }
+
+                    Item { Layout.fillWidth: true }
+
+                    Text {
+                        text: root.activeProfile === "bar" ? "Command bar" : (root.activeProfile === "status" ? "Status island" : "Dynamic island")
+                        color: root.cOnSurfaceVariant
+                        opacity: 0.50
+                        font.family: root.fontMono
+                        font.pixelSize: 10
+                    }
                 }
             }
 
-            EmptyState {
-                anchors.centerIn: parent
-                width: parent.width - root.s6
-                visible: root.notificationList.length === 0
-                title: "No notifications"
-                detail: root.dndEnabled ? "Do Not Disturb is on" : ""
+            // ── Notifications View ─────────────────────────────────
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: 10
+                visible: mainTab === "notifications"
+
+                // Header with Count + Clear All Button
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 28
+
+                    Text {
+                        text: root.notificationList.length > 0
+                            ? (root.notificationList.length + " Notifications")
+                            : "Recent"
+                        color: root.cOnSurfaceVariant
+                        font.family: root.fontSans
+                        font.pixelSize: 12
+                        font.weight: Font.DemiBold
+                    }
+
+                    Item { Layout.fillWidth: true }
+
+                    // Clear All Glass Button
+                    Rectangle {
+                        visible: root.notificationList.length > 0
+                        implicitWidth: clearText.implicitWidth + 18
+                        implicitHeight: 24
+                        radius: 12
+                        color: clearArea.containsMouse ? root.cSurfaceContainerHighest : root.cSurfaceContainerHigh
+                        border.width: 1
+                        border.color: clearArea.containsMouse ? root.cOutline : root.cOutlineVariant
+
+                        Text {
+                            id: clearText
+                            anchors.centerIn: parent
+                            text: "Clear all"
+                            color: clearArea.containsMouse ? root.cOnSurface : root.cOnSurfaceVariant
+                            font.family: root.fontSans
+                            font.pixelSize: 11
+                            font.weight: Font.Medium
+                        }
+
+                        MouseArea {
+                            id: clearArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: clearAllNotifications()
+                        }
+                    }
+                }
+
+                // Notification Cards List
+                ListView {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    visible: root.notificationList.length > 0
+                    clip: true
+                    spacing: 8
+                    boundsBehavior: Flickable.StopAtBounds
+                    model: root.notificationList
+
+                    delegate: NotificationItem {
+                        width: ListView.view.width
+                        appName: modelData.app
+                        summary: modelData.summary
+                        body: modelData.body
+                        time: modelData.time
+                        onDismissed: clearNotification(modelData.id)
+                    }
+                }
+
+                // Empty State
+                Item {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    visible: root.notificationList.length === 0
+
+                    EmptyState {
+                        anchors.centerIn: parent
+                        icon: root.icoNotifications
+                        title: "No Notifications"
+                        detail: root.dndEnabled ? "Do Not Disturb is currently active" : "All caught up for now"
+                    }
+                }
             }
         }
     }
@@ -630,31 +964,27 @@ Item {
 
         Item { Layout.preferredHeight: root.s3 }
 
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 0
-
+        Group {
             ListRow {
-                icon: "\uf1eb"
+                icon: root.icoWifi
                 label: "Wi-Fi"
                 detail: wifiActive ? (wifiConn || "Connected") : (wifiRadio ? "Radio on" : "Radio off")
                 value: wifiActive ? "Connected" : (wifiRadio ? "On" : "Off")
                 active: wifiActive
-                showDivider: true
                 onClicked: wifiRadio ? switchWifi() : toggleWifiRadio()
             }
 
             ListRow {
                 icon: "󰈀"
+                iconFont: root.fontMono
                 label: "Wired"
                 value: wiredActive ? "Connected" : "—"
                 active: wiredActive
-                showDivider: true
                 onClicked: switchWired()
             }
 
             ListRow {
-                icon: wifiRadio ? "\uf1eb" : "\uf072"
+                icon: root.icoWifi
                 label: "Wi-Fi radio"
                 value: wifiRadio ? "On" : "Off"
                 chevron: false
@@ -678,29 +1008,30 @@ Item {
                 anchors.fill: parent
                 visible: !wifiLoading
                 clip: true
-                spacing: 0
+                spacing: root.s1
                 boundsBehavior: Flickable.StopAtBounds
                 model: wifiNetworks
 
                 delegate: Item {
                     id: netRow
                     width: ListView.view.width
-                    height: 52
+                    height: 56
                     property var net: wifiNetworks[index]
                     property int strength: net && net.signal !== undefined ? net.signal : 0
 
                     Rectangle {
                         anchors.fill: parent
-                        radius: root.rSm
-                        color: netRowArea.containsMouse ? root.ink(0.045) : "transparent"
+                        anchors.margins: 2
+                        radius: root.rMd
+                        color: netRowArea.containsMouse ? root.cStateHover : "transparent"
                         Behavior on color { ColorAnimation { duration: root.dMicro } }
                     }
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: root.s3
-                        anchors.rightMargin: root.s3
-                        spacing: root.s3
+                        anchors.leftMargin: 16
+                        anchors.rightMargin: 16
+                        spacing: root.s4
 
                         Item {
                             Layout.preferredWidth: 18
@@ -716,11 +1047,11 @@ Item {
                                     model: 4
 
                                     Rectangle {
-                                        width: 2.5
+                                        width: 3
                                         height: 4 + index * 3
-                                        radius: 1
+                                        radius: 1.5
                                         anchors.bottom: parent.bottom
-                                        color: index < netRow.strength ? themeAccent : root.ink(0.14)
+                                        color: index < netRow.strength ? themeAccent : root.cOutlineVariant
                                     }
                                 }
                             }
@@ -733,9 +1064,9 @@ Item {
                             Text {
                                 Layout.fillWidth: true
                                 text: netRow.net && netRow.net.ssid ? netRow.net.ssid : "Unknown"
-                                color: root.cFgPrimary
+                                color: root.cOnSurface
                                 font.family: root.fontSans
-                                font.pixelSize: 13
+                                font.pixelSize: 14
                                 font.weight: Font.Medium
                                 elide: Text.ElideRight
                             }
@@ -743,9 +1074,9 @@ Item {
                             Text {
                                 Layout.fillWidth: true
                                 text: netRow.net && netRow.net.security ? "Secured" : "Open"
-                                color: root.cFgMuted
+                                color: root.cOnSurfaceVariant
                                 font.family: root.fontSans
-                                font.pixelSize: 11
+                                font.pixelSize: 12
                             }
                         }
 
@@ -756,19 +1087,11 @@ Item {
                                 : (netRow.net && netRow.net.active ? "Connected" : "Connect")
                             color: connectingSsid === (netRow.net ? netRow.net.ssid : "") || (netRow.net && netRow.net.active)
                                 ? themeAccent
-                                : root.cFgMuted
+                                : root.cOnSurfaceVariant
                             font.family: root.fontSans
                             font.pixelSize: 12
                             font.weight: Font.Medium
                         }
-                    }
-
-                    Rectangle {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.bottom: parent.bottom
-                        height: 1
-                        color: root.ink(0.055)
                     }
 
                     MouseArea {
@@ -788,6 +1111,7 @@ Item {
 
                 EmptyState {
                     Layout.alignment: Qt.AlignHCenter
+                    icon: root.icoSearchOff
                     title: "No networks found"
                     detail: wifiRadio ? "Move closer to the router and scan again" : "Turn the Wi-Fi radio on"
                 }
@@ -795,10 +1119,10 @@ Item {
                 Text {
                     Layout.alignment: Qt.AlignHCenter
                     text: "Scan again"
-                    color: scanArea.containsMouse ? root.cFgPrimary : themeAccent
+                    color: root.cPrimary
                     font.family: root.fontSans
                     font.pixelSize: 12
-                    font.weight: Font.Medium
+                    font.weight: Font.DemiBold
 
                     MouseArea {
                         id: scanArea
@@ -840,11 +1164,13 @@ Item {
 
         Item { Layout.preferredHeight: root.s3 }
 
-        ListRow {
-            icon: "\uf293"
-            label: "Bluetooth"
-            value: btPowered ? "On" : "Off"
-            onClicked: toggleBluetooth()
+        Group {
+            ListRow {
+                icon: root.icoBluetooth
+                label: "Bluetooth"
+                value: btPowered ? "On" : "Off"
+                onClicked: toggleBluetooth()
+            }
         }
 
         Item { Layout.preferredHeight: root.s5 }
@@ -863,49 +1189,50 @@ Item {
                 anchors.fill: parent
                 visible: !btLoading
                 clip: true
-                spacing: 0
+                spacing: root.s1
                 boundsBehavior: Flickable.StopAtBounds
                 model: btDevices
 
                 delegate: Item {
                     id: btRow
                     width: ListView.view.width
-                    height: 54
+                    height: 56
                     property var device: btDevices[index]
 
                     Rectangle {
                         anchors.fill: parent
-                        radius: root.rSm
-                        color: btRowArea.containsMouse ? root.ink(0.045) : "transparent"
+                        anchors.margins: 2
+                        radius: root.rMd
+                        color: btRowArea.containsMouse ? root.cStateHover : "transparent"
                         Behavior on color { ColorAnimation { duration: root.dMicro } }
                     }
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: root.s3
-                        anchors.rightMargin: root.s3
-                        spacing: root.s3
+                        anchors.leftMargin: 16
+                        anchors.rightMargin: 16
+                        spacing: root.s4
 
                         Text {
-                            Layout.preferredWidth: 20
+                            Layout.preferredWidth: 24
                             Layout.alignment: Qt.AlignVCenter
                             horizontalAlignment: Text.AlignHCenter
                             text: getDeviceIcon(btRow.device ? btRow.device.type : "")
-                            color: btRow.device && btRow.device.connected ? themeAccent : root.cFgSecondary
+                            color: btRow.device && btRow.device.connected ? themeAccent : root.cOnSurfaceVariant
                             font.family: root.fontMono
-                            font.pixelSize: 15
+                            font.pixelSize: 16
                         }
 
                         ColumnLayout {
                             Layout.fillWidth: true
-                            spacing: 0
+                            spacing: 1
 
                             Text {
                                 Layout.fillWidth: true
                                 text: btRow.device && btRow.device.name ? btRow.device.name : "Unknown device"
-                                color: root.cFgPrimary
+                                color: root.cOnSurface
                                 font.family: root.fontSans
-                                font.pixelSize: 13
+                                font.pixelSize: 14
                                 font.weight: Font.Medium
                                 elide: Text.ElideRight
                             }
@@ -914,9 +1241,9 @@ Item {
                                 Layout.fillWidth: true
                                 text: btRow.device && btRow.device.connected ? "Connected"
                                     : (btRow.device && btRow.device.paired ? "Paired" : "Available")
-                                color: btRow.device && btRow.device.connected ? themeAccent : root.cFgMuted
+                                color: btRow.device && btRow.device.connected ? themeAccent : root.cOnSurfaceVariant
                                 font.family: root.fontSans
-                                font.pixelSize: 11
+                                font.pixelSize: 12
                             }
                         }
 
@@ -925,21 +1252,11 @@ Item {
                             text: connectingMac !== "" && btRow.device && connectingMac === btRow.device.mac
                                 ? "Connecting…"
                                 : (btRow.device && btRow.device.connected ? "Disconnect" : "Connect")
-                            color: root.cFgMuted
+                            color: btRow.device && btRow.device.connected ? root.cOnSurfaceVariant : root.cPrimary
                             font.family: root.fontSans
                             font.pixelSize: 12
                             font.weight: Font.Medium
-                            opacity: btRowArea.containsMouse ? 1 : 0.55
-                            Behavior on opacity { NumberAnimation { duration: root.dMicro } }
                         }
-                    }
-
-                    Rectangle {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.bottom: parent.bottom
-                        height: 1
-                        color: root.ink(0.055)
                     }
 
                     MouseArea {
@@ -956,46 +1273,45 @@ Item {
                 anchors.centerIn: parent
                 width: parent.width - root.s6
                 visible: !btLoading && btDevices.length === 0
+                icon: root.icoBluetooth
                 title: btPowered ? "No devices found" : "Bluetooth is off"
                 detail: btPowered ? "Put the device in pairing mode" : "Turn Bluetooth on to connect"
             }
         }
     }
 
-    // ── Action toast ───────────────────────────────────────────────
+    // ── Action snackbar ────────────────────────────────────────────
     Item {
         id: actionToast
         anchors.bottom: parent.bottom
         anchors.bottomMargin: root.s5
         anchors.horizontalCenter: parent.horizontalCenter
         width: parent.width - root.s7
-        height: 40
+        height: 52
         opacity: actionVisible ? 1 : 0
         visible: opacity > 0
         transform: Translate { y: (1 - actionToast.opacity) * 8 }
         Behavior on opacity {
             NumberAnimation {
                 duration: actionVisible ? root.motionBase : root.motionExit
-                easing.type: actionVisible ? Easing.OutExpo : Easing.OutCubic
+                easing.type: Easing.OutCubic
             }
         }
 
         Rectangle {
             anchors.fill: parent
-            radius: root.rMd
-            color: Qt.rgba(root.cBgElevated.r, root.cBgElevated.g, root.cBgElevated.b, 0.96)
-            border.width: 1
-            border.color: root.ink(0.08)
+            radius: root.rSm
+            color: root.cInverseSurface
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: root.s4
-                anchors.rightMargin: root.s4
+                anchors.leftMargin: root.s5
+                anchors.rightMargin: root.s5
                 spacing: root.s3
 
                 Text {
                     text: actionTitle
-                    color: root.cFgPrimary
+                    color: root.cInverseOnSurface
                     font.family: root.fontSans
                     font.pixelSize: 13
                     font.weight: Font.DemiBold
@@ -1004,7 +1320,8 @@ Item {
                 Text {
                     Layout.fillWidth: true
                     text: actionSub
-                    color: root.cFgMuted
+                    color: root.cInverseOnSurface
+                    opacity: 0.72
                     font.family: root.fontSans
                     font.pixelSize: 12
                     elide: Text.ElideRight

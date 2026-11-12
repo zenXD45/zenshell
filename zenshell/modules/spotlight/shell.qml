@@ -108,8 +108,8 @@ Scope {
     target: root
     property: "reveal"
     to: 1
-    duration: 230
-    easing.type: Easing.OutExpo
+    duration: 240
+    easing.type: Easing.OutCubic
   }
 
   NumberAnimation {
@@ -236,9 +236,11 @@ Scope {
       }
 
       implicitWidth: 700
-      implicitHeight: 80 + (resultsModel.count > 0 ? (Math.min(resultsModel.count, 7) * 60 + 34) : 0)
+      implicitHeight: resultsModel.count > 0
+        ? 105 + Math.min(resultsModel.count, 6) * 56
+        : 96
       Behavior on implicitHeight {
-        NumberAnimation { duration: 230; easing.type: Easing.OutExpo }
+        NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
       }
 
       visible: root.windowVisible
@@ -251,49 +253,88 @@ Scope {
       Rectangle {
         id: spotlightSurface
         anchors.fill: parent
-        color: "#35000000"
-        radius: 16
-        border.color: root.ink(0.188)
+        color: Qt.rgba(root.themeSurface.r, root.themeSurface.g, root.themeSurface.b, 0.985)
+        radius: 24
+        border.color: root.ink(0.12)
         border.width: 1
         opacity: root.reveal
-        scale: 0.985 + root.reveal * 0.015
-        transform: Translate { y: (1 - root.reveal) * 8 }
+        transform: Translate { y: (1 - root.reveal) * 6 }
 
         ColumnLayout {
           anchors.fill: parent
           anchors.margins: 20
-          spacing: 16
+          spacing: 8
 
-          TextField {
-            id: searchInput
+          RowLayout {
             Layout.fillWidth: true
-            font.pixelSize: 26
-            placeholderText: "Spotlight Search..."
-            color: "white"
-            background: Item {}
-            
-            text: root.currentQuery
-            onTextEdited: root.currentQuery = text
+            Layout.preferredHeight: 56
+            spacing: 12
 
-            Keys.onPressed: (event) => {
-              if (event.key === Qt.Key_Escape) {
-                root.isVisible = false;
-                event.accepted = true;
-              } else if (event.key === Qt.Key_Down) {
-                if (resultList.currentIndex < resultsModel.count - 1) {
-                  resultList.currentIndex++;
+            Text {
+              Layout.alignment: Qt.AlignVCenter
+              text: "\uef7a"
+              color: root.currentQuery.length > 0 ? root.themeAccent : root.ink(0.62)
+              font.family: "Material Symbols Rounded"
+              font.pixelSize: 24
+            }
+
+            TextField {
+              id: searchInput
+              Layout.fillWidth: true
+              Layout.alignment: Qt.AlignVCenter
+              font.pixelSize: 22
+              font.family: "Google Sans Flex"
+              placeholderText: "Search apps and files"
+              placeholderTextColor: root.ink(0.48)
+              color: root.themeFg
+              selectionColor: root.accent(0.30)
+              selectedTextColor: root.themeFg
+              background: Item {}
+              verticalAlignment: TextInput.AlignVCenter
+              selectByMouse: true
+              padding: 0
+
+              text: root.currentQuery
+              onTextEdited: root.currentQuery = text
+
+              Keys.onPressed: (event) => {
+                if (event.key === Qt.Key_Escape) {
+                  root.isVisible = false;
+                  event.accepted = true;
+                } else if (event.key === Qt.Key_Down) {
+                  if (resultList.currentIndex < resultsModel.count - 1) {
+                    resultList.currentIndex++;
+                  }
+                  event.accepted = true;
+                } else if (event.key === Qt.Key_Up) {
+                  if (resultList.currentIndex > 0) {
+                    resultList.currentIndex--;
+                  }
+                  event.accepted = true;
+                } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                  if (resultsModel.count > 0 && resultList.currentIndex >= 0) {
+                    root.launchResult(resultsModel.get(resultList.currentIndex));
+                  }
+                  event.accepted = true;
                 }
-                event.accepted = true;
-              } else if (event.key === Qt.Key_Up) {
-                if (resultList.currentIndex > 0) {
-                  resultList.currentIndex--;
-                }
-                event.accepted = true;
-              } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                if (resultsModel.count > 0 && resultList.currentIndex >= 0) {
-                  root.launchResult(resultsModel.get(resultList.currentIndex));
-                }
-                event.accepted = true;
+              }
+            }
+
+            Rectangle {
+              Layout.alignment: Qt.AlignVCenter
+              width: 34
+              height: 22
+              radius: 6
+              color: root.ink(0.06)
+              border.width: 1
+              border.color: root.ink(0.12)
+
+              Text {
+                anchors.centerIn: parent
+                text: "esc"
+                color: root.ink(0.66)
+                font.family: "JetBrainsMono Nerd Font"
+                font.pixelSize: 10
               }
             }
           }
@@ -301,7 +342,7 @@ Scope {
           Rectangle {
             Layout.fillWidth: true
             height: 1
-            color: root.ink(0.251)
+            color: root.ink(0.09)
             visible: resultsModel.count > 0
           }
 
@@ -324,44 +365,58 @@ Scope {
             }
 
             delegate: Rectangle {
+              id: resultRow
               width: resultList.width
-              height: 60
-              color: resultList.currentIndex === index ? root.ink(0.251) : "transparent"
-              radius: 8
-              Behavior on color { ColorAnimation { duration: 120 } }
-              
+              height: 56
+              radius: 12
+              color: resultList.currentIndex === index
+                ? root.accent(0.14)
+                : (rowArea.containsMouse ? root.ink(0.04) : "transparent")
+              Behavior on color { ColorAnimation { duration: 110 } }
+
               RowLayout {
                 anchors.fill: parent
-                anchors.margins: 10
-                spacing: 15
-                
+                anchors.leftMargin: 12
+                anchors.rightMargin: 12
+                spacing: 14
+
                 IconImage {
-                  width: 32
-                  height: 32
+                  width: 28
+                  height: 28
                   source: Quickshell.iconPath(model.icon, true)
+                  asynchronous: true
                 }
-                
+
                 ColumnLayout {
                   Layout.fillWidth: true
-                  spacing: 4
+                  spacing: 1
+
                   Text {
+                    Layout.fillWidth: true
                     text: model.name
-                    color: "white"
-                    font.pixelSize: 18
-                    font.bold: true
+                    color: root.themeFg
+                    font.family: "Google Sans Flex"
+                    font.pixelSize: 15
+                    font.weight: Font.Medium
+                    elide: Text.ElideRight
                   }
+
                   Text {
+                    Layout.fillWidth: true
                     text: model.type === "app" ? model.exec : model.path
-                    color: root.ink(0.65)
+                    color: root.ink(0.64)
+                    font.family: "Google Sans Flex"
                     font.pixelSize: 12
                     elide: Text.ElideRight
-                    Layout.fillWidth: true
                   }
                 }
               }
-              
+
               MouseArea {
+                id: rowArea
                 anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
                 onClicked: {
                   resultList.currentIndex = index;
                   root.launchResult(resultsModel.get(index));

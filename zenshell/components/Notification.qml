@@ -9,16 +9,16 @@ RowLayout {
     anchors.fill: parent
     anchors.margins: root.s4
     spacing: root.s4
-    property real reveal: root.displayState === 10 ? 1 : 0
+    property bool entered: false
+    property real reveal: (root.displayState === 10 && entered) ? 1 : 0
     opacity: reveal
     visible: opacity > 0
-    clip: true
     transform: Translate { y: (1 - notificationRoot.reveal) * 5 }
 
     Behavior on reveal {
         NumberAnimation {
-            duration: root.displayState === 10 ? root.dNormal : root.dFast
-            easing.type: root.displayState === 10 ? Easing.OutExpo : Easing.OutCubic
+            duration: root.displayState === 10 ? root.motionBase : root.motionExit
+            easing.type: Easing.OutCubic
         }
     }
 

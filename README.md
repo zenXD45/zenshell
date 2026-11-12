@@ -52,7 +52,7 @@ The split is the whole point: HyprZen owns *behaviour and colour*, ZenShell owns
 | :--- | :--- |
 | **15 themes, one source of truth** | Colours live in `themes/source/*.toml`; `gen-themes.py` emits Lua, Hyprlang, CSS, Kitty and a JSON manifest. No hand-edited palette can drift. |
 | **Two shell profiles** | Profile 01 is the dynamic island, dock and desktop widgets. Profile 02 is a floating or edge-mounted command bar with toggleable widgets. Both share media, weather, notifications and the launcher; switching is instant. |
-| **One settings app** | A searchable page tree — wallpaper, theme, typography and motion, profile and bar, dock, widgets, alerts, power, camera, keyboard. It writes through a single `setValue()` door, so the UI, the shell and `shell_settings.json` never disagree. |
+| **One settings app** | A searchable page tree — wallpaper, theme, typography and motion, profile and bar, dock, widgets, alerts, power, camera, keyboard. It writes through a single `setValue()` door, so the UI, the shell and `shell_settings.json` never disagree. **Dock can now be fully disabled** from the settings (frees the screen edge). |
 | **Functional dock** | Pinned apps plus running windows only — no tray clutter. Defaults pin kitty, Helium, VSCodium, Nautilus and Firefox. Right-click any app to focus, open a new window, pin/unpin, reorder or close. |
 | **Camera effects** | A virtual webcam and virtual microphone (Center Stage, Portrait, Studio Light, backgrounds, filters, reactions, privacy shutter, voice isolation, voice changers), ported from the Omarchy plugin and opened from the notification center. |
 | **Dynamic colour** | `dynamic` and `matugen` themes derive the whole palette from your wallpaper via pywal / Matugen. |
@@ -60,6 +60,8 @@ The split is the whole point: HyprZen owns *behaviour and colour*, ZenShell owns
 | **No dead keybinds** | `scripts/check_keybinds.py` parses `keybinds.lua` and fails CI if a bound binary isn't installed by `install.sh`. |
 | **Media keys built in** | Volume, mic, brightness and playback go straight through `osd_control.sh`, which changes the value *and* draws the OSD. |
 | **Fonts handled** | JetBrainsMono Nerd for terminal/icon glyphs and [Google Sans Flex](https://fonts.google.com/specimen/Google+Sans+Flex) for the UI. JetBrainsMono comes from the official repos; Google Sans Flex is downloaded and cached by the installer. |
+| **Improved wallpaper picker** | Larger tiles (164×104), smoother hover animations, better label rendering with theme-aware text colors and gradient overlays. |
+| **Theme-aware GTK integration** | Each theme in `themes.json` now declares its matching GTK theme (`gtk` field), so `adw-gtk3` / `adw-gtk3-dark` switch automatically with the shell theme. |
 | **Reinstall-safe** | A re-run refreshes the code and keeps your theme, `shell_settings.json` and dock pins. Real config dirs are backed up with a timestamp, never deleted. |
 | **Portable** | Every path resolves through `$HOME` / `Qt.homePath()`. Clone it anywhere; no edits needed. |
 
@@ -105,6 +107,7 @@ What `install.sh` does:
 9. Applies the default theme (`catppuccin`) and a matching wallpaper on a fresh install; re-runs keep the current theme and wallpaper.
 10. Enables NetworkManager, bluetooth and power-profiles-daemon.
 11. **Verifies** the result — key binaries, configs, fonts and the ZenShell Python helpers — and warns about anything missing.
+12. **Restarts ZenShell** in a live session so new QML is loaded immediately without a reboot.
 
 ### Manual
 

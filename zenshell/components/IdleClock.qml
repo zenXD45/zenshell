@@ -9,7 +9,9 @@ RowLayout {
     property bool idleReady: false
     property real reveal: (root.displayState === 0 && idleReady) ? 1 : 0
     opacity: reveal
-    visible: opacity > 0
+    // The status profile draws its own richer idle row (IdleStatus), so the
+    // plain clock must not stack underneath it.
+    visible: opacity > 0 && root.activeProfile !== "status"
     transform: Translate { y: (1 - idleClockRoot.reveal) * 3 }
 
     // Let a closing panel finish before the clock fades back in. Without this

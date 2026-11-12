@@ -1,23 +1,22 @@
 import QtQuick
 import QtQuick.Layouts
 
-// Profile picker for the two shell modes. Each mode is a card previewing what
+// Profile picker for the three shell modes. Each mode is a card previewing what
 // it keeps on the desktop; the footer states that switching is in-place so
 // nobody expects a restart.
 Item {
     id: profileSwitcher
     anchors.fill: parent
-    property real reveal: root.displayState === 16 ? 1 : 0
+    property bool entered: false
+    property real reveal: (root.displayState === 16 && entered) ? 1 : 0
     opacity: reveal
     visible: opacity > 0
-    clip: true
-    scale: 0.992 + reveal * 0.008
-    transform: Translate { y: (1 - profileSwitcher.reveal) * 8 }
+    transform: Translate { y: (1 - profileSwitcher.reveal) * 6 }
 
     Behavior on reveal {
         NumberAnimation {
-            duration: root.displayState === 16 ? root.dPage : root.dFast
-            easing.type: root.displayState === 16 ? Easing.OutExpo : Easing.OutCubic
+            duration: root.displayState === 16 ? root.motionPanel : root.motionExit
+            easing.type: Easing.OutCubic
         }
     }
 
@@ -42,6 +41,9 @@ Item {
             } else if (event.key === Qt.Key_2) {
                 root.setProfile("bar");
                 event.accepted = true;
+            } else if (event.key === Qt.Key_3) {
+                root.setProfile("status");
+                event.accepted = true;
             }
         }
 
@@ -52,7 +54,7 @@ Item {
 
             MenuHeader {
                 title: "Shell profile"
-                hint: "1 / 2"
+                hint: "1 / 3"
             }
 
             Item { Layout.preferredHeight: root.s4 }
@@ -71,8 +73,16 @@ Item {
                     title: "Bar"
                     description: "Command rail \u00b7 widgets"
                     active: root.activeProfile === "bar"
-                    last: true
                     onActivated: root.setProfile("bar")
+                }
+
+                ProfileRow {
+                    profileId: "status"
+                    title: "Status"
+                    description: "Island \u00b7 clock, battery, workspaces"
+                    active: root.activeProfile === "status"
+                    last: true
+                    onActivated: root.setProfile("status")
                 }
             }
 
@@ -80,7 +90,7 @@ Item {
 
             HintBar {
                 hints: [
-                    { key: "1 2", label: "switch" },
+                    { key: "1 2 3", label: "switch" },
                     { key: "esc", label: "close" }
                 ]
             }
